@@ -561,25 +561,25 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
       {/* Layout Principal */}
       <div className="w-full h-full flex items-center justify-center">
         {/* Balão de Pensamento com NOA ao Lado */}
-        <div className="flex items-center gap-2 md:gap-8 justify-center w-full h-full px-1 md:px-0 -ml-[3%] md:-ml-[10%]">
+        <div className="flex items-center gap-2 md:gap-8 justify-center w-full h-full px-1 md:px-0 -ml-[8%] md:-ml-[10%]">
           {/* Balão de Pensamento */}
-          <div className="flex-1 relative max-w-xs md:max-w-md z-[100] -ml-1 md:-ml-4">
+          <div className="flex-1 relative w-[clamp(280px,60vw,320px)] md:w-[40vw] md:max-w-md z-[100] -ml-2 md:-ml-4">
             {/* Balão principal */}
             <div className="bg-white rounded-xl md:rounded-2xl px-2 md:px-3 pb-2 md:pb-3 shadow-lg border border-white/20 relative z-[100] w-full">
 
               {/* Área de Mensagens */}
-              <div className="space-y-2 max-h-32 md:max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div className="space-y-2 max-h-[clamp(200px,25vh,300px)] md:max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 {messages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[200px] md:max-w-xs ${
+                    <div className={`max-w-[clamp(200px,50vw,320px)] md:max-w-xs ${
                       message.sender === 'user' 
                         ? 'bg-blue-500 text-white rounded-md md:rounded-lg p-2 md:p-3' 
                         : 'bg-gray-100 text-gray-800 rounded-md md:rounded-lg p-2 md:p-3'
                     }`}>
-                      <p className="text-xs md:text-sm leading-relaxed whitespace-pre-line">{message.message}</p>
+                      <p className="text-xs sm:text-sm md:text-base leading-relaxed whitespace-pre-line">{message.message}</p>
                       
                       {/* Opções de resposta rápida */}
                       {message.options && message.sender === 'noa' && (
@@ -613,7 +613,7 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                        <span className="text-xs">NOA está digitando...</span>
+                        <span className="text-xs sm:text-sm">NOA está digitando...</span>
                   </div>
                 </div>
               </div>
@@ -630,7 +630,7 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Digite sua mensagem..."
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-600"
+                  className="flex-1 px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-600"
                   aria-label="Campo de mensagem para conversar com NOA"
                 />
                 {/* Botão de voz */}
@@ -645,7 +645,7 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
                       startVoiceRecognition()
                     }
                   }}
-                  className={`px-4 py-2 rounded-lg transition-colors text-sm ${
+                  className={`px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm ${
                     isVoiceListening 
                       ? 'bg-red-500 hover:bg-red-600 text-white' 
                       : 'bg-green-500 hover:bg-green-600 text-white'
@@ -670,7 +670,7 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
 
           {/* Avatar da NOA - Vídeos Animados */}
           <div className="flex-shrink-0 flex justify-center items-center relative">
-            <div className="w-[150px] h-[150px] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative">
+            <div className="w-[clamp(120px,20vw,135px)] h-[clamp(120px,20vw,135px)] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square">
               {/* Vídeo estático piscando (padrão) */}
               <video 
                 key="estatico"
@@ -715,16 +715,16 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
                     setAudioPlaying(false)
                   }
                 }}
-                className="absolute top-2 right-2 md:top-4 md:right-4 p-2 md:p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
+                className="absolute top-[5%] right-[5%] md:top-4 md:right-4 p-[clamp(8px,2vw,12px)] md:p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
                 title="Parar áudio"
               >
-                <i className="fas fa-stop text-sm md:text-lg"></i>
+                <i className="fas fa-stop text-[clamp(0.6rem,3vw,1.125rem)] md:text-lg"></i>
               </button>
             )}
             {/* Indicador de escuta de voz */}
             {isVoiceListening && (
-              <div className="absolute top-2 left-2 md:top-4 md:left-4 p-2 md:p-3 bg-green-500 text-white rounded-full shadow-lg animate-pulse">
-                <i className="fas fa-microphone text-sm md:text-lg"></i>
+              <div className="absolute top-[5%] left-[5%] md:top-4 md:left-4 p-[clamp(8px,2vw,12px)] md:p-3 bg-green-500 text-white rounded-full shadow-lg animate-pulse">
+                <i className="fas fa-microphone text-[clamp(0.6rem,3vw,1.125rem)] md:text-lg"></i>
               </div>
             )}
           </div>

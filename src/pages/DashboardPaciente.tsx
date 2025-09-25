@@ -67,10 +67,10 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
   }
 
   return (
-    <div className="h-full overflow-hidden">
+    <div className="h-full overflow-hidden md:min-h-screen">
       {/* Header */}
       <div className="max-w-6xl mx-auto px-3 mb-1">
-        <div className="premium-card p-2 scale-95">
+        <div className="premium-card p-2 scale-95 md:p-3 md:scale-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
               <Link to="/" className="text-yellow-400 hover:text-yellow-300">
@@ -114,93 +114,95 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-3 h-full">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-1 md:gap-2 h-full items-start">
+      <div className="max-w-6xl mx-auto px-3 h-full md:h-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6 h-full md:h-auto items-start">
           {/* Acesso Rápido - Lateral Esquerda */}
           <div className="lg:col-span-1">
-            <div className="premium-card p-2 md:p-3 scale-90 md:scale-95">
-              <h3 className="text-premium text-sm md:text-base font-semibold mb-2 md:mb-3">Acesso Rápido</h3>
+            <div className="premium-card p-2 scale-90 md:p-3 md:scale-100">
+              <h3 className="text-premium text-sm font-semibold mb-3">Acesso Rápido</h3>
               
-              <div className="space-y-2 md:space-y-3">
+              <div className="space-y-3">
                 <button
                   onClick={() => handleActionClick('Meus Exames')}
-                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
+                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
                 >
-                  <i className="fas fa-vials text-blue-400 text-sm md:text-base"></i>
-                  <span className="text-sm md:text-base text-gray-300">Meus Exames</span>
+                  <i className="fas fa-vials text-blue-400 text-sm"></i>
+                  <span className="text-sm text-gray-300">Meus Exames</span>
                 </button>
                 
                 <button
                   onClick={() => handleActionClick('Prescrições')}
-                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
+                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
                 >
-                  <i className="fas fa-prescription text-green-400 text-sm md:text-base"></i>
-                  <span className="text-sm md:text-base text-gray-300">Prescrições</span>
+                  <i className="fas fa-prescription text-green-400 text-sm"></i>
+                  <span className="text-sm text-gray-300">Prescrições</span>
                 </button>
                 
                 <button
                   onClick={() => handleActionClick('Prontuário')}
-                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
+                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
                 >
-                  <i className="fas fa-file-medical text-purple-400 text-sm md:text-base"></i>
-                  <span className="text-sm md:text-base text-gray-300">Prontuário</span>
+                  <i className="fas fa-file-medical text-purple-400 text-sm"></i>
+                  <span className="text-sm text-gray-300">Prontuário</span>
                 </button>
                 
                 <button
                   onClick={() => handleActionClick('Pagamentos')}
-                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
+                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
                 >
-                  <i className="fas fa-credit-card text-yellow-400 text-sm md:text-base"></i>
-                  <span className="text-sm md:text-base text-gray-300">Pagamentos</span>
+                  <i className="fas fa-credit-card text-yellow-400 text-sm"></i>
+                  <span className="text-sm text-gray-300">Pagamentos</span>
                 </button>
               </div>
             </div>
           </div>
 
           {/* Informações Principais */}
-          <div className="lg:col-span-2 space-y-1 md:space-y-2">
+          <div className="lg:col-span-2 space-y-1 md:space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Cards de Informações */}
-            <div className="premium-card p-2 md:p-3 scale-90 md:scale-95">
-              <div className="grid grid-cols-3 gap-2 md:gap-3">
+            <div className="premium-card p-2 scale-90 md:p-3 md:scale-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="text-center">
-                  <div className={`w-6 h-6 md:w-8 md:h-8 mx-auto mb-1 md:mb-2 rounded-full bg-${currentData.color}-500 bg-opacity-20 flex items-center justify-center`}>
-                    <i className={`fas fa-user-md text-xs md:text-sm text-${currentData.color}-400`}></i>
+                  <div className={`w-8 h-8 mx-auto mb-2 rounded-full bg-${currentData.color}-500 bg-opacity-20 flex items-center justify-center`}>
+                    <i className={`fas fa-user-md text-sm text-${currentData.color}-400`}></i>
                   </div>
-                  <div className={`text-sm md:text-xl font-bold text-${currentData.color}-400 mb-1`}>
+                  <div className={`text-xl font-bold text-${currentData.color}-400 mb-1`}>
                     {currentData.doctor.split(' ')[1]}
                   </div>
-                  <div className="text-gray-400 text-xs md:text-sm">Médico</div>
-                  <div className="text-xs md:text-sm text-green-400">{currentData.doctor}</div>
+                  <div className="text-gray-400 text-base">Médico</div>
+                  <div className="text-base text-green-400">{currentData.doctor}</div>
                 </div>
 
                 <div className="text-center">
-                  <div className={`w-6 h-6 md:w-8 md:h-8 mx-auto mb-1 md:mb-2 rounded-full bg-blue-500 bg-opacity-20 flex items-center justify-center`}>
-                    <i className="fas fa-calendar-check text-xs md:text-sm text-blue-400"></i>
+                  <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-blue-500 bg-opacity-20 flex items-center justify-center">
+                    <i className="fas fa-calendar-check text-sm text-blue-400"></i>
                   </div>
-                  <div className="text-sm md:text-xl font-bold text-blue-400 mb-1">
+                  <div className="text-xl font-bold text-blue-400 mb-1">
                     {currentData.nextAppointment.split('/')[0]}
                   </div>
-                  <div className="text-gray-400 text-xs md:text-sm">Próxima Consulta</div>
-                  <div className="text-sm text-green-400">{currentData.nextAppointment}</div>
+                  <div className="text-gray-400 text-base">Próxima Consulta</div>
+                  <div className="text-base text-green-400">{currentData.nextAppointment}</div>
                 </div>
 
                 <div className="text-center">
-                  <div className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-1 md:mb-2 rounded-full bg-purple-500 bg-opacity-20 flex items-center justify-center">
-                    <i className="fas fa-clock text-xs md:text-sm text-purple-400"></i>
+                  <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-purple-500 bg-opacity-20 flex items-center justify-center">
+                    <i className="fas fa-clock text-sm text-purple-400"></i>
                   </div>
-                  <div className="text-sm md:text-xl font-bold text-purple-400 mb-1">
+                  <div className="text-xl font-bold text-purple-400 mb-1">
                     {currentData.lastConsultation.split('/')[0]}
                   </div>
-                  <div className="text-gray-400 text-xs md:text-sm">Última Consulta</div>
-                  <div className="text-sm text-yellow-400">{currentData.lastConsultation}</div>
+                  <div className="text-gray-400 text-base">Última Consulta</div>
+                  <div className="text-base text-yellow-400">{currentData.lastConsultation}</div>
                 </div>
+
               </div>
             </div>
 
-            {/* Histórico de Consultas */}
-            <div className="premium-card p-2 md:p-2 scale-90 md:scale-95">
+            {/* Card Consultas Recentes */}
+            <div className="premium-card p-2 scale-90 md:p-3 md:scale-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-premium text-xs md:text-sm font-semibold">Consultas Recentes</h3>
+                <h3 className="text-premium text-sm font-semibold">Consultas Recentes</h3>
                 <button
                   onClick={() => handleActionClick('Ver Todas')}
                   className="text-yellow-400 hover:text-yellow-300 text-sm"
@@ -212,9 +214,8 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
               <div className="space-y-2">
                 {[
                   { date: '15/12/2024', doctor: 'Dr. Carlos Silva', type: 'Consulta de Retorno', status: 'Concluída', time: '14:30' },
-                  { date: '01/12/2024', doctor: 'Dr. Carlos Silva', type: 'Exame de Rotina', status: 'Concluída', time: '10:15' },
-                  { date: '15/11/2024', doctor: 'Dr. Carlos Silva', type: 'Primeira Consulta', status: 'Concluída', time: '16:00' }
-                ].slice(0, 2).map((consultation, index) => (
+                  { date: '01/12/2024', doctor: 'Dr. Carlos Silva', type: 'Exame de Rotina', status: 'Concluída', time: '10:15' }
+                ].map((consultation, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
@@ -239,12 +240,14 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                 ))}
               </div>
             </div>
+            </div>
+
           </div>
 
           {/* Painel Lateral */}
-          <div className="space-y-1">
+          <div className="space-y-1 md:space-y-4">
             {/* Próximos Compromissos */}
-            <div className="premium-card p-2 scale-95">
+            <div className="premium-card p-2 scale-90 md:p-3 md:scale-100">
               <h3 className="text-premium text-sm font-semibold mb-2">Próximos Compromissos</h3>
               
               <div className="space-y-2">
@@ -276,8 +279,9 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
               </div>
             </div>
 
+
             {/* Status do Tratamento */}
-            <div className="premium-card p-2 scale-95">
+            <div className="premium-card p-2 scale-90 md:p-3 md:scale-100">
               <h3 className="text-premium text-sm font-semibold mb-2">Status do Tratamento</h3>
               
               <div className="space-y-2">
