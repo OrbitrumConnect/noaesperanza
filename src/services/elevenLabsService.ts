@@ -37,10 +37,10 @@ export interface TextToSpeechResponse {
 class ElevenLabsService {
   private apiKey: string
   private baseURL = 'https://api.elevenlabs.io/v1'
-  private noaVoiceId = 'pNInz6obpgDQGcFmaJgB' // Voz feminina suave para NOA
+  private noaVoiceId = 'pNInz6obpgDQGcFmaJgB' // Voz feminina suave para NOA (funcionando)
 
   constructor() {
-    this.apiKey = import.meta.env.VITE_ELEVEN_API_KEY
+    this.apiKey = (import.meta as any).env.VITE_ELEVEN_API_KEY
     
     console.log('🔧 ElevenLabs Service inicializado (TTS apenas):', { 
       hasApiKey: !!this.apiKey,
@@ -154,13 +154,13 @@ class ElevenLabsService {
     }
   }
 
-  // Obter configurações de voz da NOA otimizadas para fluidez
+  // Obter configurações de voz da NOA otimizadas para fluidez e feminilidade
   getNoaVoiceSettings(): VoiceSettings {
     return {
-      stability: 0.75, // Voz mais estável para melhor fluidez
-      similarity_boost: 0.85, // Manter características da voz
-      style: 0.1, // Menos expressiva para melhor fluidez
-      use_speaker_boost: true // Melhorar qualidade
+      stability: 0.8, // Voz mais estável e suave
+      similarity_boost: 0.9, // Manter características femininas da voz
+      style: 0.2, // Ligeiramente mais expressiva para soar mais natural
+      use_speaker_boost: true // Melhorar qualidade e clareza
     }
   }
 

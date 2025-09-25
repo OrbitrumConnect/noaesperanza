@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 interface Prescription {
@@ -7,32 +7,37 @@ interface Prescription {
   doctor: string
   date: string
   status: 'active' | 'completed' | 'expired'
+  dosage: string
+  frequency: string
+  duration: string
+  instructions: string
 }
 
 const Prescricoes = () => {
-  const [prescriptions] = useState<Prescription[]>([
-    {
-      id: '1',
-      medication: 'Medicamento A',
-      doctor: 'Dr. Carlos Silva',
-      date: '2025-01-15',
-      status: 'active'
-    },
-    {
-      id: '2',
-      medication: 'Medicamento B',
-      doctor: 'Dr. Carlos Silva',
-      date: '2025-01-10',
-      status: 'active'
-    },
-    {
-      id: '3',
-      medication: 'Medicamento C',
-      doctor: 'Dr. Carlos Silva',
-      date: '2024-12-20',
-      status: 'completed'
+  // Dados das prescrições virão de médicos reais via API/Supabase
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Carregar prescrições reais do Supabase/API
+  useEffect(() => {
+    const loadPrescriptions = async () => {
+      try {
+        setLoading(true)
+        // TODO: Implementar carregamento real de prescrições
+        // const data = await prescriptionService.getPrescriptions()
+        // setPrescriptions(data)
+        
+        // Por enquanto, array vazio - dados virão de médicos reais
+        setPrescriptions([])
+      } catch (error) {
+        console.error('Erro ao carregar prescrições:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  ])
+
+    loadPrescriptions()
+  }, [])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -96,7 +101,17 @@ const Prescricoes = () => {
             </div>
 
             <div className="space-y-1">
-              {prescriptions.map((prescription) => (
+              {loading ? (
+                <div className="text-center py-4">
+                  <div className="text-gray-400 text-xs">Carregando prescrições...</div>
+                </div>
+              ) : prescriptions.length === 0 ? (
+                <div className="text-center py-4">
+                  <div className="text-gray-400 text-xs">Nenhuma prescrição encontrada</div>
+                  <div className="text-gray-500 text-xs mt-1">As prescrições aparecerão aqui quando um médico as criar</div>
+                </div>
+              ) : (
+                prescriptions.map((prescription) => (
                 <div key={prescription.id} className="border border-gray-600 rounded-lg p-1 hover:bg-gray-800/50 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -147,7 +162,8 @@ const Prescricoes = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 

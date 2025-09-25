@@ -112,43 +112,43 @@ const DashboardMedico = ({ currentSpecialty, addNotification }: DashboardMedicoP
       </div>
 
       <div className="max-w-6xl mx-auto px-3 h-full">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 h-full items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-1 md:gap-2 h-full items-start">
           {/* Acesso Rápido - Lateral Esquerda */}
           <div className="lg:col-span-1">
-            <div className="premium-card p-3 scale-95">
-              <h3 className="text-premium text-base font-semibold mb-3">Acesso Rápido</h3>
+            <div className="premium-card p-2 md:p-3 scale-90 md:scale-95">
+              <h3 className="text-premium text-sm md:text-base font-semibold mb-2 md:mb-3">Acesso Rápido</h3>
               
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 <button
                   onClick={() => handleActionClick('Prescrições')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
+                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
                 >
                   <i className="fas fa-prescription text-green-400 text-base"></i>
-                  <span className="text-base text-gray-300">Prescrições</span>
+                  <span className="text-sm md:text-base text-gray-300">Prescrições</span>
                 </button>
                 
                 <button
                   onClick={() => handleActionClick('Exames')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
+                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
                 >
                   <i className="fas fa-vials text-blue-400 text-base"></i>
-                  <span className="text-base text-gray-300">Exames</span>
+                  <span className="text-sm md:text-base text-gray-300">Exames</span>
                 </button>
                 
                 <button
                   onClick={() => handleActionClick('Prontuários')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
+                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
                 >
                   <i className="fas fa-file-medical text-purple-400 text-base"></i>
-                  <span className="text-base text-gray-300">Prontuários</span>
+                  <span className="text-sm md:text-base text-gray-300">Prontuários</span>
                 </button>
                 
                 <button
                   onClick={() => handleActionClick('Relatórios')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
+                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
                 >
                   <i className="fas fa-chart-bar text-yellow-400 text-base"></i>
-                  <span className="text-base text-gray-300">Relatórios</span>
+                  <span className="text-sm md:text-base text-gray-300">Relatórios</span>
                 </button>
               </div>
             </div>
@@ -157,7 +157,7 @@ const DashboardMedico = ({ currentSpecialty, addNotification }: DashboardMedicoP
           {/* Métricas Principais */}
           <div className="lg:col-span-2 space-y-2">
             {/* Cards de Métricas */}
-            <div className="premium-card p-3 scale-95">
+            <div className="premium-card p-2 md:p-3 scale-90 md:scale-95">
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center">
                   <div className={`w-8 h-8 mx-auto mb-2 rounded-full bg-${currentData.color}-500 bg-opacity-20 flex items-center justify-center`}>

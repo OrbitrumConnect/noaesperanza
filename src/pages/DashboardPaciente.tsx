@@ -115,92 +115,92 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
       </div>
 
       <div className="max-w-6xl mx-auto px-3 h-full">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 h-full items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-1 md:gap-2 h-full items-start">
           {/* Acesso Rápido - Lateral Esquerda */}
           <div className="lg:col-span-1">
-            <div className="premium-card p-3 scale-95">
-              <h3 className="text-premium text-base font-semibold mb-3">Acesso Rápido</h3>
+            <div className="premium-card p-2 md:p-3 scale-90 md:scale-95">
+              <h3 className="text-premium text-sm md:text-base font-semibold mb-2 md:mb-3">Acesso Rápido</h3>
               
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 <button
                   onClick={() => handleActionClick('Meus Exames')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
+                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
                 >
-                  <i className="fas fa-vials text-blue-400 text-base"></i>
-                  <span className="text-base text-gray-300">Meus Exames</span>
+                  <i className="fas fa-vials text-blue-400 text-sm md:text-base"></i>
+                  <span className="text-sm md:text-base text-gray-300">Meus Exames</span>
                 </button>
                 
                 <button
                   onClick={() => handleActionClick('Prescrições')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
+                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
                 >
-                  <i className="fas fa-prescription text-green-400 text-base"></i>
-                  <span className="text-base text-gray-300">Prescrições</span>
+                  <i className="fas fa-prescription text-green-400 text-sm md:text-base"></i>
+                  <span className="text-sm md:text-base text-gray-300">Prescrições</span>
                 </button>
                 
                 <button
                   onClick={() => handleActionClick('Prontuário')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
+                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
                 >
-                  <i className="fas fa-file-medical text-purple-400 text-base"></i>
-                  <span className="text-base text-gray-300">Prontuário</span>
+                  <i className="fas fa-file-medical text-purple-400 text-sm md:text-base"></i>
+                  <span className="text-sm md:text-base text-gray-300">Prontuário</span>
                 </button>
                 
                 <button
                   onClick={() => handleActionClick('Pagamentos')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
+                  className="w-full p-2 md:p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-2 md:gap-4"
                 >
-                  <i className="fas fa-credit-card text-yellow-400 text-base"></i>
-                  <span className="text-base text-gray-300">Pagamentos</span>
+                  <i className="fas fa-credit-card text-yellow-400 text-sm md:text-base"></i>
+                  <span className="text-sm md:text-base text-gray-300">Pagamentos</span>
                 </button>
               </div>
             </div>
           </div>
 
           {/* Informações Principais */}
-          <div className="lg:col-span-2 space-y-2">
+          <div className="lg:col-span-2 space-y-1 md:space-y-2">
             {/* Cards de Informações */}
-            <div className="premium-card p-3 scale-95">
-              <div className="grid grid-cols-3 gap-3">
+            <div className="premium-card p-2 md:p-3 scale-90 md:scale-95">
+              <div className="grid grid-cols-3 gap-2 md:gap-3">
                 <div className="text-center">
-                  <div className={`w-8 h-8 mx-auto mb-2 rounded-full bg-${currentData.color}-500 bg-opacity-20 flex items-center justify-center`}>
-                    <i className={`fas fa-user-md text-sm text-${currentData.color}-400`}></i>
+                  <div className={`w-6 h-6 md:w-8 md:h-8 mx-auto mb-1 md:mb-2 rounded-full bg-${currentData.color}-500 bg-opacity-20 flex items-center justify-center`}>
+                    <i className={`fas fa-user-md text-xs md:text-sm text-${currentData.color}-400`}></i>
                   </div>
-                  <div className={`text-xl font-bold text-${currentData.color}-400 mb-1`}>
+                  <div className={`text-sm md:text-xl font-bold text-${currentData.color}-400 mb-1`}>
                     {currentData.doctor.split(' ')[1]}
                   </div>
-                  <div className="text-gray-400 text-sm">Médico</div>
-                  <div className="text-sm text-green-400">{currentData.doctor}</div>
+                  <div className="text-gray-400 text-xs md:text-sm">Médico</div>
+                  <div className="text-xs md:text-sm text-green-400">{currentData.doctor}</div>
                 </div>
 
                 <div className="text-center">
-                  <div className={`w-8 h-8 mx-auto mb-2 rounded-full bg-blue-500 bg-opacity-20 flex items-center justify-center`}>
-                    <i className="fas fa-calendar-check text-sm text-blue-400"></i>
+                  <div className={`w-6 h-6 md:w-8 md:h-8 mx-auto mb-1 md:mb-2 rounded-full bg-blue-500 bg-opacity-20 flex items-center justify-center`}>
+                    <i className="fas fa-calendar-check text-xs md:text-sm text-blue-400"></i>
                   </div>
-                  <div className="text-xl font-bold text-blue-400 mb-1">
+                  <div className="text-sm md:text-xl font-bold text-blue-400 mb-1">
                     {currentData.nextAppointment.split('/')[0]}
                   </div>
-                  <div className="text-gray-400 text-sm">Próxima Consulta</div>
+                  <div className="text-gray-400 text-xs md:text-sm">Próxima Consulta</div>
                   <div className="text-sm text-green-400">{currentData.nextAppointment}</div>
                 </div>
 
                 <div className="text-center">
-                  <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-purple-500 bg-opacity-20 flex items-center justify-center">
-                    <i className="fas fa-clock text-sm text-purple-400"></i>
+                  <div className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-1 md:mb-2 rounded-full bg-purple-500 bg-opacity-20 flex items-center justify-center">
+                    <i className="fas fa-clock text-xs md:text-sm text-purple-400"></i>
                   </div>
-                  <div className="text-xl font-bold text-purple-400 mb-1">
+                  <div className="text-sm md:text-xl font-bold text-purple-400 mb-1">
                     {currentData.lastConsultation.split('/')[0]}
                   </div>
-                  <div className="text-gray-400 text-sm">Última Consulta</div>
+                  <div className="text-gray-400 text-xs md:text-sm">Última Consulta</div>
                   <div className="text-sm text-yellow-400">{currentData.lastConsultation}</div>
                 </div>
               </div>
             </div>
 
             {/* Histórico de Consultas */}
-            <div className="premium-card p-2 scale-95">
+            <div className="premium-card p-2 md:p-2 scale-90 md:scale-95">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-premium text-sm font-semibold">Consultas Recentes</h3>
+                <h3 className="text-premium text-xs md:text-sm font-semibold">Consultas Recentes</h3>
                 <button
                   onClick={() => handleActionClick('Ver Todas')}
                   className="text-yellow-400 hover:text-yellow-300 text-sm"

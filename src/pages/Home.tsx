@@ -48,117 +48,7 @@ interface AvaliacaoClinicaData {
   }
 }
 
-// Etapas da Avaliação Clínica Triaxial
-const ETAPAS_AVALIACAO = [
-  { 
-    id: 'abertura', 
-    title: 'Abertura Exponencial', 
-    pergunta: 'Olá! Eu sou Nôa Esperanza. Por favor, apresente-se também e vamos iniciar a sua avaliação inicial para consultas com Dr. Ricardo Valença.',
-    opcoes: ['Olá, sou [seu nome], tenho [idade] anos', 'Meu nome é [nome], sou [profissão]', 'Sou [nome], venho de [cidade]']
-  },
-  { 
-    id: 'cannabis_medicinal', 
-    title: 'Cannabis Medicinal', 
-    pergunta: 'Você já utilizou canabis medicinal?',
-    opcoes: ['Sim, já utilizei', 'Não, nunca utilizei', 'Estou considerando usar', 'Não sei o que é', 'Prefiro não responder']
-  },
-  { 
-    id: 'lista_indiciaria', 
-    title: 'Lista Indiciária', 
-    pergunta: 'O que trouxe você à nossa avaliação hoje?',
-    opcoes: ['Dor de cabeça', 'Dor no peito', 'Falta de ar', 'Dor abdominal', 'Cansaço', 'Outro sintoma']
-  },
-  { 
-    id: 'queixa_principal', 
-    title: 'Queixa Principal', 
-    pergunta: 'De todas essas questões, qual mais o(a) incomoda?',
-    opcoes: ['A primeira que mencionei', 'A segunda que mencionei', 'A terceira que mencionei', 'Todas me incomodam igualmente']
-  },
-  { 
-    id: 'desenvolvimento_localizacao', 
-    title: 'Desenvolvimento Indiciário - Localização', 
-    pergunta: 'Vamos explorar suas queixas mais detalhadamente. Onde você sente [queixa]?',
-    opcoes: ['Cabeça', 'Peito', 'Abdômen', 'Costas', 'Pernas', 'Braços', 'Todo o corpo']
-  },
-  { 
-    id: 'desenvolvimento_inicio', 
-    title: 'Início', 
-    pergunta: 'Quando essa [queixa] começou?',
-    opcoes: ['Hoje', 'Ontem', 'Esta semana', 'Este mês', 'Há alguns meses', 'Há mais de um ano']
-  },
-  { 
-    id: 'desenvolvimento_qualidade', 
-    title: 'Qualidade', 
-    pergunta: 'Como é a [queixa]?',
-    opcoes: ['Dor aguda', 'Dor latejante', 'Dor em queimação', 'Dor em pontada', 'Desconforto', 'Pressão']
-  },
-  { 
-    id: 'desenvolvimento_sintomas', 
-    title: 'Sintomas Associados', 
-    pergunta: 'O que mais você sente quando está com a [queixa]?',
-    opcoes: ['Náusea', 'Tontura', 'Suor', 'Falta de ar', 'Cansaço', 'Nenhum sintoma adicional']
-  },
-  { 
-    id: 'desenvolvimento_melhora', 
-    title: 'Fatores de Melhora', 
-    pergunta: 'O que melhora a [queixa]?',
-    opcoes: ['Repouso', 'Medicação', 'Calor', 'Frio', 'Massagem', 'Nada melhora']
-  },
-  { 
-    id: 'desenvolvimento_piora', 
-    title: 'Fatores de Piora', 
-    pergunta: 'O que piora a [queixa]?',
-    opcoes: ['Movimento', 'Esforço', 'Estresse', 'Alimentação', 'Posição', 'Nada piora']
-  },
-  { 
-    id: 'historia_patologica', 
-    title: 'História Patológica Pregressa', 
-    pergunta: 'E agora, sobre o restante sua vida até aqui, desde seu nascimento, quais as questões de saúde que você já viveu? Vamos ordenar do mais antigo para o mais recente, o que veio primeiro?',
-    opcoes: ['Nenhuma', 'Hipertensão', 'Diabetes', 'Problemas cardíacos', 'Cirurgias', 'Outras doenças']
-  },
-  { 
-    id: 'historia_familiar_mae', 
-    title: 'História Familiar - Mãe', 
-    pergunta: 'E na sua família? Começando pela parte de sua mãe, quais as questões de saúde dela e desse lado da família?',
-    opcoes: ['Nenhuma', 'Hipertensão', 'Diabetes', 'Câncer', 'Problemas cardíacos', 'Outras doenças']
-  },
-  { 
-    id: 'historia_familiar_pai', 
-    title: 'História Familiar - Pai', 
-    pergunta: 'E por parte do pai?',
-    opcoes: ['Nenhuma', 'Hipertensão', 'Diabetes', 'Câncer', 'Problemas cardíacos', 'Outras doenças']
-  },
-  { 
-    id: 'habitos_vida', 
-    title: 'Hábitos de Vida', 
-    pergunta: 'Além dos hábitos de vida que já verificamos em nossa conversa, que outros hábitos você acha importante mencionar?',
-    opcoes: ['Fumo', 'Bebida alcoólica', 'Exercícios', 'Alimentação', 'Sono', 'Estresse no trabalho']
-  },
-  { 
-    id: 'alergias', 
-    title: 'Alergias', 
-    pergunta: 'Você tem alguma alergia (mudança de tempo, medicação, poeira...)?',
-    opcoes: ['Nenhuma', 'Poeira', 'Pólen', 'Medicamentos', 'Alimentos', 'Mudança de tempo']
-  },
-  { 
-    id: 'medicacoes_continuas', 
-    title: 'Medicações Contínuas', 
-    pergunta: 'Quais medicações utiliza regularmente?',
-    opcoes: ['Nenhuma', 'Anti-hipertensivo', 'Antidiabético', 'Analgésico', 'Vitaminas', 'Outras medicações']
-  },
-  { 
-    id: 'medicacoes_eventuais', 
-    title: 'Medicações Eventuais', 
-    pergunta: 'Quais as medicações você utiliza esporadicamente (de vez em quando) e porque utiliza?',
-    opcoes: ['Nenhuma', 'Analgésico para dor', 'Antitérmico para febre', 'Antiácido', 'Antialérgico', 'Outras medicações']
-  },
-  { 
-    id: 'fechamento', 
-    title: 'Fechamento Consensual', 
-    pergunta: 'Vamos revisar a sua história rapidamente para garantir que não perdemos nenhum detalhe importante.',
-    opcoes: ['Sim, vamos revisar', 'Está tudo correto', 'Quero adicionar algo', 'Há algo a corrigir']
-  }
-]
+// Método triaxial removido - agora usa apenas ChatGPT
 
 interface HomeProps {
   currentSpecialty: Specialty
@@ -174,20 +64,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Estados para Avaliação Clínica Triaxial
-  const [modoAvaliacao, setModoAvaliacao] = useState(false)
-  const [etapaAtual, setEtapaAtual] = useState(0)
-  const [perguntandoMais, setPerguntandoMais] = useState(false)
-  const [dadosAvaliacao, setDadosAvaliacao] = useState<AvaliacaoClinicaData['dados']>({
-    cannabis_medicinal: '',
-    lista_indiciaria: [],
-    historia_patologica: [],
-    historia_familiar: { mae: [], pai: [] },
-    habitos_vida: [],
-    desenvolvimento_indiciario: {}
-  })
-  const [sessionId] = useState(() => `avaliacao_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
-  const [evaluationId, setEvaluationId] = useState<string | null>(null)
+  // Estados de avaliação removidos - agora usa apenas ChatGPT
   
   // Controle de áudio
   const [audioPlaying, setAudioPlaying] = useState(false)
@@ -213,28 +90,40 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     localStorage.setItem('noa_user_memory', JSON.stringify(updatedMemory))
   }
 
-  // Salva avaliação no Supabase
-  const saveEvaluationToSupabase = async (isCompleted: boolean = false) => {
+  // Salva conversa do ChatGPT no Supabase
+  const saveChatConversation = async (userMessage: string, noaResponse: string) => {
     try {
-      const evaluationData = {
-        session_id: sessionId,
-        status: (isCompleted ? 'completed' : 'in_progress') as 'completed' | 'in_progress',
-        etapa_atual: ETAPAS_AVALIACAO[etapaAtual]?.id || 'fechamento',
-        dados: dadosAvaliacao,
-        user_id: userMemory.name ? userMemory.name : null
+      const conversationData = {
+        user_id: userMemory.name || 'anonymous',
+        user_message: userMessage,
+        noa_response: noaResponse,
+        session_id: `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        created_at: new Date().toISOString()
       }
 
-      if (evaluationId) {
-        // Atualiza avaliação existente
-        await dataService.updateClinicalEvaluation(evaluationId, evaluationData)
-      } else {
-        // Cria nova avaliação
-        const result = await dataService.createClinicalEvaluation(evaluationData)
-        setEvaluationId(result.id)
-      }
+      // Salva no Supabase usando a tabela de avaliações clínicas
+      await dataService.createClinicalEvaluation({
+        session_id: conversationData.session_id,
+        status: 'completed',
+        etapa_atual: 'chat_conversation',
+        dados: {
+          cannabis_medicinal: '',
+          lista_indiciaria: [],
+          historia_patologica: [],
+          historia_familiar: { mae: [], pai: [] },
+          habitos_vida: [],
+          desenvolvimento_indiciario: {},
+          // Dados da conversa do ChatGPT
+          user_message: userMessage,
+          noa_response: noaResponse,
+          conversation_type: 'chatgpt_evaluation'
+        } as any,
+        user_id: conversationData.user_id
+      })
+      
+      console.log('✅ Conversa salva no Supabase:', conversationData.session_id)
     } catch (error) {
-      console.error('Erro ao salvar avaliação no Supabase:', error)
-      // Não mostra erro para o usuário, apenas loga
+      console.error('❌ Erro ao salvar conversa no Supabase:', error)
     }
   }
 
@@ -299,12 +188,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       
       // Quebra-gelo: Pesquisa - Projetos de Investigação (removido - usa ChatGPT)
 
-      // Se está em modo avaliação, processa a resposta
-      if (modoAvaliacao) {
-        await processarRespostaAvaliacao(userMessage)
-        setIsTyping(false)
-        return
-      }
+      // Modo de avaliação removido - agora usa apenas ChatGPT
 
       // Detecta se o usuário está se apresentando (salva nome, mas usa ChatGPT para resposta)
       if (!userMemory.name && (
@@ -366,7 +250,7 @@ FECHAMENTO CONSENSUAL:
 - Formule hipóteses sindrômicas se concordar
 - Faça recomendação final específica
 
-CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxial' : 'Conversa geral'}`
+CONTEXTO ATUAL: Conversa geral com ChatGPT`
 
       const conversationHistory: ChatMessage[] = [
         { role: 'system', content: systemContext },
@@ -403,6 +287,9 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       setMessages(prev => [...prev, noaMessage])
       // Removido: addNotification('Resposta da NOA Esperanza recebida', 'success')
       
+      // Salva conversa no Supabase
+      await saveChatConversation(userMessage, response)
+      
       // 🧠 APRENDIZADO AUTOMÁTICO - IA aprende com a conversa
       aiLearningService.saveInteraction(userMessage, response, 'general')
       
@@ -418,249 +305,11 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
     }
   }
 
-  // Processa resposta da avaliação clínica
-  const processarRespostaAvaliacao = async (resposta: string) => {
-    const etapa = ETAPAS_AVALIACAO[etapaAtual]
-    
-    // Verifica se é uma resposta "não" ou "nenhuma" para pular "O que mais?"
-    const respostaNegativa = resposta.toLowerCase().includes('não') || 
-                            resposta.toLowerCase().includes('nenhuma') || 
-                            resposta.toLowerCase().includes('nada') ||
-                            resposta.toLowerCase().includes('nunca')
-    
-    // Salva a resposta na etapa atual
-    if (etapa.id === 'abertura') {
-      setDadosAvaliacao(prev => ({ ...prev, apresentacao: resposta }))
-    } else if (etapa.id === 'cannabis_medicinal') {
-      setDadosAvaliacao(prev => ({ ...prev, cannabis_medicinal: resposta }))
-    } else if (etapa.id === 'lista_indiciaria') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        lista_indiciaria: [...prev.lista_indiciaria, resposta] 
-      }))
-      
-      // Pergunta "O que mais?" removida - usa ChatGPT
-    } else if (etapa.id === 'queixa_principal') {
-      setDadosAvaliacao(prev => ({ ...prev, queixa_principal: resposta }))
-    } else if (etapa.id === 'desenvolvimento_localizacao') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        desenvolvimento_indiciario: { 
-          ...prev.desenvolvimento_indiciario, 
-          localizacao: resposta 
-        } 
-      }))
-    } else if (etapa.id === 'desenvolvimento_inicio') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        desenvolvimento_indiciario: { 
-          ...prev.desenvolvimento_indiciario, 
-          inicio: resposta 
-        } 
-      }))
-    } else if (etapa.id === 'desenvolvimento_qualidade') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        desenvolvimento_indiciario: { 
-          ...prev.desenvolvimento_indiciario, 
-          qualidade: resposta 
-        } 
-      }))
-    } else if (etapa.id === 'desenvolvimento_sintomas') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        desenvolvimento_indiciario: { 
-          ...prev.desenvolvimento_indiciario, 
-          sintomas_associados: resposta 
-        } 
-      }))
-    } else if (etapa.id === 'desenvolvimento_melhora') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        desenvolvimento_indiciario: { 
-          ...prev.desenvolvimento_indiciario, 
-          fatores_melhora: resposta 
-        } 
-      }))
-    } else if (etapa.id === 'desenvolvimento_piora') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        desenvolvimento_indiciario: { 
-          ...prev.desenvolvimento_indiciario, 
-          fatores_piora: resposta 
-        } 
-      }))
-    } else if (etapa.id === 'historia_patologica') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        historia_patologica: [...prev.historia_patologica, resposta] 
-      }))
-      
-      // Pergunta "O que mais?" removida - usa ChatGPT
-    } else if (etapa.id === 'historia_familiar_mae') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        historia_familiar: { 
-          ...prev.historia_familiar, 
-          mae: [...prev.historia_familiar.mae, resposta] 
-        } 
-      }))
-      
-      // Pergunta "O que mais?" removida - usa ChatGPT
-    } else if (etapa.id === 'historia_familiar_pai') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        historia_familiar: { 
-          ...prev.historia_familiar, 
-          pai: [...prev.historia_familiar.pai, resposta] 
-        } 
-      }))
-      
-      // Pergunta "O que mais?" removida - usa ChatGPT
-    } else if (etapa.id === 'habitos_vida') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        habitos_vida: [...prev.habitos_vida, resposta] 
-      }))
-      
-      // Pergunta "O que mais?" removida - usa ChatGPT
-    } else if (etapa.id === 'alergias') {
-      setDadosAvaliacao(prev => ({ ...prev, alergias: resposta }))
-    } else if (etapa.id === 'medicacoes_continuas') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        medicacoes: { 
-          ...prev.medicacoes, 
-          continuas: resposta 
-        } 
-      }))
-    } else if (etapa.id === 'medicacoes_eventuais') {
-      setDadosAvaliacao(prev => ({ 
-        ...prev, 
-        medicacoes: { 
-          ...prev.medicacoes, 
-          eventuais: resposta 
-        } 
-      }))
-    } else if (etapa.id === 'fechamento') {
-      // Gera relatório narrativo
-      const relatorio = gerarRelatorioNarrativo()
-      setDadosAvaliacao(prev => ({ ...prev, relatorio_narrativo: relatorio }))
-    }
+  // Função processarRespostaAvaliacao removida - agora usa apenas ChatGPT
 
-    // Se estava perguntando "O que mais?" e recebeu resposta negativa, avança
-    if (perguntandoMais && respostaNegativa) {
-      setPerguntandoMais(false)
-    }
+  // Função gerarRelatorioNarrativo removida - agora usa apenas ChatGPT
 
-    // Salva progresso no Supabase
-    await saveEvaluationToSupabase(false)
-
-    // Avança para próxima etapa
-    if (etapaAtual < ETAPAS_AVALIACAO.length - 1) {
-      setEtapaAtual(prev => prev + 1)
-      const proximaEtapa = ETAPAS_AVALIACAO[etapaAtual + 1]
-      
-      // Próxima pergunta removida - usa ChatGPT
-    } else {
-      // Finaliza avaliação
-      await finalizarAvaliacao()
-    }
-  }
-
-  // Gera relatório narrativo
-  const gerarRelatorioNarrativo = () => {
-    const dados = dadosAvaliacao
-    return `
-**RELATÓRIO DE AVALIAÇÃO CLÍNICA INICIAL**
-*Método Triaxial - Dr. Ricardo Valença*
-
-**APRESENTAÇÃO:** ${dados.apresentacao || 'Não informado'}
-
-**CANNABIS MEDICINAL:** ${dados.cannabis_medicinal || 'Não informado'}
-
-**QUEIXAS PRINCIPAIS:** ${dados.lista_indiciaria.join(', ')}
-
-**QUEIXA PRINCIPAL:** ${dados.queixa_principal || 'Não especificada'}
-
-**DESENVOLVIMENTO INDICIÁRIO:**
-- Localização: ${dados.desenvolvimento_indiciario?.localizacao || 'Não informado'}
-- Início: ${dados.desenvolvimento_indiciario?.inicio || 'Não informado'}
-- Qualidade: ${dados.desenvolvimento_indiciario?.qualidade || 'Não informado'}
-- Sintomas associados: ${dados.desenvolvimento_indiciario?.sintomas_associados || 'Não informado'}
-- Fatores de melhora: ${dados.desenvolvimento_indiciario?.fatores_melhora || 'Não informado'}
-- Fatores de piora: ${dados.desenvolvimento_indiciario?.fatores_piora || 'Não informado'}
-
-**HISTÓRIA PATOLÓGICA:** ${dados.historia_patologica.join(', ') || 'Nenhuma'}
-
-**HISTÓRIA FAMILIAR:**
-- Mãe: ${dados.historia_familiar.mae.join(', ') || 'Nenhuma'}
-- Pai: ${dados.historia_familiar.pai.join(', ') || 'Nenhuma'}
-
-**HÁBITOS DE VIDA:** ${dados.habitos_vida.join(', ') || 'Não informado'}
-
-**ALERGIAS:** ${dados.alergias || 'Nenhuma'}
-
-**MEDICAÇÕES:**
-- Contínuas: ${dados.medicacoes?.continuas || 'Nenhuma'}
-- Eventuais: ${dados.medicacoes?.eventuais || 'Nenhuma'}
-
-*Relatório gerado em: ${new Date().toLocaleString('pt-BR')}*
-    `.trim()
-  }
-
-  // Finaliza avaliação
-  const finalizarAvaliacao = async () => {
-    setModoAvaliacao(false)
-    
-    const relatorio = gerarRelatorioNarrativo()
-    setDadosAvaliacao(prev => ({ ...prev, relatorio_narrativo: relatorio }))
-    
-    // Fechamento consensual detalhado
-    const fechamentoConsensual: Message = {
-      id: crypto.randomUUID(),
-      message: `**FECHAMENTO CONSENSUAL**\n\nVamos revisar sua história para garantir que não perdemos nenhum detalhe importante.\n\n**RESUMO DA SUA HISTÓRIA:**\n\n${relatorio}\n\n**O que posso melhorar no meu entendimento?**`,
-      sender: 'noa',
-      timestamp: new Date(),
-      options: ['Está tudo correto', 'Gostaria de adicionar algo', 'Há algo que não entendi bem', 'Posso melhorar alguma resposta']
-    }
-    
-    setMessages(prev => [...prev, fechamentoConsensual])
-    playNoaAudioWithText(fechamentoConsensual.message)
-    
-    // Aguarda resposta do fechamento consensual
-    setTimeout(() => {
-      const concordancia: Message = {
-        id: crypto.randomUUID(),
-        message: `**Você concorda com o meu entendimento?**\n\nHá mais alguma coisa que gostaria de adicionar sobre a história que construímos?`,
-        sender: 'noa',
-        timestamp: new Date(),
-        options: ['Sim, concordo', 'Quero adicionar algo', 'Há algo a corrigir', 'Está perfeito']
-      }
-      
-      setMessages(prev => [...prev, concordancia])
-      playNoaAudioWithText(concordancia.message)
-      
-      // Finalização com recomendação específica
-      setTimeout(() => {
-        const finalizacao: Message = {
-          id: crypto.randomUUID(),
-          message: `**🎉 AVALIAÇÃO CLÍNICA CONCLUÍDA!**\n\n✅ Seu relatório foi gerado e está disponível no seu dashboard.\n\n**RECOMENDAÇÃO FINAL:**\n\nEssa é uma avaliação inicial de acordo com o método desenvolvido pelo Dr. Ricardo Valença com o objetivo de aperfeiçoar o seu atendimento. Ao final, recomendo a marcação de uma consulta com o Dr. Ricardo Valença pelo site.\n\n💡 **Próximos passos:**\n- Agende sua consulta\n- Leve este relatório\n- Prepare suas dúvidas\n\n*Método Triaxial - Dr. Ricardo Valença*`,
-          sender: 'noa',
-          timestamp: new Date()
-        }
-        
-        setMessages(prev => [...prev, finalizacao])
-        // Removido: addNotification('Avaliação Clínica Concluída', 'success')
-        playNoaAudioWithText(finalizacao.message)
-        
-        // Salva avaliação concluída no Supabase
-        saveEvaluationToSupabase(true).then(() => {
-          console.log('Avaliação salva no Supabase:', evaluationId)
-        })
-      }, 3000)
-    }, 3000)
-  }
+  // Função finalizarAvaliacao removida - agora usa apenas ChatGPT
 
   const handleSendMessage = (messageText?: string) => {
     const messageToSend = messageText || inputMessage
@@ -705,11 +354,10 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     const recognition = new SpeechRecognition()
 
-    recognition.continuous = true // Permite interrupção
-    recognition.interimResults = true // Detecta fala em tempo real
+    recognition.continuous = false // Modo mais estável
+    recognition.interimResults = false // Menos processamento
     recognition.lang = 'pt-BR'
     recognition.maxAlternatives = 1 // Melhor precisão
-    recognition.serviceURI = 'wss://www.google.com/speech-api/full-duplex/v1/up' // Melhor performance
     
     // Variável para acumular texto durante a fala
     let accumulatedText = ''
@@ -733,29 +381,12 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         }
       }
 
-      // Se há fala detectada (interim ou final), interrompe áudio da NOA
-      if (interimTranscript || finalTranscript) {
-        // Só interrompe se não estiver tocando áudio da NOA
-        if (!audioPlaying) {
-          console.log('🗣️ Usuário falando detectado, interrompendo áudio da NOA...')
-          
-          // Para o áudio atual da NOA
-          if (currentAudioRef.current) {
-            currentAudioRef.current.pause()
-            currentAudioRef.current = null
-            setAudioPlaying(false)
-            console.log('⏹️ Áudio da NOA interrompido')
-          }
-        } else {
-          console.log('🔇 NOA está falando, ignorando detecção de voz')
-        }
-      }
-
-      // Mostra texto intermediário em tempo real (sem processar ainda)
-      if (interimTranscript) {
-        console.log('🎤 Texto em tempo real:', interimTranscript)
-        setInputMessage(interimTranscript)
-        // Removido: addNotification(`🎤 Escutando: "${interimTranscript}"`, 'info')
+      // Para o áudio da NOA se usuário falar
+      if (finalTranscript && currentAudioRef.current) {
+        currentAudioRef.current.pause()
+        currentAudioRef.current = null
+        setAudioPlaying(false)
+        console.log('⏹️ Áudio da NOA interrompido')
       }
 
       // Se há resultado final, processa imediatamente (mais rápido)
@@ -873,6 +504,8 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       
       // Armazena referência do áudio atual
       currentAudioRef.current = audio
+      
+      // Inicia o vídeo "falando" um pouco antes do áudio
       setAudioPlaying(true)
       
       // Para o reconhecimento de voz enquanto NOA fala
@@ -880,6 +513,9 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         console.log('🔇 Pausando reconhecimento de voz enquanto NOA fala')
         setIsVoiceListening(false)
       }
+
+      // Delay para sincronizar vídeo com áudio (pouquinho antes)
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       audio.play().then(() => {
         console.log('🎵 Áudio tocando com sucesso!')
@@ -925,25 +561,25 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       {/* Layout Principal */}
       <div className="w-full h-full flex items-center justify-center">
         {/* Balão de Pensamento com NOA ao Lado */}
-        <div className="flex items-center gap-8 justify-center w-full h-full -ml-[10%]">
+        <div className="flex items-center gap-2 md:gap-8 justify-center w-full h-full px-1 md:px-0 -ml-[3%] md:-ml-[10%]">
           {/* Balão de Pensamento */}
-          <div className="flex-1 relative max-w-md z-[100] -ml-4">
+          <div className="flex-1 relative max-w-xs md:max-w-md z-[100] -ml-1 md:-ml-4">
             {/* Balão principal */}
-            <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 relative z-[100]">
+            <div className="bg-white rounded-xl md:rounded-2xl px-2 md:px-3 pb-2 md:pb-3 shadow-lg border border-white/20 relative z-[100] w-full">
 
               {/* Área de Mensagens */}
-              <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div className="space-y-2 max-h-32 md:max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 {messages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-xs ${
+                    <div className={`max-w-[200px] md:max-w-xs ${
                       message.sender === 'user' 
-                        ? 'bg-blue-500 text-white rounded-lg p-3' 
-                        : 'bg-gray-100 text-gray-800 rounded-lg p-3'
+                        ? 'bg-blue-500 text-white rounded-md md:rounded-lg p-2 md:p-3' 
+                        : 'bg-gray-100 text-gray-800 rounded-md md:rounded-lg p-2 md:p-3'
                     }`}>
-                      <p className="text-sm leading-relaxed whitespace-pre-line">{message.message}</p>
+                      <p className="text-xs md:text-sm leading-relaxed whitespace-pre-line">{message.message}</p>
                       
                       {/* Opções de resposta rápida */}
                       {message.options && message.sender === 'noa' && (
@@ -1032,17 +668,42 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
               </div>
             </div>
 
-          {/* Avatar da NOA */}
+          {/* Avatar da NOA - Vídeos Animados */}
           <div className="flex-shrink-0 flex justify-center items-center relative">
-            <div className="w-[533px] h-[533px] rounded-full overflow-hidden border-4 border-green-400 shadow-lg">
-              <img 
-                src="./avatar-default.jpg" 
-                alt="NOA Esperanza" 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA0IiBoZWlnaHQ9IjEwNCIgdmlld0JveD0iMCAwIDEwNCAxMDQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDQiIGhlaWdodD0iMTA0IiBmaWxsPSIjMTA5NjMxIi8+CjxjaXJjbGUgY3g9IjUyIiBjeT0iMzgiIHI9IjE4IiBmaWxsPSIjRkZGRkZGIi8+CjxwYXRoIGQ9Ik0yNiA4NkMyNiA3MS4xNjQyIDM4LjE2NDIgNTkgNTMgNTlINDFDMzguMTY0MiA1OSAyNiA3MS4xNjQyIDI2IDg2WiIgZmlsbD0iI0ZGRkZGRiIvPgo8L3N2Zz4K'
-                }}
-              />
+            <div className="w-[150px] h-[150px] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative">
+              {/* Vídeo estático piscando (padrão) */}
+              <video 
+                key="estatico"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                  audioPlaying ? 'opacity-0' : 'opacity-100'
+                }`}
+                autoPlay
+                loop
+                muted
+                playsInline
+              >
+                <source src="./estatica piscando.mp4" type="video/mp4" />
+                {/* Fallback para imagem caso o vídeo não carregue */}
+                <img 
+                  src="./avatar-default.jpg" 
+                  alt="NOA Esperanza" 
+                  className="w-full h-full object-cover"
+                />
+              </video>
+              
+              {/* Vídeo falando (quando áudio está tocando) */}
+              <video 
+                key="falando"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                  audioPlaying ? 'opacity-100' : 'opacity-0'
+                }`}
+                autoPlay
+                loop
+                muted
+                playsInline
+              >
+                <source src="./Noafalando.mp4" type="video/mp4" />
+              </video>
             </div>
             {/* Botão para parar áudio */}
             {audioPlaying && (
@@ -1054,16 +715,16 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                     setAudioPlaying(false)
                   }
                 }}
-                className="absolute top-4 right-4 p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
+                className="absolute top-2 right-2 md:top-4 md:right-4 p-2 md:p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
                 title="Parar áudio"
               >
-                <i className="fas fa-stop text-lg"></i>
+                <i className="fas fa-stop text-sm md:text-lg"></i>
               </button>
             )}
             {/* Indicador de escuta de voz */}
             {isVoiceListening && (
-              <div className="absolute top-4 left-4 p-3 bg-green-500 text-white rounded-full shadow-lg animate-pulse">
-                <i className="fas fa-microphone text-lg"></i>
+              <div className="absolute top-2 left-2 md:top-4 md:left-4 p-2 md:p-3 bg-green-500 text-white rounded-full shadow-lg animate-pulse">
+                <i className="fas fa-microphone text-sm md:text-lg"></i>
               </div>
             )}
           </div>
