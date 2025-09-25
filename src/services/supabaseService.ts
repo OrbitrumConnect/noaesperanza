@@ -18,6 +18,120 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseAnonKey === 'your-anon-key') {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// Funções para dashboard administrativo
+export interface AdminMetrics {
+  totalUsers: number
+  activeSubscriptions: number
+  monthlyRevenue: number
+  systemUptime: number
+  totalDoctors: number
+  totalPatients: number
+  totalInteractions: number
+  aiLearningCount: number
+}
+
+export const getAdminMetrics = async (): Promise<AdminMetrics> => {
+  try {
+    // Buscar contagem de usuários
+    const { count: totalUsers } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+
+    // Buscar contagem de médicos
+    const { count: totalDoctors } = await supabase
+      .from('doctors')
+      .select('*', { count: 'exact', head: true })
+
+    // Buscar contagem de pacientes
+    const { count: totalPatients } = await supabase
+      .from('patients')
+      .select('*', { count: 'exact', head: true })
+
+    // Buscar contagem de interações da IA
+    const { count: totalInteractions } = await supabase
+      .from('ai_learning')
+      .select('*', { count: 'exact', head: true })
+
+    // Buscar dados de aprendizado da IA
+    const { count: aiLearningCount } = await supabase
+      .from('ai_keywords')
+      .select('*', { count: 'exact', head: true })
+
+    // Calcular receita mensal (simulado baseado em assinaturas)
+    const activeSubscriptions = totalUsers || 0
+    const monthlyRevenue = activeSubscriptions * 89.90 // Valor da assinatura
+
+    return {
+      totalUsers: totalUsers || 0,
+      activeSubscriptions: activeSubscriptions,
+      monthlyRevenue: monthlyRevenue,
+      systemUptime: 99.9, // Simulado
+      totalDoctors: totalDoctors || 0,
+      totalPatients: totalPatients || 0,
+      totalInteractions: totalInteractions || 0,
+      aiLearningCount: aiLearningCount || 0
+    }
+  } catch (error) {
+    console.error('Erro ao buscar métricas administrativas:', error)
+    // Retornar valores padrão em caso de erro
+    return {
+      totalUsers: 0,
+      activeSubscriptions: 0,
+      monthlyRevenue: 0,
+      systemUptime: 99.9,
+      totalDoctors: 0,
+      totalPatients: 0,
+      totalInteractions: 0,
+      aiLearningCount: 0
+    }
+  }
+}
+
+export const getRecentUsers = async (limit: number = 10) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Erro ao buscar usuários recentes:', error)
+    return []
+  }
+}
+
+export const getSystemStats = async () => {
+  try {
+    // Buscar estatísticas de uso da IA
+    const { data: aiStats } = await supabase
+      .from('ai_learning')
+      .select('category, usage_count')
+      .order('usage_count', { ascending: false })
+      .limit(10)
+
+    // Buscar palavras-chave mais usadas
+    const { data: topKeywords } = await supabase
+      .from('ai_keywords')
+      .select('keyword, usage_count, category')
+      .order('usage_count', { ascending: false })
+      .limit(10)
+
+    return {
+      aiStats: aiStats || [],
+      topKeywords: topKeywords || []
+    }
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas do sistema:', error)
+    return {
+      aiStats: [],
+      topKeywords: []
+    }
+  }
+}
+
 // Tipos para o banco de dados
 export interface User {
   id: string

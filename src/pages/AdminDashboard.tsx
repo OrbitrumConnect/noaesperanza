@@ -1,34 +1,58 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { getAdminMetrics, getRecentUsers, getSystemStats, AdminMetrics } from '../services/supabaseService'
 
 interface AdminDashboardProps {
   addNotification: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void
 }
 
-interface SystemMetrics {
-  totalUsers: number
-  activeSubscriptions: number
-  monthlyRevenue: number
-  systemUptime: number
-}
-
 const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
-  const [metrics, setMetrics] = useState<SystemMetrics>({
-    totalUsers: 2847,
-    activeSubscriptions: 1456,
-    monthlyRevenue: 125000,
-    systemUptime: 99.9
+  const [metrics, setMetrics] = useState<AdminMetrics>({
+    totalUsers: 0,
+    activeSubscriptions: 0,
+    monthlyRevenue: 0,
+    systemUptime: 99.9,
+    totalDoctors: 0,
+    totalPatients: 0,
+    totalInteractions: 0,
+    aiLearningCount: 0
   })
+  const [loading, setLoading] = useState(true)
+  const [recentUsers, setRecentUsers] = useState<any[]>([])
+  const [systemStats, setSystemStats] = useState<any>({ aiStats: [], topKeywords: [] })
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMetrics(prev => ({
-        ...prev,
-        monthlyRevenue: prev.monthlyRevenue + Math.floor(Math.random() * 1000)
-      }))
-    }, 10000)
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true)
+        
+        // Carregar métricas principais
+        const metricsData = await getAdminMetrics()
+        setMetrics(metricsData)
+        
+        // Carregar usuários recentes
+        const usersData = await getRecentUsers(5)
+        setRecentUsers(usersData)
+        
+        // Carregar estatísticas do sistema
+        const statsData = await getSystemStats()
+        setSystemStats(statsData)
+        
+        addNotification('Dashboard carregado com dados reais', 'success')
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error)
+        addNotification('Erro ao carregar dados do dashboard', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDashboardData()
+    
+    // Atualizar dados a cada 30 segundos
+    const interval = setInterval(loadDashboardData, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [addNotification])
 
   return (
     <div className="h-full overflow-hidden">
@@ -50,8 +74,10 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-300 text-xs">Total Usuários</p>
-                <p className="text-lg font-bold text-premium">{metrics.totalUsers.toLocaleString()}</p>
-                <p className="text-green-400 text-xs">+12%</p>
+                <p className="text-lg font-bold text-premium">
+                  {loading ? '...' : metrics.totalUsers.toLocaleString()}
+                </p>
+                <p className="text-green-400 text-xs">Ativos</p>
               </div>
               <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
                 <i className="fas fa-users text-blue-400 text-sm"></i>
@@ -62,12 +88,14 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
           <div className="premium-card p-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-300 text-xs">Assinaturas Ativas</p>
-                <p className="text-lg font-bold text-premium">{metrics.activeSubscriptions.toLocaleString()}</p>
-                <p className="text-green-400 text-xs">87%</p>
+                <p className="text-gray-300 text-xs">Médicos</p>
+                <p className="text-lg font-bold text-premium">
+                  {loading ? '...' : metrics.totalDoctors.toLocaleString()}
+                </p>
+                <p className="text-blue-400 text-xs">Profissionais</p>
               </div>
               <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <i className="fas fa-crown text-green-400 text-sm"></i>
+                <i className="fas fa-user-md text-green-400 text-sm"></i>
               </div>
             </div>
           </div>
@@ -75,25 +103,29 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
           <div className="premium-card p-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-300 text-xs">Receita Mensal</p>
-                <p className="text-lg font-bold text-premium">R$ {(metrics.monthlyRevenue / 1000).toFixed(0)}k</p>
-                <p className="text-green-400 text-xs">+28%</p>
+                <p className="text-gray-300 text-xs">Interações IA</p>
+                <p className="text-lg font-bold text-premium">
+                  {loading ? '...' : metrics.totalInteractions.toLocaleString()}
+                </p>
+                <p className="text-purple-400 text-xs">Aprendizado</p>
+              </div>
+              <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                <i className="fas fa-brain text-purple-400 text-sm"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="premium-card p-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-300 text-xs">Palavras-chave</p>
+                <p className="text-lg font-bold text-premium">
+                  {loading ? '...' : metrics.aiLearningCount.toLocaleString()}
+                </p>
+                <p className="text-yellow-400 text-xs">Conhecimento</p>
               </div>
               <div className="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                <i className="fas fa-dollar-sign text-yellow-400 text-sm"></i>
-              </div>
-            </div>
-          </div>
-
-          <div className="premium-card p-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-300 text-xs">Uptime Sistema</p>
-                <p className="text-lg font-bold text-premium">{metrics.systemUptime}%</p>
-                <p className="text-green-400 text-xs">Estável</p>
-              </div>
-              <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                <i className="fas fa-server text-emerald-400 text-sm"></i>
+                <i className="fas fa-key text-yellow-400 text-sm"></i>
               </div>
             </div>
           </div>
@@ -102,45 +134,59 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
         {/* Management Tools */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mb-2">
           
-          {/* User Management */}
+          {/* Recent Users */}
           <div className="premium-card p-2">
-            <h2 className="text-sm font-semibold text-premium mb-2">Gestão de Usuários</h2>
+            <h2 className="text-sm font-semibold text-premium mb-2">Usuários Recentes</h2>
             <div className="space-y-1">
-              
-              <div className="flex items-center justify-between p-1 border border-gray-600 rounded-lg">
-                <div className="flex items-center gap-1">
-                  <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
-                    <i className="fas fa-user-md text-blue-400 text-xs"></i>
+              {loading ? (
+                <div className="text-center text-gray-400 text-xs">Carregando...</div>
+              ) : recentUsers.length > 0 ? (
+                recentUsers.map((user, index) => (
+                  <div key={user.id || index} className="flex items-center justify-between p-1 border border-gray-600 rounded-lg">
+                    <div className="flex items-center gap-1">
+                      <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center">
+                        <i className="fas fa-user text-blue-400 text-xs"></i>
+                      </div>
+                      <div>
+                        <div className="font-medium text-white text-xs">{user.name || user.email}</div>
+                        <div className="text-xs text-gray-400">{user.role || 'Usuário'}</div>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                    </span>
                   </div>
-                  <div>
-                    <div className="font-medium text-white text-xs">Médicos Ativos</div>
-                    <div className="text-xs text-gray-400">847 profissionais</div>
-                  </div>
-                </div>
-                <button className="text-blue-400 hover:text-blue-300">
-                  <i className="fas fa-chevron-right text-xs"></i>
-                </button>
-              </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-400 text-xs">Nenhum usuário encontrado</div>
+              )}
             </div>
           </div>
 
-          {/* Payment Management */}
+          {/* AI Statistics */}
           <div className="premium-card p-2">
-            <h2 className="text-sm font-semibold text-premium mb-2">Sistema de Pagamentos</h2>
+            <h2 className="text-sm font-semibold text-premium mb-2">Estatísticas da IA</h2>
             <div className="space-y-1">
-              
-              <div className="flex items-center justify-between p-1 border border-gray-600 rounded-lg">
-                <div className="flex items-center gap-1">
-                  <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <i className="fas fa-check-circle text-green-400 text-xs"></i>
+              {loading ? (
+                <div className="text-center text-gray-400 text-xs">Carregando...</div>
+              ) : systemStats.topKeywords.length > 0 ? (
+                systemStats.topKeywords.slice(0, 3).map((keyword: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between p-1 border border-gray-600 rounded-lg">
+                    <div className="flex items-center gap-1">
+                      <div className="w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center">
+                        <i className="fas fa-key text-purple-400 text-xs"></i>
+                      </div>
+                      <div>
+                        <div className="font-medium text-white text-xs">{keyword.keyword}</div>
+                        <div className="text-xs text-gray-400">{keyword.category}</div>
+                      </div>
+                    </div>
+                    <span className="text-purple-400 font-semibold text-xs">{keyword.usage_count}</span>
                   </div>
-                  <div>
-                    <div className="font-medium text-white text-xs">Pagamentos Aprovados</div>
-                    <div className="text-xs text-gray-400">R$ 15.240 hoje</div>
-                  </div>
-                </div>
-                <span className="text-green-400 font-semibold text-xs">98.2%</span>
-              </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-400 text-xs">Nenhuma palavra-chave encontrada</div>
+              )}
             </div>
           </div>
         </div>
