@@ -90,12 +90,7 @@ class ElevenLabsService {
       const requestBody: TextToSpeechRequest = {
         text,
         model_id: 'eleven_multilingual_v2',
-        voice_settings: voiceSettings || {
-          stability: 0.5,
-          similarity_boost: 0.8,
-          style: 0.0,
-          use_speaker_boost: true
-        }
+        voice_settings: voiceSettings || this.getNoaVoiceSettings()
       }
 
       console.log('📤 Enviando requisição para ElevenLabs...')
@@ -161,12 +156,12 @@ class ElevenLabsService {
     }
   }
 
-  // Obter configurações de voz da NOA
+  // Obter configurações de voz da NOA otimizadas para fluidez
   getNoaVoiceSettings(): VoiceSettings {
     return {
-      stability: 0.6, // Voz mais estável
-      similarity_boost: 0.8, // Manter características da voz
-      style: 0.2, // Ligeiramente mais expressiva
+      stability: 0.75, // Voz mais estável para melhor fluidez
+      similarity_boost: 0.85, // Manter características da voz
+      style: 0.1, // Menos expressiva para melhor fluidez
       use_speaker_boost: true // Melhorar qualidade
     }
   }

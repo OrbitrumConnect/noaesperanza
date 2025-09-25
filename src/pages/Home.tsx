@@ -775,13 +775,18 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         currentAudioRef.current = null
       }
       
-      // Remove markdown e formatação para o áudio
+      // Remove markdown e formatação para o áudio com melhor processamento
       const cleanText = text
         .replace(/\*\*(.*?)\*\*/g, '$1') // Remove **bold**
         .replace(/\*(.*?)\*/g, '$1') // Remove *italic*
         .replace(/\[(.*?)\]/g, '$1') // Remove [brackets]
-        .replace(/\n\n/g, '. ') // Substitui quebras de linha por pontos
+        .replace(/```[\s\S]*?```/g, '') // Remove blocos de código
+        .replace(/`(.*?)`/g, '$1') // Remove código inline
+        .replace(/#{1,6}\s+/g, '') // Remove headers
+        .replace(/\n\n+/g, '. ') // Substitui múltiplas quebras por pontos
         .replace(/\n/g, ' ') // Remove quebras de linha simples
+        .replace(/\s+/g, ' ') // Remove espaços múltiplos
+        .replace(/[^\w\s.,!?;:()-]/g, '') // Remove caracteres especiais
         .trim()
 
       console.log('🎤 Chamando ElevenLabs com texto:', cleanText.substring(0, 100) + '...')
@@ -849,13 +854,18 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         currentAudioRef.current = null
       }
       
-      // Remove markdown e formatação para o áudio
+      // Remove markdown e formatação para o áudio com melhor processamento
       const cleanText = text
         .replace(/\*\*(.*?)\*\*/g, '$1') // Remove **bold**
         .replace(/\*(.*?)\*/g, '$1') // Remove *italic*
         .replace(/\[(.*?)\]/g, '$1') // Remove [brackets]
-        .replace(/\n\n/g, '. ') // Substitui quebras de linha por pontos
+        .replace(/```[\s\S]*?```/g, '') // Remove blocos de código
+        .replace(/`(.*?)`/g, '$1') // Remove código inline
+        .replace(/#{1,6}\s+/g, '') // Remove headers
+        .replace(/\n\n+/g, '. ') // Substitui múltiplas quebras por pontos
         .replace(/\n/g, ' ') // Remove quebras de linha simples
+        .replace(/\s+/g, ' ') // Remove espaços múltiplos
+        .replace(/[^\w\s.,!?;:()-]/g, '') // Remove caracteres especiais
         .trim()
 
       console.log('🎤 Chamando ElevenLabs com texto:', cleanText.substring(0, 100) + '...')
