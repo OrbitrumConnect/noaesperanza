@@ -36,18 +36,16 @@ export interface TextToSpeechResponse {
 
 class ElevenLabsService {
   private apiKey: string
-  private agentId: string
   private baseURL = 'https://api.elevenlabs.io/v1'
   private noaVoiceId = 'pNInz6obpgDQGcFmaJgB' // Voz feminina suave para NOA
 
   constructor() {
     this.apiKey = import.meta.env.VITE_ELEVEN_API_KEY
-    this.agentId = import.meta.env.VITE_ELEVEN_AGENT_ID
     
-    console.log('🔧 ElevenLabs Service inicializado:', { 
-      hasApiKey: !!this.apiKey, 
-      hasAgentId: !!this.agentId,
-      voiceId: this.noaVoiceId 
+    console.log('🔧 ElevenLabs Service inicializado (TTS apenas):', { 
+      hasApiKey: !!this.apiKey,
+      voiceId: this.noaVoiceId,
+      mode: 'TTS_ONLY'
     })
     
     if (!this.apiKey) {

@@ -249,6 +249,15 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       document.removeEventListener('click', handleFirstInteraction)
       document.removeEventListener('keydown', handleFirstInteraction)
       document.removeEventListener('touchstart', handleFirstInteraction)
+      
+      // Ativa microfone automaticamente após primeira interação
+      console.log('🎤 Primeira interação detectada, ativando microfone em 1.5 segundos...')
+      setTimeout(() => {
+        if (!isVoiceListening) {
+          console.log('🎤 Ativação automática inicial do microfone')
+          startVoiceRecognition()
+        }
+      }, 1500) // Reduzido de 3s para 1.5s - mais responsivo
     }
 
     document.addEventListener('click', handleFirstInteraction)
@@ -262,13 +271,13 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     }
   }, [])
 
-  // Inicializa mensagem da NOA via ChatGPT (sem respostas locais)
-  useEffect(() => {
-    if (messages.length === 0) {
-      // Chama ChatGPT para gerar mensagem inicial
-      getNoaResponse('iniciar conversa')
-    }
-  }, [userMemory.name])
+  // Removido: Inicialização automática de mensagem - ChatGPT será completamente livre
+  // useEffect(() => {
+  //   if (messages.length === 0) {
+  //     // Chama ChatGPT para gerar mensagem inicial
+  //     getNoaResponse('iniciar conversa')
+  //   }
+  // }, [userMemory.name])
 
   // Toca áudio da mensagem inicial da NOA
   useEffect(() => {
@@ -392,7 +401,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       }
       
       setMessages(prev => [...prev, noaMessage])
-      addNotification('Resposta da NOA Esperanza recebida', 'success')
+      // Removido: addNotification('Resposta da NOA Esperanza recebida', 'success')
       
       // 🧠 APRENDIZADO AUTOMÁTICO - IA aprende com a conversa
       aiLearningService.saveInteraction(userMessage, response, 'general')
@@ -403,7 +412,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       
     } catch (error) {
       console.error('Erro ao obter resposta da NOA:', error)
-      addNotification('Erro ao conectar com NOA. Verifique sua conexão.', 'error')
+      // Removido: addNotification('Erro ao conectar com NOA. Verifique sua conexão.', 'error')
     } finally {
       setIsTyping(false)
     }
@@ -642,7 +651,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         }
         
         setMessages(prev => [...prev, finalizacao])
-        addNotification('Avaliação Clínica Concluída', 'success')
+        // Removido: addNotification('Avaliação Clínica Concluída', 'success')
         playNoaAudioWithText(finalizacao.message)
         
         // Salva avaliação concluída no Supabase
@@ -688,7 +697,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
   // Função para iniciar reconhecimento de voz
   const startVoiceRecognition = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      addNotification('Reconhecimento de voz não suportado neste navegador', 'error')
+      // Removido: addNotification('Reconhecimento de voz não suportado neste navegador', 'error')
       setIsVoiceListening(false)
       return
     }
@@ -696,28 +705,79 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     const recognition = new SpeechRecognition()
 
-    recognition.continuous = false
-    recognition.interimResults = false
+    recognition.continuous = true // Permite interrupção
+    recognition.interimResults = true // Detecta fala em tempo real
     recognition.lang = 'pt-BR'
+    recognition.maxAlternatives = 1 // Melhor precisão
+    recognition.serviceURI = 'wss://www.google.com/speech-api/full-duplex/v1/up' // Melhor performance
+    
+    // Variável para acumular texto durante a fala
+    let accumulatedText = ''
 
     recognition.onstart = () => {
-      console.log('Reconhecimento de voz iniciado')
-      addNotification('Escutando... Fale agora!', 'info')
+      console.log('🎤 Reconhecimento de voz iniciado (modo contínuo)')
+      // Removido: addNotification('🎤 Microfone ativo! Fale quando quiser interromper a NOA!', 'success')
     }
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript
-      console.log('🎤 Texto reconhecido:', transcript)
-      
-      setInputMessage(transcript)
-      setIsVoiceListening(false)
-      addNotification(`Mensagem reconhecida: "${transcript}"`, 'success')
-      
-      // Envia automaticamente a mensagem com o texto reconhecido
-      setTimeout(() => {
+      let finalTranscript = ''
+      let interimTranscript = ''
+
+      // Processa resultados finais e intermediários
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript
+        } else {
+          interimTranscript += transcript
+        }
+      }
+
+      // Se há fala detectada (interim ou final), interrompe áudio da NOA
+      if (interimTranscript || finalTranscript) {
+        // Só interrompe se não estiver tocando áudio da NOA
+        if (!audioPlaying) {
+          console.log('🗣️ Usuário falando detectado, interrompendo áudio da NOA...')
+          
+          // Para o áudio atual da NOA
+          if (currentAudioRef.current) {
+            currentAudioRef.current.pause()
+            currentAudioRef.current = null
+            setAudioPlaying(false)
+            console.log('⏹️ Áudio da NOA interrompido')
+          }
+        } else {
+          console.log('🔇 NOA está falando, ignorando detecção de voz')
+        }
+      }
+
+      // Mostra texto intermediário em tempo real (sem processar ainda)
+      if (interimTranscript) {
+        console.log('🎤 Texto em tempo real:', interimTranscript)
+        setInputMessage(interimTranscript)
+        // Removido: addNotification(`🎤 Escutando: "${interimTranscript}"`, 'info')
+      }
+
+      // Se há resultado final, processa imediatamente (mais rápido)
+      if (finalTranscript) {
+        console.log('🎤 Texto final reconhecido:', finalTranscript)
+        
+        // Para o reconhecimento primeiro
+        recognition.stop()
+        
+        // Processa imediatamente para ser mais rápido
+        console.log('✅ Processando mensagem final imediatamente:', finalTranscript)
+        
+        setInputMessage(finalTranscript)
+        // Removido: addNotification(`✅ Processando: "${finalTranscript}"`, 'success')
+        
+        // Envia automaticamente a mensagem (sem delay)
         console.log('📤 Enviando mensagem automaticamente...')
-        handleSendMessage(transcript)
-      }, 500)
+        handleSendMessage(finalTranscript)
+        
+        // Atualiza estado após envio
+        setIsVoiceListening(false)
+      }
     }
 
     recognition.onerror = (event: any) => {
@@ -726,21 +786,22 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       
       switch (event.error) {
         case 'no-speech':
-          addNotification('Nenhuma fala detectada. Tente novamente.', 'warning')
+          // Removido: addNotification('Nenhuma fala detectada. Tente novamente.', 'warning')
           break
         case 'audio-capture':
-          addNotification('Erro ao acessar o microfone.', 'error')
+          // Removido: addNotification('Erro ao acessar o microfone.', 'error')
           break
         case 'not-allowed':
-          addNotification('Permissão de microfone negada.', 'error')
+          // Removido: addNotification('Permissão de microfone negada.', 'error')
           break
         default:
-          addNotification('Erro no reconhecimento de voz.', 'error')
+          // Removido: addNotification('Erro no reconhecimento de voz.', 'error')
       }
     }
 
     recognition.onend = () => {
       setIsVoiceListening(false)
+      console.log('🎤 Reconhecimento de voz finalizado')
     }
 
     try {
@@ -748,8 +809,19 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
     } catch (error) {
       console.error('Erro ao iniciar reconhecimento:', error)
       setIsVoiceListening(false)
-      addNotification('Erro ao iniciar reconhecimento de voz', 'error')
+      // Removido: addNotification('Erro ao iniciar reconhecimento de voz', 'error')
     }
+  }
+
+  // Função para ativar reconhecimento de voz automaticamente após resposta da NOA
+  const autoActivateVoiceAfterResponse = () => {
+    console.log('🔄 Ativando reconhecimento de voz automaticamente em 1 segundo...')
+    setTimeout(() => {
+      if (!isVoiceListening && userInteracted) {
+        console.log('🎤 Ativação automática do reconhecimento de voz')
+        startVoiceRecognition()
+      }
+    }, 1000) // Reduzido de 2s para 1s - mais fluido
   }
 
   // Função para tocar áudio da NOA com texto sincronizado
@@ -802,6 +874,12 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       // Armazena referência do áudio atual
       currentAudioRef.current = audio
       setAudioPlaying(true)
+      
+      // Para o reconhecimento de voz enquanto NOA fala
+      if (isVoiceListening) {
+        console.log('🔇 Pausando reconhecimento de voz enquanto NOA fala')
+        setIsVoiceListening(false)
+      }
 
       audio.play().then(() => {
         console.log('🎵 Áudio tocando com sucesso!')
@@ -816,6 +894,9 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         URL.revokeObjectURL(audioUrl)
         currentAudioRef.current = null
         setAudioPlaying(false)
+        
+        // Ativa reconhecimento de voz automaticamente após resposta da NOA
+        autoActivateVoiceAfterResponse()
       }
       
       // Limpa referência se houver erro

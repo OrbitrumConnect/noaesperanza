@@ -338,18 +338,35 @@ class AILearningService {
       const patterns = this.analyzeConversationPatterns(userMessage, aiResponse)
       
       for (const pattern of patterns) {
-        await supabase
+        // Verificar se o padrão já existe
+        const { data: existingPattern } = await supabase
           .from('ai_conversation_patterns')
-          .upsert({
-            pattern_type: pattern.type,
-            user_input_pattern: pattern.userPattern,
-            best_response: pattern.bestResponse,
-            success_rate: pattern.successRate,
-            usage_count: 1,
-            last_used: new Date().toISOString()
-          }, {
-            onConflict: 'user_input_pattern'
-          })
+          .select('id, usage_count')
+          .eq('user_input_pattern', pattern.userPattern)
+          .single()
+
+        if (existingPattern) {
+          // Atualizar contador de uso
+          await supabase
+            .from('ai_conversation_patterns')
+            .update({
+              usage_count: existingPattern.usage_count + 1,
+              last_used: new Date().toISOString()
+            })
+            .eq('id', existingPattern.id)
+        } else {
+          // Criar novo padrão
+          await supabase
+            .from('ai_conversation_patterns')
+            .insert({
+              pattern_type: pattern.type,
+              user_input_pattern: pattern.userPattern,
+              best_response: pattern.bestResponse,
+              success_rate: pattern.successRate,
+              usage_count: 1,
+              last_used: new Date().toISOString()
+            })
+        }
       }
     } catch (error) {
       console.error('Erro ao criar clusters de aprendizado:', error)
