@@ -1,11 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Configuração do Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://lhclqebtkyfftkevumix.supabase.co'
+const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY || 'your-anon-key'
+const supabaseProjectId = (import.meta as any).env?.VITE_SUPABASE_PROJECT_ID || 'lhclqebtkyfftkevumix'
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Configuração do Supabase não encontrada')
+console.log('🔧 Supabase configurado:', { 
+  url: supabaseUrl, 
+  projectId: supabaseProjectId,
+  hasAnonKey: !!supabaseAnonKey,
+  isDefaultUrl: supabaseUrl === 'https://lhclqebtkyfftkevumix.supabase.co'
+})
+
+if (!supabaseUrl || !supabaseAnonKey || supabaseAnonKey === 'your-anon-key') {
+  console.warn('⚠️ Configuração do Supabase não encontrada. Verifique o arquivo .env')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
@@ -67,6 +75,42 @@ export interface Payment {
   payment_method: 'pix' | 'credit_card'
   mercado_pago_id?: string
   plan: 'basic' | 'premium' | 'enterprise'
+  created_at: string
+  updated_at: string
+}
+
+export interface ClinicalEvaluation {
+  id: string
+  user_id?: string
+  session_id: string
+  status: 'in_progress' | 'completed'
+  etapa_atual: string
+  dados: {
+    apresentacao?: string
+    cannabis_medicinal?: string
+    lista_indiciaria: string[]
+    queixa_principal?: string
+    desenvolvimento_indiciario?: {
+      localizacao?: string
+      inicio?: string
+      qualidade?: string
+      sintomas_associados?: string
+      fatores_melhora?: string
+      fatores_piora?: string
+    }
+    historia_patologica: string[]
+    historia_familiar: {
+      mae: string[]
+      pai: string[]
+    }
+    habitos_vida: string[]
+    alergias?: string
+    medicacoes?: {
+      continuas?: string
+      eventuais?: string
+    }
+    relatorio_narrativo?: string
+  }
   created_at: string
   updated_at: string
 }
@@ -300,6 +344,63 @@ export class DataService {
       .update(updates)
       .eq('id', paymentId)
       .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+
+  // Avaliações Clínicas
+  async createClinicalEvaluation(evaluationData: Partial<ClinicalEvaluation>) {
+    const { data, error } = await supabase
+      .from('clinical_evaluations')
+      .insert(evaluationData)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+
+  async updateClinicalEvaluation(evaluationId: string, updates: Partial<ClinicalEvaluation>) {
+    const { data, error } = await supabase
+      .from('clinical_evaluations')
+      .update(updates)
+      .eq('id', evaluationId)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+
+  async getClinicalEvaluation(evaluationId: string) {
+    const { data, error } = await supabase
+      .from('clinical_evaluations')
+      .select('*')
+      .eq('id', evaluationId)
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+
+  async getClinicalEvaluationsByUser(userId: string) {
+    const { data, error } = await supabase
+      .from('clinical_evaluations')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data
+  }
+
+  async getClinicalEvaluationBySession(sessionId: string) {
+    const { data, error } = await supabase
+      .from('clinical_evaluations')
+      .select('*')
+      .eq('session_id', sessionId)
       .single()
     
     if (error) throw error

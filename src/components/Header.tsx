@@ -8,9 +8,12 @@ interface HeaderProps {
 }
 
 const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
-  const { user, signOut } = useAuth()
+  const auth = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  
+  // Verificação de segurança para evitar erros durante a inicialização
+  const { user, signOut } = auth || { user: null, signOut: () => {} }
   
   // Agora temos um laboratório unificado
   const labInfo = {
@@ -61,10 +64,6 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
 
         {/* Menu de Navegação Principal */}
         <nav className="hidden lg:flex gap-3">
-          <Link to="/chat" className="nav-item text-sm">
-            <i className="fas fa-comments text-sm"></i>
-            <span className="text-sm">Chat</span>
-          </Link>
           <Link to="/paciente" className="nav-item text-sm">
             <i className="fas fa-user text-sm"></i>
             <span className="text-sm">Paciente</span>
@@ -87,9 +86,6 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
         <div className="flex items-center gap-4">
           {/* Menu adicional pode ser adicionado aqui */}
           <div className="flex items-center gap-3">
-            <Link to="/chat" className="text-white/80 hover:text-yellow-300 transition-colors">
-              <i className="fas fa-comments text-sm"></i>
-            </Link>
             <Link to="/paciente" className="text-white/80 hover:text-yellow-300 transition-colors">
               <i className="fas fa-user text-sm"></i>
             </Link>

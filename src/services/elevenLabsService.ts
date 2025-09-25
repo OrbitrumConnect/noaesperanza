@@ -44,8 +44,14 @@ class ElevenLabsService {
     this.apiKey = import.meta.env.VITE_ELEVEN_API_KEY
     this.agentId = import.meta.env.VITE_ELEVEN_AGENT_ID
     
+    console.log('🔧 ElevenLabs Service inicializado:', { 
+      hasApiKey: !!this.apiKey, 
+      hasAgentId: !!this.agentId,
+      voiceId: this.noaVoiceId 
+    })
+    
     if (!this.apiKey) {
-      console.error('ElevenLabs API Key não encontrada')
+      console.error('❌ ElevenLabs API Key não encontrada')
     }
   }
 
@@ -79,6 +85,8 @@ class ElevenLabsService {
     voiceSettings?: VoiceSettings
   ): Promise<TextToSpeechResponse> {
     try {
+      console.log('🎤 ElevenLabs textToSpeech chamado:', { text: text.substring(0, 50) + '...', voiceId })
+      
       const requestBody: TextToSpeechRequest = {
         text,
         model_id: 'eleven_multilingual_v2',
@@ -90,6 +98,7 @@ class ElevenLabsService {
         }
       }
 
+      console.log('📤 Enviando requisição para ElevenLabs...')
       const response = await fetch(`${this.baseURL}/text-to-speech/${voiceId}`, {
         method: 'POST',
         headers: {
@@ -101,11 +110,15 @@ class ElevenLabsService {
       })
 
       if (!response.ok) {
+        console.error('❌ ElevenLabs API Error:', response.status, response.statusText)
         throw new Error(`ElevenLabs API Error: ${response.statusText}`)
       }
 
+      console.log('✅ ElevenLabs respondeu com sucesso!')
       const audioBuffer = await response.arrayBuffer()
       const contentType = response.headers.get('content-type') || 'audio/mpeg'
+      
+      console.log('🎵 Áudio recebido:', { size: audioBuffer.byteLength, contentType })
 
       return {
         audio: audioBuffer,
@@ -113,7 +126,7 @@ class ElevenLabsService {
       }
 
     } catch (error) {
-      console.error('Erro ao converter texto em fala:', error)
+      console.error('❌ Erro ao converter texto em fala:', error)
       throw error
     }
   }

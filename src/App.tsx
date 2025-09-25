@@ -7,7 +7,6 @@ import Footer from './components/Footer'
 import HomeFooter from './components/HomeFooter'
 import PremiumBackground from './components/PremiumBackground'
 import Home from './pages/Home'
-import NoaChatPage from './pages/NoaChatPage'
 import DashboardMedico from './pages/DashboardMedico'
 import DashboardPaciente from './pages/DashboardPaciente'
 import DashboardProfissional from './pages/DashboardProfissional'
@@ -123,9 +122,6 @@ function App() {
           } />
 
           {/* Páginas específicas */}
-          <Route path="/chat" element={
-            <NoaChatPage addNotification={addNotification} />
-          } />
           
           <Route path="/medico" element={
             <DashboardMedico 

@@ -7,6 +7,18 @@ export const config = {
     apiKey: process.env.VITE_OPENAI_API_KEY || 'your_openai_api_key_here'
   },
 
+  // ElevenLabs Configuration
+  elevenLabs: {
+    apiKey: process.env.VITE_ELEVEN_API_KEY || 'your_elevenlabs_api_key_here',
+    agentId: process.env.VITE_ELEVEN_AGENT_ID || 'your_elevenlabs_agent_id_here'
+  },
+
+  // Supabase Configuration
+  supabase: {
+    url: process.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co',
+    anonKey: process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'your_supabase_anon_key_here'
+  },
+
   // Mercado Pago Configuration
   mercadoPago: {
     accessToken: process.env.VITE_MERCADO_PAGO_ACCESS_TOKEN || 'your_mercado_pago_access_token_here',
