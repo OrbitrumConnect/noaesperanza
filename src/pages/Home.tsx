@@ -561,9 +561,9 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
       {/* Layout Principal */}
       <div className="w-full h-full flex items-center justify-center">
         {/* Balão de Pensamento com NOA ao Lado */}
-        <div className="flex items-center gap-2 md:gap-8 justify-center w-full h-full px-1 md:px-0 -ml-[8%] md:-ml-[10%]">
+        <div className="flex items-center gap-2 md:gap-8 justify-center w-full h-full px-2 md:px-0">
           {/* Balão de Pensamento */}
-          <div className="flex-1 relative w-[clamp(280px,60vw,320px)] md:w-[40vw] md:max-w-md z-[100] -ml-2 md:-ml-4">
+          <div className="flex-1 relative w-[250px] md:w-[40vw] md:max-w-md z-[100]">
             {/* Balão principal */}
             <div className="bg-white rounded-xl md:rounded-2xl px-2 md:px-3 pb-2 md:pb-3 shadow-lg border border-white/20 relative z-[100] w-full">
 
@@ -670,7 +670,7 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
 
           {/* Avatar da NOA - Vídeos Animados */}
           <div className="flex-shrink-0 flex justify-center items-center relative">
-            <div className="w-[clamp(120px,20vw,135px)] h-[clamp(120px,20vw,135px)] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square">
+            <div className="w-[100px] h-[100px] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square">
               {/* Vídeo estático piscando (padrão) */}
               <video 
                 key="estatico"

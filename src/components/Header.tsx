@@ -66,19 +66,19 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
         <nav className="flex flex-wrap gap-1 md:gap-3">
           <Link to="/paciente" className="nav-item text-xs md:text-sm">
             <i className="fas fa-user text-xs md:text-sm"></i>
-            <span className="text-xs md:text-sm hidden sm:inline">Paciente</span>
+            <span className="text-xs md:text-sm">Paciente</span>
           </Link>
           <Link to="/medico" className="nav-item text-xs md:text-sm">
             <i className="fas fa-user-md text-xs md:text-sm"></i>
-            <span className="text-xs md:text-sm hidden sm:inline">Médico</span>
+            <span className="text-xs md:text-sm">Médico</span>
           </Link>
           <Link to="/checkout" className="nav-item text-xs md:text-sm">
             <i className="fas fa-credit-card text-xs md:text-sm"></i>
-            <span className="text-xs md:text-sm hidden sm:inline">Pagar</span>
+            <span className="text-xs md:text-sm">Pagar</span>
           </Link>
           <Link to="/admin" className="nav-item text-xs md:text-sm">
             <i className="fas fa-cog text-xs md:text-sm"></i>
-            <span className="text-xs md:text-sm hidden sm:inline">Admin</span>
+            <span className="text-xs md:text-sm">Admin</span>
           </Link>
         </nav>
 
