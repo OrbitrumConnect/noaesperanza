@@ -925,20 +925,20 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       {/* Layout Principal */}
       <div className="w-full h-full flex items-center justify-center">
         {/* Balão de Pensamento com NOA ao Lado */}
-        <div className="flex items-center gap-8 justify-center w-full h-full -ml-[22%]">
+        <div className="flex flex-col lg:flex-row items-center gap-4 lg:gap-8 justify-center w-full h-full lg:-ml-[22%] px-4 lg:px-0">
           {/* Balão de Pensamento */}
-          <div className="flex-1 relative max-w-md z-[100] -ml-4">
+          <div className="flex-1 relative max-w-md w-full lg:w-auto z-[100] lg:-ml-4 order-2 lg:order-1">
             {/* Balão principal */}
             <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 relative z-[100]">
 
               {/* Área de Mensagens */}
-              <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div className="space-y-2 max-h-48 lg:max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 {messages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-xs ${
+                    <div className={`max-w-xs lg:max-w-xs ${
                       message.sender === 'user' 
                         ? 'bg-blue-500 text-white rounded-lg p-3' 
                         : 'bg-gray-100 text-gray-800 rounded-lg p-3'
@@ -987,54 +987,57 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                 </div>
                 
               {/* Input de Mensagem */}
-              <div className="flex gap-2 mt-3">
+              <div className="flex gap-2 mt-3 flex-col sm:flex-row">
                 <input 
                   type="text" 
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Digite sua mensagem..."
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-600"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-600 w-full sm:w-auto"
                   aria-label="Campo de mensagem para conversar com NOA"
                 />
-                {/* Botão de voz */}
-                <button
-                  onClick={() => {
-                    if (isVoiceListening) {
-                      setIsVoiceListening(false)
-                      // TODO: Parar reconhecimento de voz
-                    } else {
-                      setIsVoiceListening(true)
-                      // TODO: Iniciar reconhecimento de voz
-                      startVoiceRecognition()
-                    }
-                  }}
-                  className={`px-4 py-2 rounded-lg transition-colors text-sm ${
-                    isVoiceListening 
-                      ? 'bg-red-500 hover:bg-red-600 text-white' 
-                      : 'bg-green-500 hover:bg-green-600 text-white'
-                  }`}
-                  title={isVoiceListening ? 'Parar gravação' : 'Falar com a NOA'}
-                  aria-label={isVoiceListening ? 'Parar gravação de voz' : 'Iniciar gravação de voz'}
-                >
-                  <i className={`fas ${isVoiceListening ? 'fa-stop' : 'fa-microphone'}`}></i>
-                </button>
-                <button 
-                  onClick={() => handleSendMessage()}
-                  disabled={!inputMessage.trim()}
-                  className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors text-sm"
-                  aria-label="Enviar mensagem para NOA"
-                  title="Enviar mensagem"
-                >
-                  <i className="fas fa-paper-plane"></i>
-                </button>
+                {/* Botões de controle */}
+                <div className="flex gap-2 w-full sm:w-auto">
+                  {/* Botão de voz */}
+                  <button
+                    onClick={() => {
+                      if (isVoiceListening) {
+                        setIsVoiceListening(false)
+                        // TODO: Parar reconhecimento de voz
+                      } else {
+                        setIsVoiceListening(true)
+                        // TODO: Iniciar reconhecimento de voz
+                        startVoiceRecognition()
+                      }
+                    }}
+                    className={`flex-1 sm:flex-none px-4 py-2 rounded-lg transition-colors text-sm ${
+                      isVoiceListening 
+                        ? 'bg-red-500 hover:bg-red-600 text-white' 
+                        : 'bg-green-500 hover:bg-green-600 text-white'
+                    }`}
+                    title={isVoiceListening ? 'Parar gravação' : 'Falar com a NOA'}
+                    aria-label={isVoiceListening ? 'Parar gravação de voz' : 'Iniciar gravação de voz'}
+                  >
+                    <i className={`fas ${isVoiceListening ? 'fa-stop' : 'fa-microphone'}`}></i>
+                  </button>
+                  <button 
+                    onClick={() => handleSendMessage()}
+                    disabled={!inputMessage.trim()}
+                    className="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                    aria-label="Enviar mensagem para NOA"
+                    title="Enviar mensagem"
+                  >
+                    <i className="fas fa-paper-plane"></i>
+                  </button>
+                </div>
                 </div>
               </div>
             </div>
 
           {/* Avatar da NOA */}
-          <div className="flex-shrink-0 flex justify-center items-center relative">
-            <div className="w-[561px] h-[561px] rounded-full overflow-hidden border-4 border-green-400 shadow-lg">
+          <div className="flex-shrink-0 flex justify-center items-center relative order-1 lg:order-2">
+            <div className="w-48 h-48 sm:w-64 sm:h-64 lg:w-[561px] lg:h-[561px] rounded-full overflow-hidden border-4 border-green-400 shadow-lg">
               <img 
                 src="./avatar-default.jpg" 
                 alt="NOA Esperanza" 
@@ -1054,16 +1057,16 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                     setAudioPlaying(false)
                   }
                 }}
-                className="absolute top-4 right-4 p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
+                className="absolute top-2 right-2 lg:top-4 lg:right-4 p-2 lg:p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
                 title="Parar áudio"
               >
-                <i className="fas fa-stop text-lg"></i>
+                <i className="fas fa-stop text-sm lg:text-lg"></i>
               </button>
             )}
             {/* Indicador de escuta de voz */}
             {isVoiceListening && (
-              <div className="absolute top-4 left-4 p-3 bg-green-500 text-white rounded-full shadow-lg animate-pulse">
-                <i className="fas fa-microphone text-lg"></i>
+              <div className="absolute top-2 left-2 lg:top-4 lg:left-4 p-2 lg:p-3 bg-green-500 text-white rounded-full shadow-lg animate-pulse">
+                <i className="fas fa-microphone text-sm lg:text-lg"></i>
               </div>
             )}
           </div>
