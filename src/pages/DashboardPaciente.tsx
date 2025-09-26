@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Specialty } from '../App'
 
 interface DashboardPacienteProps {
@@ -7,6 +7,8 @@ interface DashboardPacienteProps {
 }
 
 const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacienteProps) => {
+  const navigate = useNavigate()
+  
   const specialtyData = {
     rim: {
       name: 'Nefrologia',
@@ -90,7 +92,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
               
               <div className="space-y-3">
                 <button
-                  onClick={() => handleActionClick('Meus Exames')}
+                  onClick={() => navigate('/exames')}
                   className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
                 >
                   <i className="fas fa-vials text-blue-400 text-base"></i>
@@ -98,7 +100,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                 </button>
                 
                 <button
-                  onClick={() => handleActionClick('Prescrições')}
+                  onClick={() => navigate('/prescricoes')}
                   className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
                 >
                   <i className="fas fa-prescription text-green-400 text-base"></i>
@@ -106,7 +108,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                 </button>
                 
                 <button
-                  onClick={() => handleActionClick('Prontuário')}
+                  onClick={() => navigate('/prontuario')}
                   className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
                 >
                   <i className="fas fa-file-medical text-purple-400 text-base"></i>
@@ -114,7 +116,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                 </button>
                 
                 <button
-                  onClick={() => handleActionClick('Pagamentos')}
+                  onClick={() => navigate('/pagamentos-paciente')}
                   className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
                 >
                   <i className="fas fa-credit-card text-yellow-400 text-base"></i>

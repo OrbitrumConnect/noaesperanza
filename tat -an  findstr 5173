@@ -1,0 +1,5 @@
+[33m9c16c72[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m Ajustar responsividade para mobile - layout vertical, avatar redimensionado e chat otimizado
+[33m6958cb1[m Remover lógica local que forçava mensagem inicial repetitiva - ChatGPT agora é completamente livre
+[33m796d99c[m Otimizar código: remover duplicações e conectar dashboard admin com dados reais
+[33m00fc7a7[m Otimizar fluidez do áudio ElevenLabs e corrigir políticas RLS
+[33m2021a46[m Add AI learning features and database setup

@@ -5,6 +5,7 @@ import { openAIService, ChatMessage } from '../services/openaiService'
 import { elevenLabsService } from '../services/elevenLabsService'
 import { dataService } from '../services/supabaseService'
 import { aiLearningService } from '../services/aiLearningService'
+import { cleanTextForAudio } from '../utils/textUtils'
 
 interface Message {
   id: string
@@ -848,18 +849,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       }
       
       // Remove markdown e formatação para o áudio com melhor processamento
-      const cleanText = text
-        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove **bold**
-        .replace(/\*(.*?)\*/g, '$1') // Remove *italic*
-        .replace(/\[(.*?)\]/g, '$1') // Remove [brackets]
-        .replace(/```[\s\S]*?```/g, '') // Remove blocos de código
-        .replace(/`(.*?)`/g, '$1') // Remove código inline
-        .replace(/#{1,6}\s+/g, '') // Remove headers
-        .replace(/\n\n+/g, '. ') // Substitui múltiplas quebras por pontos
-        .replace(/\n/g, ' ') // Remove quebras de linha simples
-        .replace(/\s+/g, ' ') // Remove espaços múltiplos
-        .replace(/[^\w\s.,!?;:()-]/g, '') // Remove caracteres especiais
-        .trim()
+      const cleanText = cleanTextForAudio(text)
 
       console.log('🎤 Chamando ElevenLabs com texto:', cleanText.substring(0, 100) + '...')
       const audioResponse = await elevenLabsService.textToSpeech(cleanText)
@@ -1035,17 +1025,42 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
               </div>
             </div>
 
-          {/* Avatar da NOA */}
+          {/* Avatar da NOA - Vídeos Animados */}
           <div className="flex-shrink-0 flex justify-center items-center relative order-1 lg:order-2">
-            <div className="w-48 h-48 sm:w-64 sm:h-64 lg:w-[561px] lg:h-[561px] rounded-full overflow-hidden border-4 border-green-400 shadow-lg">
-              <img 
-                src="./avatar-default.jpg" 
-                alt="NOA Esperanza" 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA0IiBoZWlnaHQ9IjEwNCIgdmlld0JveD0iMCAwIDEwNCAxMDQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDQiIGhlaWdodD0iMTA0IiBmaWxsPSIjMTA5NjMxIi8+CjxjaXJjbGUgY3g9IjUyIiBjeT0iMzgiIHI9IjE4IiBmaWxsPSIjRkZGRkZGIi8+CjxwYXRoIGQ9Ik0yNiA4NkMyNiA3MS4xNjQyIDM4LjE2NDIgNTkgNTMgNTlINDFDMzguMTY0MiA1OSAyNiA3MS4xNjQyIDI2IDg2WiIgZmlsbD0iI0ZGRkZGRiIvPgo8L3N2Zz4K'
-                }}
-              />
+            <div className="w-[clamp(120px,20vw,135px)] h-[clamp(120px,20vw,135px)] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square">
+              {/* Vídeo estático piscando (padrão) */}
+              <video 
+                key="estatico"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                  audioPlaying ? 'opacity-0' : 'opacity-100'
+                }`}
+                autoPlay
+                loop
+                muted
+                playsInline
+              >
+                <source src="./estatica piscando.mp4" type="video/mp4" />
+                {/* Fallback para imagem caso o vídeo não carregue */}
+                <img 
+                  src="./avatar-default.jpg" 
+                  alt="NOA Esperanza" 
+                  className="w-full h-full object-cover"
+                />
+              </video>
+              
+              {/* Vídeo falando (quando áudio está tocando) */}
+              <video 
+                key="falando"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                  audioPlaying ? 'opacity-100' : 'opacity-0'
+                }`}
+                autoPlay
+                loop
+                muted
+                playsInline
+              >
+                <source src="./Noafalando.mp4" type="video/mp4" />
+              </video>
             </div>
             {/* Botão para parar áudio */}
             {audioPlaying && (

@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Footer from './components/Footer'
@@ -20,6 +21,10 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import LandingPage from './pages/LandingPage'
 import NotFound from './pages/NotFound'
+import MeusExames from './pages/MeusExames'
+import Prescricoes from './pages/Prescricoes'
+import Prontuario from './pages/Prontuario'
+import PagamentosPaciente from './pages/PagamentosPaciente'
 
 export type Specialty = 'rim' | 'neuro' | 'cannabis'
 
@@ -33,8 +38,8 @@ function App() {
     timestamp: Date
   }>>([])
 
-  // Adiciona notificação
-  const addNotification = (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
+  // Adiciona notificação (memoizada para evitar re-renders desnecessários)
+  const addNotification = useCallback((message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
     const newNotification = {
       id: Date.now().toString(),
       message,
@@ -42,7 +47,7 @@ function App() {
       timestamp: new Date()
     }
     setNotifications(prev => [newNotification, ...prev.slice(0, 9)]) // Máximo 10 notificações
-  }
+  }, [])
 
   // Remove notificação
   const removeNotification = (id: string) => {
@@ -81,10 +86,11 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <div className="h-screen overflow-hidden" style={{
-        background: 'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)'
-      }}>
+    <ErrorBoundary>
+      <AuthProvider>
+        <div className="h-screen overflow-hidden" style={{
+          background: 'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)'
+        }}>
       
       {/* Header */}
       <Header 
@@ -98,9 +104,9 @@ function App() {
         <Routes>
           {/* Página inicial com layout completo */}
           <Route path="/" element={
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-9xl mx-auto h-full overflow-hidden">
+            <div className="flex h-full overflow-hidden">
               {/* Sidebar */}
-              <div className="lg:col-span-1">
+              <div className="w-80 flex-shrink-0">
                 <Sidebar 
                   currentSpecialty={currentSpecialty}
                   isVoiceListening={isVoiceListening}
@@ -109,8 +115,8 @@ function App() {
                 />
               </div>
               
-              {/* Área Central */}
-              <div className="lg:col-span-3 relative z-50">
+              {/* Área Central - Chat */}
+              <div className="flex-1 relative z-50">
                 <Home 
                   currentSpecialty={currentSpecialty}
                   isVoiceListening={isVoiceListening}
@@ -177,6 +183,12 @@ function App() {
             <Perfil addNotification={addNotification} />
           } />
 
+          {/* Páginas do Paciente */}
+          <Route path="/exames" element={<MeusExames />} />
+          <Route path="/prescricoes" element={<Prescricoes />} />
+          <Route path="/prontuario" element={<Prontuario />} />
+          <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
+
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -213,7 +225,8 @@ function App() {
             ))}
           </div>
         </div>
-    </AuthProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 
