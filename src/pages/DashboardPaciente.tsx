@@ -1,5 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { Specialty } from '../App'
+import MiniChat from '../components/MiniChat'
 
 interface DashboardPacienteProps {
   currentSpecialty: Specialty
@@ -8,6 +10,7 @@ interface DashboardPacienteProps {
 
 const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacienteProps) => {
   const navigate = useNavigate()
+  const [isChatOpen, setIsChatOpen] = useState(false)
   
   const specialtyData = {
     rim: {
@@ -37,6 +40,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
   }
 
   const currentData = specialtyData[currentSpecialty]
+
 
   const handleActionClick = (action: string) => {
     addNotification(`Ação "${action}" executada`, 'success')
@@ -121,6 +125,14 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                 >
                   <i className="fas fa-credit-card text-yellow-400 text-base"></i>
                   <span className="text-base text-gray-300">Pagamentos</span>
+                </button>
+                
+                <button
+                  onClick={() => setIsChatOpen(true)}
+                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
+                >
+                  <i className="fas fa-comments text-green-400 text-base"></i>
+                  <span className="text-base text-gray-300">Chat com Médico</span>
                 </button>
               </div>
             </div>
@@ -278,6 +290,19 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
           </div>
         </div>
       </div>
+
+      {/* Chat com Médico */}
+      <MiniChat
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        userType="patient"
+        otherUser={{
+          name: currentData.doctor,
+          specialty: currentData.name,
+          avatar: undefined
+        }}
+        addNotification={addNotification}
+      />
     </div>
   )
 }

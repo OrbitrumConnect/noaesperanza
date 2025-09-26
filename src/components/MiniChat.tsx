@@ -110,7 +110,19 @@ const MiniChat = ({ isOpen, onClose, userType, otherUser, addNotification }: Min
   if (!isOpen) return null
 
   return (
-    <div className="fixed bottom-4 right-4 w-80 h-96 bg-gray-900 border border-gray-600 rounded-lg shadow-2xl z-50 flex flex-col">
+    <div 
+      className="fixed bottom-4 right-4 w-80 h-96 bg-gray-900 border border-gray-600 rounded-lg shadow-2xl z-[9999] flex flex-col"
+      style={{ 
+        position: 'fixed', 
+        bottom: '16px', 
+        right: '16px', 
+        zIndex: 9999,
+        backgroundColor: '#1f2937',
+        border: '1px solid #4b5563',
+        borderRadius: '8px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+      }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-gray-600 bg-gray-800 rounded-t-lg">
         <div className="flex items-center gap-2">

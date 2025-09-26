@@ -21,6 +21,37 @@ const Pesquisa = () => {
   const isClient = useIsClient();
   const { toast } = useToast();
 
+  // Handlers para as funcionalidades
+  const handleGravação = () => {
+    // Aqui você pode adicionar lógica para acessar gravações
+    console.log('Acessando gravações...');
+    toast({
+      title: "Gravações",
+      description: "Acessando sessões gravadas do LabPEC...",
+    });
+    // Exemplo: window.open('/gravações', '_blank');
+  };
+
+  const handleAnálise = () => {
+    // Aqui você pode adicionar lógica para acessar análises
+    console.log('Acessando análises...');
+    toast({
+      title: "Análises",
+      description: "Acessando feedback detalhado das sessões...",
+    });
+    // Exemplo: window.open('/análises', '_blank');
+  };
+
+  const handleColaboração = () => {
+    // Aqui você pode adicionar lógica para acessar colaboração
+    console.log('Acessando colaboração...');
+    toast({
+      title: "Colaboração",
+      description: "Acessando ferramentas de trabalho em equipe...",
+    });
+    // Exemplo: window.open('/colaboração', '_blank');
+  };
+
   useEffect(() => {
     if (isClient) {
       const urlParams = new URLSearchParams(window.location.search);
@@ -116,219 +147,265 @@ const Pesquisa = () => {
         <link rel="canonical" href={`${window.location.origin}/pesquisa`} />
       </Helmet>
 
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="min-h-screen premium-background">
         <Header currentSpecialty="rim" setCurrentSpecialty={() => {}} />
         <main>
-          {/* Hero Section para Pesquisa */}
-          <section className="py-16 px-6">
-            <div className="container mx-auto max-w-7xl grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-pink-500 to-purple-500 text-transparent bg-clip-text">
-                  Laboratório de Performance em Entrevista Clínica
-                </h1>
-                <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                  Projetos inovadores que aplicam a metodologia AEC em diferentes contextos,
-                  desde pesquisa aplicada até intervenções comunitárias globais. Integração de
-                  <strong> Deep Learning </strong> e <strong> NLP </strong> para saúde humanizada.
-                </p>
-              </div>
-              <div className="flex justify-center">
-                <img
-                  src="/logo-noa-triangulo.gif"
-                  alt="Logo Nôa Esperanza Pesquisa"
-                  className="w-64 h-64 object-contain"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Banner do Seminário */}
-          <section className="bg-secondary text-center py-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">Seminário Setembro 2025</h2>
-            <p className="italic text-lg mb-4">Saúde Espectral</p>
-            <p className="max-w-4xl mx-auto text-muted-foreground px-4">
-              Análise de critérios diagnósticos em nefrologia e neurologia, e o uso da cannabis medicinal na prática clínica. Um olhar expandido pela metodologia da Arte da Entrevista Clínica.
-            </p>
-            <div className="mt-6">
-              <Button variant="default">📕 Baixar eBook do Seminário</Button>
-            </div>
-          </section>
-
-          {/* Descrição LabPEC destacada */}
-          <section className="py-16 px-6">
-            <div className="container mx-auto max-w-4xl">
-              <h2 className="text-xl font-semibold text-center mb-8">
-                No LabPEC, a metodologia da Arte da Entrevista Clínica ganha corpo em encontros ao vivo, simulados e analisados com profundidade. Aqui, a escuta clínica é treinada com rigor e sensibilidade, em situações reais da prática médica.
+          {/* Layout Principal com Sidebar */}
+          <div className="flex gap-4 py-1 px-4">
+            {/* Sidebar de eBooks */}
+            <div className="w-72 flex-shrink-0">
+              <div className="premium-card p-2 sticky top-4 h-[calc(100vh-8rem)] overflow-y-auto z-10">
+                {/* Projetos de Pesquisa */}
+                <div className="mb-2">
+                  <h2 className="text-xs font-bold mb-0.5 text-premium">
+                    Projetos de Pesquisa
               </h2>
-
-              <div className="grid md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Brain className="w-5 h-5 text-blue-600" />
-                      O que acontece no LabPEC?
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc list-inside text-sm space-y-1">
-                      <li><strong>Role-playing clínico realista:</strong> consultas encenadas por duplas com base em casos clínicos reais.</li>
-                      <li><strong>Análise triaxial da consulta:</strong> diferentes perspectivas entre entrevistador, paciente e professor.</li>
-                      <li><strong>Gravação e revisão técnica:</strong> análise em grupo da comunicação clínica e não-verbal.</li>
-                    </ul>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Target className="w-5 h-5 text-green-600" />
-                      Por que participar?
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc list-inside text-sm space-y-1">
-                      <li>Treinamento intensivo em habilidades comunicacionais</li>
-                      <li>Aplicação prática dos conceitos da AEC</li>
-                      <li>Feedback direto e individualizado</li>
-                      <li>Prática segura, com supervisão ativa</li>
-                    </ul>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="w-5 h-5 text-purple-600" />
-                      Para quem?
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc list-inside text-sm space-y-1">
-                      <li>Estudantes de Medicina e Saúde</li>
-                      <li>Profissionais em formação continuada</li>
-                      <li>Equipes de pesquisa aplicando a metodologia</li>
-                    </ul>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card className="mt-10 bg-muted">
-                <CardContent className="pt-6">
-                  <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <Cpu className="w-5 h-5 text-blue-600" />
-                    Como funciona?
-                  </h3>
-                  <ul className="list-disc list-inside text-sm space-y-1">
-                    <li>💻 Aulas ao vivo via Zoom às 21h</li>
-                    <li>🧾 Casos clínicos alinhados ao tema da aula</li>
-                    <li>👩‍⚕️ Dupla de alunos selecionada na hora</li>
-                    <li>⏱️ Exercícios com até 3 rodadas por noite</li>
-                    <li>📊 Análise final orientada por Dr. Ricardo Valença</li>
-                  </ul>
-                  <p className="mt-4 text-sm text-muted-foreground">
-                    O LabPEC integra o eixo formativo da plataforma Nôa Esperanza, articulando ensino, clínica e pesquisa.
+                  <p className="text-xs text-gray-300">
+                    Aplicações da metodologia AEC em diferentes contextos
                   </p>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-
-          {/* Cards de Projetos */}
-          <section className="py-20 px-4 bg-background">
-            <div className="container mx-auto max-w-7xl">
-              {/* Cabeçalho da seção */}
-              <div className="text-center mb-16">
-                <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full px-4 py-2 mb-6">
-                  <span className="text-white font-medium text-sm">
-                    Projetos de Aplicação AEC
-                  </span>
                 </div>
 
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
-                  Aplicações da Arte da{" "}
-                  <span className="text-primary block">Entrevista Clínica</span>
-                </h2>
-
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                  Projetos inovadores que aplicam a metodologia AEC em diferentes
-                  contextos, desde pesquisa aplicada até intervenções comunitárias
-                  globais.
-                </p>
-              </div>
-
-              {/* Cards */}
-              <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-1 mb-2">
                 {projects.map((project) => (
-                  <Card
-                    key={project.id}
-                    className="group hover:shadow-xl transition-all duration-500 border hover:border-primary/50 overflow-hidden"
-                  >
-                    <div className={`h-2 bg-gradient-to-r ${project.color}`} />
-
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start space-x-3 mb-3">
-                        <div
-                          className={`p-3 rounded-xl bg-gradient-to-r ${project.color} text-white`}
-                        >
-                          <project.icon className="w-6 h-6" />
+                    <div key={project.id} className="premium-card p-1 group hover:bg-gray-800 transition-all duration-300">
+                      <div className={`h-0.5 bg-gradient-to-r ${project.color} mb-1`} />
+                      
+                      <div className="flex items-start space-x-1 mb-1">
+                        <div className={`p-0.5 rounded bg-gradient-to-r ${project.color} text-white flex-shrink-0`}>
+                          <project.icon className="w-2 h-2" />
                         </div>
-                        <div>
-                          <CardTitle className="text-2xl text-foreground group-hover:text-primary transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs font-bold text-premium group-hover:text-green-400 transition-colors mb-0.5">
                             {project.title}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground font-medium">
+                          </h4>
+                          <p className="text-xs text-gray-400 font-medium mb-0.5">
                             {project.subtitle}
+                          </p>
+                          <p className="text-xs text-gray-300 leading-tight mb-1 line-clamp-2">
+                            {project.description}
                           </p>
                         </div>
                       </div>
 
-                      <p className="text-muted-foreground leading-relaxed">
-                        {project.description}
-                      </p>
-                    </CardHeader>
-
-                    <CardContent className="pt-0">
-                      {/* Stats */}
-                      <div className="grid grid-cols-3 gap-4 mb-6">
+                      {/* Stats compactas */}
+                      <div className="grid grid-cols-3 gap-0.5 mb-1">
                         {project.stats.map((stat, index) => (
                           <div key={index} className="text-center">
-                            <stat.icon className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
-                            <div className="text-lg font-bold text-foreground">{stat.value}</div>
-                            <div className="text-xs text-muted-foreground">{stat.label}</div>
+                            <stat.icon className="w-1.5 h-1.5 mx-auto mb-0.5 text-gray-400" />
+                            <div className="text-xs font-bold text-premium">{stat.value}</div>
+                            <div className="text-xs text-gray-400">{stat.label}</div>
                           </div>
                         ))}
                       </div>
 
-                      <div className="mb-6">
-                        <h4 className="font-semibold text-foreground mb-3">
-                          Características Principais
-                        </h4>
-                        <ul className="space-y-2">
-                          {project.features.map((feature, index) => (
-                            <li
-                              key={index}
-                              className="flex items-center text-sm text-muted-foreground"
-                            >
-                              <div className="w-1.5 h-1.5 bg-primary rounded-full mr-3 flex-shrink-0" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      <Link to={project.link} className="block">
+                        <button className="premium-button w-full text-xs px-1 py-0.5">
+                          Explorar Projeto
+                        </button>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
 
-                      <div className="flex">
-                        <Link to={project.link} className="flex-1">
-                          <Button className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                            Explorar Projeto
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                {/* eBooks Disponíveis */}
+                <div>
+                  <h3 className="text-xs font-bold text-premium mb-1">eBooks Disponíveis</h3>
+                  <p className="text-xs text-gray-300 mb-1">
+                    Recursos educacionais da NOA Esperanza
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  {/* eBook Principal */}
+                  <div className="premium-card p-1.5 text-center">
+                    <h3 className="text-xs font-bold mb-0.5">Seminário Setembro 2025</h3>
+                    <p className="italic text-xs mb-1">Saúde Espectral</p>
+                    <p className="text-xs text-gray-300 mb-1">
+                      Análise de critérios diagnósticos em nefrologia e neurologia, e o uso da cannabis medicinal na prática clínica.
+                    </p>
+                    <button className="premium-button text-xs px-1 py-0.5 w-full">📕 Baixar eBook</button>
+                  </div>
+
+                  {/* Outros eBooks */}
+                  <div className="premium-card p-1.5 text-center">
+                    <h3 className="text-xs font-bold mb-0.5">AEC Fundamentos</h3>
+                    <p className="text-xs text-gray-300 mb-1">
+                      Guia completo da metodologia Arte da Entrevista Clínica.
+                    </p>
+                    <button className="premium-button text-xs px-1 py-0.5 w-full">📖 Baixar eBook</button>
+                  </div>
+
+                  <div className="premium-card p-1.5 text-center">
+                    <h3 className="text-xs font-bold mb-0.5">Cannabis Medicinal</h3>
+                    <p className="text-xs text-gray-300 mb-1">
+                      Protocolos e aplicações da cannabis medicinal em nefrologia.
+                    </p>
+                    <button className="premium-button text-xs px-1 py-0.5 w-full">🌿 Baixar eBook</button>
+                  </div>
+
+                  <div className="premium-card p-1.5 text-center">
+                    <h3 className="text-xs font-bold mb-0.5">Nefrologia Clínica</h3>
+                    <p className="text-xs text-gray-300 mb-1">
+                      Casos clínicos e abordagens em nefrologia.
+                    </p>
+                    <button className="premium-button text-xs px-1 py-0.5 w-full">🩺 Baixar eBook</button>
+                  </div>
+                </div>
               </div>
             </div>
-          </section>
+
+            {/* Conteúdo Principal */}
+            <div className="flex-1">
+              {/* Hero Section */}
+              <section className="mb-3">
+                <div className="text-center mb-2">
+                  <h1 className="text-sm font-bold mb-1 text-premium">
+                    Laboratório de Performance em Entrevista Clínica
+                  </h1>
+                  <p className="text-xs text-gray-300 leading-tight">
+                    Projetos inovadores que aplicam a metodologia AEC em diferentes contextos,
+                    desde pesquisa aplicada até intervenções comunitárias globais.
+                  </p>
+                </div>
+              </section>
+
+              {/* Funcionalidades da Página */}
+              <section className="mb-2">
+                <div className="grid md:grid-cols-2 gap-1 mb-2">
+                  {/* Ações Rápidas */}
+                  <div className="premium-card p-1">
+                    <h3 className="text-xs font-bold text-premium mb-1 flex items-center gap-1">
+                      <i className="fas fa-bolt text-yellow-400"></i>
+                      Ações Rápidas
+                    </h3>
+                    <div className="space-y-0.5">
+                      <button className="premium-button w-full text-xs px-1 py-0.5 text-left">
+                        <i className="fas fa-video mr-1"></i>
+                        Participar do LabPEC
+                      </button>
+                      <button className="premium-button w-full text-xs px-1 py-0.5 text-left">
+                        <i className="fas fa-download mr-1"></i>
+                        Baixar Materiais
+                      </button>
+                      <button className="premium-button w-full text-xs px-1 py-0.5 text-left">
+                        <i className="fas fa-calendar mr-1"></i>
+                        Próximos Eventos
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Estatísticas */}
+                  <div className="premium-card p-1">
+                    <h3 className="text-xs font-bold text-premium mb-1 flex items-center gap-1">
+                      <i className="fas fa-chart-bar text-green-400"></i>
+                      Estatísticas
+                    </h3>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-premium">1.2K+</div>
+                        <div className="text-xs text-gray-400">Pacientes</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-premium">45+</div>
+                        <div className="text-xs text-gray-400">Profissionais</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-premium">12</div>
+                        <div className="text-xs text-gray-400">Comunidades</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-premium">3</div>
+                        <div className="text-xs text-gray-400">Cidades</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recursos e Ferramentas */}
+                <div className="premium-card p-1 mb-2">
+                  <h3 className="text-xs font-bold text-premium mb-1 flex items-center gap-1">
+                    <i className="fas fa-tools text-blue-400"></i>
+                    Recursos e Ferramentas
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-1">
+                    <button 
+                      onClick={handleGravação}
+                      className="group hover:bg-gray-800 transition-all duration-300 p-1 rounded"
+                    >
+                      <div className="w-6 h-6 bg-blue-500 bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-0.5 group-hover:bg-opacity-30 transition-all">
+                        <i className="fas fa-microphone text-blue-400 text-xs"></i>
+                      </div>
+                      <h4 className="text-xs font-semibold text-premium group-hover:text-green-400 transition-colors">Gravação</h4>
+                      <p className="text-xs text-gray-400">Sessões gravadas</p>
+                    </button>
+                    <button 
+                      onClick={handleAnálise}
+                      className="group hover:bg-gray-800 transition-all duration-300 p-1 rounded"
+                    >
+                      <div className="w-6 h-6 bg-green-500 bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-0.5 group-hover:bg-opacity-30 transition-all">
+                        <i className="fas fa-chart-line text-green-400 text-xs"></i>
+                      </div>
+                      <h4 className="text-xs font-semibold text-premium group-hover:text-green-400 transition-colors">Análise</h4>
+                      <p className="text-xs text-gray-400">Feedback detalhado</p>
+                    </button>
+                    <button 
+                      onClick={handleColaboração}
+                      className="group hover:bg-gray-800 transition-all duration-300 p-1 rounded"
+                    >
+                      <div className="w-6 h-6 bg-purple-500 bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-0.5 group-hover:bg-opacity-30 transition-all">
+                        <i className="fas fa-users text-purple-400 text-xs"></i>
+                      </div>
+                      <h4 className="text-xs font-semibold text-premium group-hover:text-green-400 transition-colors">Colaboração</h4>
+                      <p className="text-xs text-gray-400">Trabalho em equipe</p>
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* LabPEC */}
+              <section className="mb-1">
+                <div className="premium-card p-0.5">
+                  <h3 className="text-xs font-semibold text-center mb-0.5 text-premium">
+                    LabPEC - Laboratório de Prática Clínica
+                  </h3>
+                  
+                  <div className="grid grid-cols-2 gap-0.5">
+                    <div className="flex items-start gap-0.5">
+                      <Brain className="w-1.5 h-1.5 text-blue-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="text-xs font-semibold text-premium">O que acontece:</span>
+                        <p className="text-xs text-gray-300">Role-playing clínico, análise triaxial.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-0.5">
+                      <Target className="w-1.5 h-1.5 text-green-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="text-xs font-semibold text-premium">Por que participar:</span>
+                        <p className="text-xs text-gray-300">Treinamento em habilidades.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-0.5">
+                      <Users className="w-1.5 h-1.5 text-purple-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="text-xs font-semibold text-premium">Para quem:</span>
+                        <p className="text-xs text-gray-300">Estudantes e profissionais.</p>
+                      </div>
+                      </div>
+
+                    <div className="flex items-start gap-0.5">
+                      <Cpu className="w-1.5 h-1.5 text-blue-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="text-xs font-semibold text-premium">Como funciona:</span>
+                        <p className="text-xs text-gray-300">💻 Aulas às 21h • 🧾 Casos • 📊 Análise</p>
+                      </div>
+                    </div>
+                  </div>
+              </div>
+              </section>
+            </div>
+          </div>
         </main>
         <Footer />
       </div>
