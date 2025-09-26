@@ -173,7 +173,7 @@ class OpenAIService {
       
       return {
         response: lastMessage.content[0].text.value,
-        threadId: currentThreadId
+        threadId: currentThreadId || ''
       }
       
     } catch (error) {

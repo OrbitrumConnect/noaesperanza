@@ -34,74 +34,66 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[200] h-16 bg-gradient-to-r from-gray-900/95 via-purple-900/95 to-amber-600/95 backdrop-blur-md shadow-lg border-b border-white/20">
-      <div className="flex items-center justify-between h-full px-3 md:px-6 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between h-full px-6 max-w-7xl mx-auto">
         {/* Logo NOA Esperanza */}
-        <Link to="/" className="flex items-center gap-2 md:gap-3">
-          <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
             <img 
               src="/logo-noa-triangulo.gif" 
               alt="NOA Esperanza" 
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="hidden sm:block">
-            <div className="text-sm md:text-lg font-bold text-white drop-shadow-md">{labInfo.name}</div>
+          <div>
+            <div className="text-lg font-bold text-white drop-shadow-md">{labInfo.name}</div>
             <div className="text-xs text-yellow-100 drop-shadow-sm">{labInfo.fullName}</div>
           </div>
         </Link>
 
-        {/* Status do Laboratório */}
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg border border-white/30">
-            <div className="flex gap-1">
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-            </div>
-            <span className="text-sm font-medium text-white drop-shadow-md">Lab Online</span>
-          </div>
-        </div>
 
         {/* Menu de Navegação Principal */}
-        <nav className="flex flex-wrap gap-1 md:gap-3">
-          <Link to="/paciente" className="nav-item text-xs md:text-sm">
-            <i className="fas fa-user text-xs md:text-sm"></i>
-            <span className="text-xs md:text-sm">Paciente</span>
+        <nav className="hidden lg:flex gap-1">
+          <Link to="/avaliacao-clinica" className="nav-item text-xs px-2 py-1">
+            <i className="fas fa-stethoscope text-xs"></i>
+            <span className="text-xs">Avaliação</span>
           </Link>
-          <Link to="/medico" className="nav-item text-xs md:text-sm">
-            <i className="fas fa-user-md text-xs md:text-sm"></i>
-            <span className="text-xs md:text-sm">Médico</span>
+          <Link to="/ensino" className="nav-item text-xs px-2 py-1">
+            <i className="fas fa-graduation-cap text-xs"></i>
+            <span className="text-xs">Ensino</span>
           </Link>
-          <Link to="/checkout" className="nav-item text-xs md:text-sm">
-            <i className="fas fa-credit-card text-xs md:text-sm"></i>
-            <span className="text-xs md:text-sm">Pagar</span>
+          <Link to="/pesquisa" className="nav-item text-xs px-2 py-1">
+            <i className="fas fa-flask text-xs"></i>
+            <span className="text-xs">Pesquisa</span>
           </Link>
-          <Link to="/admin" className="nav-item text-xs md:text-sm">
-            <i className="fas fa-cog text-xs md:text-sm"></i>
-            <span className="text-xs md:text-sm">Admin</span>
+          <Link to="/medcann-lab" className="nav-item text-xs px-2 py-1">
+            <i className="fas fa-leaf text-xs"></i>
+            <span className="text-xs">MedCann</span>
           </Link>
         </nav>
 
         {/* Seção do Usuário */}
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Menu adicional - oculto no mobile */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link to="/paciente" className="text-white/80 hover:text-yellow-300 transition-colors">
-              <i className="fas fa-user text-sm"></i>
+        <div className="flex items-center gap-4">
+          {/* Menu adicional - ícones compactos */}
+          <div className="flex items-center gap-2">
+            <Link to="/paciente" className="text-white/80 hover:text-yellow-300 transition-colors" title="Paciente">
+              <i className="fas fa-user text-lg"></i>
             </Link>
-            <Link to="/checkout" className="text-white/80 hover:text-yellow-300 transition-colors">
-              <i className="fas fa-credit-card text-sm"></i>
+            <Link to="/medico" className="text-white/80 hover:text-yellow-300 transition-colors" title="Médico">
+              <i className="fas fa-user-md text-lg"></i>
             </Link>
-            <Link to="/config" className="text-white/80 hover:text-yellow-300 transition-colors">
-              <i className="fas fa-cog text-sm"></i>
+            <Link to="/checkout" className="text-white/80 hover:text-yellow-300 transition-colors" title="Pagamento">
+              <i className="fas fa-credit-card text-lg"></i>
+            </Link>
+            <Link to="/admin" className="text-white/80 hover:text-yellow-300 transition-colors" title="Admin">
+              <i className="fas fa-cog text-lg"></i>
             </Link>
           </div>
 
           {/* Avatar e Logout - não mostrar na landing page */}
           {location.pathname !== '/landing' && (
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-xs md:text-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold text-sm">
                   {user?.email?.charAt(0).toUpperCase() || 'A'}
                 </span>
               </div>

@@ -110,7 +110,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true)
       
-      // Login demo removido por segurança - usar apenas Supabase
+      // Usuários demo para desenvolvimento
+      if (email === 'phpg69@gmail.com' && password === 'p6p7p8P9!') {
+        // Simular login de admin
+        const mockUser = {
+          id: 'admin-demo',
+          email: 'phpg69@gmail.com',
+          user_metadata: {
+            name: 'Admin NOA',
+            role: 'admin'
+          }
+        }
+        setUser(mockUser as any)
+        setUserProfile({
+          id: 'admin-demo',
+          email: 'phpg69@gmail.com',
+          name: 'Admin NOA',
+          role: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        return
+      }
       
       // Login normal com Supabase
       const data = await authService.signIn(email, password)

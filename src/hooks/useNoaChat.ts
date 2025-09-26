@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { openAIService, ChatMessage } from '../services/openaiService'
 import { elevenLabsService } from '../services/elevenLabsService'
 import { aiLearningService } from '../services/aiLearningService'
+import { cleanTextForAudio } from '../utils/textUtils'
 
 interface Message {
   id: string
@@ -108,19 +109,8 @@ DIRETRIZES GERAIS:
         currentAudioRef.current = null
       }
       
-      // Remove markdown e formatação para o áudio
-      const cleanText = text
-        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove **bold**
-        .replace(/\*(.*?)\*/g, '$1') // Remove *italic*
-        .replace(/\[(.*?)\]/g, '$1') // Remove [brackets]
-        .replace(/```[\s\S]*?```/g, '') // Remove blocos de código
-        .replace(/`(.*?)`/g, '$1') // Remove código inline
-        .replace(/#{1,6}\s+/g, '') // Remove headers
-        .replace(/\n\n+/g, '. ') // Substitui múltiplas quebras por pontos
-        .replace(/\n/g, ' ') // Remove quebras de linha simples
-        .replace(/\s+/g, ' ') // Remove espaços múltiplos
-        .replace(/[^\w\s.,!?;:()-]/g, '') // Remove caracteres especiais
-        .trim()
+      // Remove markdown e formatação para o áudio, preservando acentos
+      const cleanText = cleanTextForAudio(text)
 
       const audioResponse = await elevenLabsService.textToSpeech(cleanText)
       

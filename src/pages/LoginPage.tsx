@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useValidation } from '../hooks/useValidation'
 
 const LoginPage = () => {
   const [email, setEmail] = useState('')
@@ -10,37 +9,20 @@ const LoginPage = () => {
   const [error, setError] = useState('')
   
   const { signIn } = useAuth()
-  const { validateEmail, validatePassword, sanitizeInput } = useValidation()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validação de entrada
     if (!email || !password) {
       setError('Por favor, preencha todos os campos')
       return
     }
 
-    if (!validateEmail(email)) {
-      setError('Por favor, insira um email válido')
-      return
-    }
-
-    const passwordValidation = validatePassword(password)
-    if (!passwordValidation.isValid) {
-      setError(passwordValidation.message)
-      return
-    }
-
-    // Sanitizar entrada
-    const sanitizedEmail = sanitizeInput(email)
-    const sanitizedPassword = sanitizeInput(password)
-
     try {
       setError('')
       setLoading(true)
-      await signIn(sanitizedEmail, sanitizedPassword)
+      await signIn(email, password)
       navigate('/')
     } catch (error: any) {
       setError(error.message || 'Erro ao fazer login')

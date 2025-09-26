@@ -5,6 +5,8 @@ import { openAIService, ChatMessage } from '../services/openaiService'
 import { elevenLabsService } from '../services/elevenLabsService'
 import { dataService } from '../services/supabaseService'
 import { aiLearningService } from '../services/aiLearningService'
+import { cleanTextForAudio } from '../utils/textUtils'
+import { NoaGPT } from '../gpt/noaGPT'
 
 interface Message {
   id: string
@@ -48,7 +50,117 @@ interface AvaliacaoClinicaData {
   }
 }
 
-// Método triaxial removido - agora usa apenas ChatGPT
+// Etapas da Avaliação Clínica Triaxial
+const ETAPAS_AVALIACAO = [
+  { 
+    id: 'abertura', 
+    title: 'Abertura Exponencial', 
+    pergunta: 'Olá! Eu sou Nôa Esperanza. Por favor, apresente-se também e vamos iniciar a sua avaliação inicial para consultas com Dr. Ricardo Valença.',
+    opcoes: ['Olá, sou [seu nome], tenho [idade] anos', 'Meu nome é [nome], sou [profissão]', 'Sou [nome], venho de [cidade]']
+  },
+  { 
+    id: 'cannabis_medicinal', 
+    title: 'Cannabis Medicinal', 
+    pergunta: 'Você já utilizou canabis medicinal?',
+    opcoes: ['Sim, já utilizei', 'Não, nunca utilizei', 'Estou considerando usar', 'Não sei o que é', 'Prefiro não responder']
+  },
+  { 
+    id: 'lista_indiciaria', 
+    title: 'Lista Indiciária', 
+    pergunta: 'O que trouxe você à nossa avaliação hoje?',
+    opcoes: ['Dor de cabeça', 'Dor no peito', 'Falta de ar', 'Dor abdominal', 'Cansaço', 'Outro sintoma']
+  },
+  { 
+    id: 'queixa_principal', 
+    title: 'Queixa Principal', 
+    pergunta: 'De todas essas questões, qual mais o(a) incomoda?',
+    opcoes: ['A primeira que mencionei', 'A segunda que mencionei', 'A terceira que mencionei', 'Todas me incomodam igualmente']
+  },
+  { 
+    id: 'desenvolvimento_localizacao', 
+    title: 'Desenvolvimento Indiciário - Localização', 
+    pergunta: 'Vamos explorar suas queixas mais detalhadamente. Onde você sente [queixa]?',
+    opcoes: ['Cabeça', 'Peito', 'Abdômen', 'Costas', 'Pernas', 'Braços', 'Todo o corpo']
+  },
+  { 
+    id: 'desenvolvimento_inicio', 
+    title: 'Início', 
+    pergunta: 'Quando essa [queixa] começou?',
+    opcoes: ['Hoje', 'Ontem', 'Esta semana', 'Este mês', 'Há alguns meses', 'Há mais de um ano']
+  },
+  { 
+    id: 'desenvolvimento_qualidade', 
+    title: 'Qualidade', 
+    pergunta: 'Como é a [queixa]?',
+    opcoes: ['Dor aguda', 'Dor latejante', 'Dor em queimação', 'Dor em pontada', 'Desconforto', 'Pressão']
+  },
+  { 
+    id: 'desenvolvimento_sintomas', 
+    title: 'Sintomas Associados', 
+    pergunta: 'O que mais você sente quando está com a [queixa]?',
+    opcoes: ['Náusea', 'Tontura', 'Suor', 'Falta de ar', 'Cansaço', 'Nenhum sintoma adicional']
+  },
+  { 
+    id: 'desenvolvimento_melhora', 
+    title: 'Fatores de Melhora', 
+    pergunta: 'O que melhora a [queixa]?',
+    opcoes: ['Repouso', 'Medicação', 'Calor', 'Frio', 'Massagem', 'Nada melhora']
+  },
+  { 
+    id: 'desenvolvimento_piora', 
+    title: 'Fatores de Piora', 
+    pergunta: 'O que piora a [queixa]?',
+    opcoes: ['Movimento', 'Esforço', 'Estresse', 'Alimentação', 'Posição', 'Nada piora']
+  },
+  { 
+    id: 'historia_patologica', 
+    title: 'História Patológica Pregressa', 
+    pergunta: 'E agora, sobre o restante sua vida até aqui, desde seu nascimento, quais as questões de saúde que você já viveu? Vamos ordenar do mais antigo para o mais recente, o que veio primeiro?',
+    opcoes: ['Nenhuma', 'Hipertensão', 'Diabetes', 'Problemas cardíacos', 'Cirurgias', 'Outras doenças']
+  },
+  { 
+    id: 'historia_familiar_mae', 
+    title: 'História Familiar - Mãe', 
+    pergunta: 'E na sua família? Começando pela parte de sua mãe, quais as questões de saúde dela e desse lado da família?',
+    opcoes: ['Nenhuma', 'Hipertensão', 'Diabetes', 'Câncer', 'Problemas cardíacos', 'Outras doenças']
+  },
+  { 
+    id: 'historia_familiar_pai', 
+    title: 'História Familiar - Pai', 
+    pergunta: 'E por parte do pai?',
+    opcoes: ['Nenhuma', 'Hipertensão', 'Diabetes', 'Câncer', 'Problemas cardíacos', 'Outras doenças']
+  },
+  { 
+    id: 'habitos_vida', 
+    title: 'Hábitos de Vida', 
+    pergunta: 'Além dos hábitos de vida que já verificamos em nossa conversa, que outros hábitos você acha importante mencionar?',
+    opcoes: ['Fumo', 'Bebida alcoólica', 'Exercícios', 'Alimentação', 'Sono', 'Estresse no trabalho']
+  },
+  { 
+    id: 'alergias', 
+    title: 'Alergias', 
+    pergunta: 'Você tem alguma alergia (mudança de tempo, medicação, poeira...)?',
+    opcoes: ['Nenhuma', 'Poeira', 'Pólen', 'Medicamentos', 'Alimentos', 'Mudança de tempo']
+  },
+  { 
+    id: 'medicacoes_continuas', 
+    title: 'Medicações Contínuas', 
+    pergunta: 'Quais medicações utiliza regularmente?',
+    opcoes: ['Nenhuma', 'Anti-hipertensivo', 'Antidiabético', 'Analgésico', 'Vitaminas', 'Outras medicações']
+  },
+  { 
+    id: 'medicacoes_eventuais', 
+    title: 'Medicações Eventuais', 
+    pergunta: 'Quais as medicações você utiliza esporadicamente (de vez em quando) e porque utiliza?',
+    opcoes: ['Nenhuma', 'Analgésico para dor', 'Antitérmico para febre', 'Antiácido', 'Antialérgico', 'Outras medicações']
+  },
+  { 
+    id: 'fechamento', 
+    title: 'Fechamento Consensual', 
+    pergunta: 'Vamos revisar a sua história rapidamente para garantir que não perdemos nenhum detalhe importante.',
+    opcoes: ['Sim, vamos revisar', 'Está tudo correto', 'Quero adicionar algo', 'Há algo a corrigir']
+  }
+]
 
 interface HomeProps {
   currentSpecialty: Specialty
@@ -63,8 +175,24 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  
+  // Estado do NoaGPT
+  const [noaGPT, setNoaGPT] = useState<NoaGPT | null>(null)
 
-  // Estados de avaliação removidos - agora usa apenas ChatGPT
+  // Estados para Avaliação Clínica Triaxial
+  const [modoAvaliacao, setModoAvaliacao] = useState(false)
+  const [etapaAtual, setEtapaAtual] = useState(0)
+  const [perguntandoMais, setPerguntandoMais] = useState(false)
+  const [dadosAvaliacao, setDadosAvaliacao] = useState<AvaliacaoClinicaData['dados']>({
+    cannabis_medicinal: '',
+    lista_indiciaria: [],
+    historia_patologica: [],
+    historia_familiar: { mae: [], pai: [] },
+    habitos_vida: [],
+    desenvolvimento_indiciario: {}
+  })
+  const [sessionId] = useState(() => `avaliacao_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
+  const [evaluationId, setEvaluationId] = useState<string | null>(null)
   
   // Controle de áudio
   const [audioPlaying, setAudioPlaying] = useState(false)
@@ -90,40 +218,28 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     localStorage.setItem('noa_user_memory', JSON.stringify(updatedMemory))
   }
 
-  // Salva conversa do ChatGPT no Supabase
-  const saveChatConversation = async (userMessage: string, noaResponse: string) => {
+  // Salva avaliação no Supabase
+  const saveEvaluationToSupabase = async (isCompleted: boolean = false) => {
     try {
-      const conversationData = {
-        user_id: userMemory.name || 'anonymous',
-        user_message: userMessage,
-        noa_response: noaResponse,
-        session_id: `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        created_at: new Date().toISOString()
+      const evaluationData = {
+        session_id: sessionId,
+        status: (isCompleted ? 'completed' : 'in_progress') as 'completed' | 'in_progress',
+        etapa_atual: ETAPAS_AVALIACAO[etapaAtual]?.id || 'fechamento',
+        dados: dadosAvaliacao,
+        user_id: userMemory.name ? userMemory.name : null
       }
 
-      // Salva no Supabase usando a tabela de avaliações clínicas
-      await dataService.createClinicalEvaluation({
-        session_id: conversationData.session_id,
-        status: 'completed',
-        etapa_atual: 'chat_conversation',
-        dados: {
-          cannabis_medicinal: '',
-          lista_indiciaria: [],
-          historia_patologica: [],
-          historia_familiar: { mae: [], pai: [] },
-          habitos_vida: [],
-          desenvolvimento_indiciario: {},
-          // Dados da conversa do ChatGPT
-          user_message: userMessage,
-          noa_response: noaResponse,
-          conversation_type: 'chatgpt_evaluation'
-        } as any,
-        user_id: conversationData.user_id
-      })
-      
-      console.log('✅ Conversa salva no Supabase:', conversationData.session_id)
+      if (evaluationId) {
+        // Atualiza avaliação existente
+        await dataService.updateClinicalEvaluation(evaluationId, evaluationData)
+      } else {
+        // Cria nova avaliação
+        const result = await dataService.createClinicalEvaluation(evaluationData)
+        setEvaluationId(result.id)
+      }
     } catch (error) {
-      console.error('❌ Erro ao salvar conversa no Supabase:', error)
+      console.error('Erro ao salvar avaliação no Supabase:', error)
+      // Não mostra erro para o usuário, apenas loga
     }
   }
 
@@ -131,42 +247,13 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     scrollToBottom()
   }, [messages])
 
-  // Detecta primeira interação do usuário para permitir áudio
+  // Áudio liberado automaticamente - sem necessidade de primeira interação
   useEffect(() => {
-    const handleFirstInteraction = () => {
-      setUserInteracted(true)
-      document.removeEventListener('click', handleFirstInteraction)
-      document.removeEventListener('keydown', handleFirstInteraction)
-      document.removeEventListener('touchstart', handleFirstInteraction)
-      
-      // Ativa microfone automaticamente após primeira interação
-      console.log('🎤 Primeira interação detectada, ativando microfone em 1.5 segundos...')
-      setTimeout(() => {
-        if (!isVoiceListening) {
-          console.log('🎤 Ativação automática inicial do microfone')
-          startVoiceRecognition()
-        }
-      }, 1500) // Reduzido de 3s para 1.5s - mais responsivo
-    }
-
-    document.addEventListener('click', handleFirstInteraction)
-    document.addEventListener('keydown', handleFirstInteraction)
-    document.addEventListener('touchstart', handleFirstInteraction)
-
-    return () => {
-      document.removeEventListener('click', handleFirstInteraction)
-      document.removeEventListener('keydown', handleFirstInteraction)
-      document.removeEventListener('touchstart', handleFirstInteraction)
-    }
+    setUserInteracted(true) // Libera áudio imediatamente
   }, [])
 
-  // Removido: Inicialização automática de mensagem - ChatGPT será completamente livre
-  // useEffect(() => {
-  //   if (messages.length === 0) {
-  //     // Chama ChatGPT para gerar mensagem inicial
-  //     getNoaResponse('iniciar conversa')
-  //   }
-  // }, [userMemory.name])
+  // Chat limpo - sem mensagem inicial automática
+  // O usuário pode começar a conversa naturalmente
 
   // Toca áudio da mensagem inicial da NOA
   useEffect(() => {
@@ -188,7 +275,12 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       
       // Quebra-gelo: Pesquisa - Projetos de Investigação (removido - usa ChatGPT)
 
-      // Modo de avaliação removido - agora usa apenas ChatGPT
+      // Se está em modo avaliação, processa a resposta
+      if (modoAvaliacao) {
+        await processarRespostaAvaliacao(userMessage)
+        setIsTyping(false)
+        return
+      }
 
       // Detecta se o usuário está se apresentando (salva nome, mas usa ChatGPT para resposta)
       if (!userMemory.name && (
@@ -250,7 +342,7 @@ FECHAMENTO CONSENSUAL:
 - Formule hipóteses sindrômicas se concordar
 - Faça recomendação final específica
 
-CONTEXTO ATUAL: Conversa geral com ChatGPT`
+CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxial' : 'Conversa geral'}`
 
       const conversationHistory: ChatMessage[] = [
         { role: 'system', content: systemContext },
@@ -263,32 +355,31 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
           .slice(-8) // Mantém apenas as últimas 8 mensagens + contexto do sistema
       ]
 
-      // Chama OpenAI para gerar resposta (ChatGPT é o agente de resposta)
-      console.log('🤖 ChatGPT gerando resposta da NOA...')
-      console.log('📋 Instruções enviadas para ChatGPT:', systemContext.substring(0, 200) + '...')
-      const response = await openAIService.getNoaResponse(userMessage, conversationHistory)
-      console.log('✅ ChatGPT respondeu:', response.substring(0, 100) + '...')
+      // Chama NoaGPT para gerar resposta (sistema integrado de agentes)
+      console.log('🤖 NoaGPT processando comando...')
+      console.log('📋 Mensagem do usuário:', userMessage.substring(0, 100) + '...')
       
-      // Opções padrão para conversas gerais
-      const defaultOptions = [
-        'Avaliação inicial',
-        'Fazer uma pergunta sobre saúde',
-        'Como você está?'
-      ]
+      // Inicializa o NoaGPT se ainda não foi criado
+      let currentNoaGPT = noaGPT
+      if (!currentNoaGPT) {
+        currentNoaGPT = new NoaGPT()
+        setNoaGPT(currentNoaGPT)
+      }
       
+      const response = await currentNoaGPT.processCommand(userMessage)
+      console.log('✅ NoaGPT respondeu:', response.substring(0, 100) + '...')
+      
+      // Chat limpo - sem comandos clicáveis automáticos
       const noaMessage: Message = {
         id: crypto.randomUUID(),
         message: response,
         sender: 'noa',
-        timestamp: new Date(),
-        options: defaultOptions
+        timestamp: new Date()
+        // options removidas para chat limpo
       }
       
       setMessages(prev => [...prev, noaMessage])
       // Removido: addNotification('Resposta da NOA Esperanza recebida', 'success')
-      
-      // Salva conversa no Supabase
-      await saveChatConversation(userMessage, response)
       
       // 🧠 APRENDIZADO AUTOMÁTICO - IA aprende com a conversa
       aiLearningService.saveInteraction(userMessage, response, 'general')
@@ -305,11 +396,249 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
     }
   }
 
-  // Função processarRespostaAvaliacao removida - agora usa apenas ChatGPT
+  // Processa resposta da avaliação clínica
+  const processarRespostaAvaliacao = async (resposta: string) => {
+    const etapa = ETAPAS_AVALIACAO[etapaAtual]
+    
+    // Verifica se é uma resposta "não" ou "nenhuma" para pular "O que mais?"
+    const respostaNegativa = resposta.toLowerCase().includes('não') || 
+                            resposta.toLowerCase().includes('nenhuma') || 
+                            resposta.toLowerCase().includes('nada') ||
+                            resposta.toLowerCase().includes('nunca')
+    
+    // Salva a resposta na etapa atual
+    if (etapa.id === 'abertura') {
+      setDadosAvaliacao(prev => ({ ...prev, apresentacao: resposta }))
+    } else if (etapa.id === 'cannabis_medicinal') {
+      setDadosAvaliacao(prev => ({ ...prev, cannabis_medicinal: resposta }))
+    } else if (etapa.id === 'lista_indiciaria') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        lista_indiciaria: [...prev.lista_indiciaria, resposta] 
+      }))
+      
+      // Pergunta "O que mais?" removida - usa ChatGPT
+    } else if (etapa.id === 'queixa_principal') {
+      setDadosAvaliacao(prev => ({ ...prev, queixa_principal: resposta }))
+    } else if (etapa.id === 'desenvolvimento_localizacao') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        desenvolvimento_indiciario: { 
+          ...prev.desenvolvimento_indiciario, 
+          localizacao: resposta 
+        } 
+      }))
+    } else if (etapa.id === 'desenvolvimento_inicio') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        desenvolvimento_indiciario: { 
+          ...prev.desenvolvimento_indiciario, 
+          inicio: resposta 
+        } 
+      }))
+    } else if (etapa.id === 'desenvolvimento_qualidade') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        desenvolvimento_indiciario: { 
+          ...prev.desenvolvimento_indiciario, 
+          qualidade: resposta 
+        } 
+      }))
+    } else if (etapa.id === 'desenvolvimento_sintomas') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        desenvolvimento_indiciario: { 
+          ...prev.desenvolvimento_indiciario, 
+          sintomas_associados: resposta 
+        } 
+      }))
+    } else if (etapa.id === 'desenvolvimento_melhora') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        desenvolvimento_indiciario: { 
+          ...prev.desenvolvimento_indiciario, 
+          fatores_melhora: resposta 
+        } 
+      }))
+    } else if (etapa.id === 'desenvolvimento_piora') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        desenvolvimento_indiciario: { 
+          ...prev.desenvolvimento_indiciario, 
+          fatores_piora: resposta 
+        } 
+      }))
+    } else if (etapa.id === 'historia_patologica') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        historia_patologica: [...prev.historia_patologica, resposta] 
+      }))
+      
+      // Pergunta "O que mais?" removida - usa ChatGPT
+    } else if (etapa.id === 'historia_familiar_mae') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        historia_familiar: { 
+          ...prev.historia_familiar, 
+          mae: [...prev.historia_familiar.mae, resposta] 
+        } 
+      }))
+      
+      // Pergunta "O que mais?" removida - usa ChatGPT
+    } else if (etapa.id === 'historia_familiar_pai') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        historia_familiar: { 
+          ...prev.historia_familiar, 
+          pai: [...prev.historia_familiar.pai, resposta] 
+        } 
+      }))
+      
+      // Pergunta "O que mais?" removida - usa ChatGPT
+    } else if (etapa.id === 'habitos_vida') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        habitos_vida: [...prev.habitos_vida, resposta] 
+      }))
+      
+      // Pergunta "O que mais?" removida - usa ChatGPT
+    } else if (etapa.id === 'alergias') {
+      setDadosAvaliacao(prev => ({ ...prev, alergias: resposta }))
+    } else if (etapa.id === 'medicacoes_continuas') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        medicacoes: { 
+          ...prev.medicacoes, 
+          continuas: resposta 
+        } 
+      }))
+    } else if (etapa.id === 'medicacoes_eventuais') {
+      setDadosAvaliacao(prev => ({ 
+        ...prev, 
+        medicacoes: { 
+          ...prev.medicacoes, 
+          eventuais: resposta 
+        } 
+      }))
+    } else if (etapa.id === 'fechamento') {
+      // Gera relatório narrativo
+      const relatorio = gerarRelatorioNarrativo()
+      setDadosAvaliacao(prev => ({ ...prev, relatorio_narrativo: relatorio }))
+    }
 
-  // Função gerarRelatorioNarrativo removida - agora usa apenas ChatGPT
+    // Se estava perguntando "O que mais?" e recebeu resposta negativa, avança
+    if (perguntandoMais && respostaNegativa) {
+      setPerguntandoMais(false)
+    }
 
-  // Função finalizarAvaliacao removida - agora usa apenas ChatGPT
+    // Salva progresso no Supabase
+    await saveEvaluationToSupabase(false)
+
+    // Avança para próxima etapa
+    if (etapaAtual < ETAPAS_AVALIACAO.length - 1) {
+      setEtapaAtual(prev => prev + 1)
+      const proximaEtapa = ETAPAS_AVALIACAO[etapaAtual + 1]
+      
+      // Próxima pergunta removida - usa ChatGPT
+    } else {
+      // Finaliza avaliação
+      await finalizarAvaliacao()
+    }
+  }
+
+  // Gera relatório narrativo
+  const gerarRelatorioNarrativo = () => {
+    const dados = dadosAvaliacao
+    return `
+**RELATÓRIO DE AVALIAÇÃO CLÍNICA INICIAL**
+*Método Triaxial - Dr. Ricardo Valença*
+
+**APRESENTAÇÃO:** ${dados.apresentacao || 'Não informado'}
+
+**CANNABIS MEDICINAL:** ${dados.cannabis_medicinal || 'Não informado'}
+
+**QUEIXAS PRINCIPAIS:** ${dados.lista_indiciaria.join(', ')}
+
+**QUEIXA PRINCIPAL:** ${dados.queixa_principal || 'Não especificada'}
+
+**DESENVOLVIMENTO INDICIÁRIO:**
+- Localização: ${dados.desenvolvimento_indiciario?.localizacao || 'Não informado'}
+- Início: ${dados.desenvolvimento_indiciario?.inicio || 'Não informado'}
+- Qualidade: ${dados.desenvolvimento_indiciario?.qualidade || 'Não informado'}
+- Sintomas associados: ${dados.desenvolvimento_indiciario?.sintomas_associados || 'Não informado'}
+- Fatores de melhora: ${dados.desenvolvimento_indiciario?.fatores_melhora || 'Não informado'}
+- Fatores de piora: ${dados.desenvolvimento_indiciario?.fatores_piora || 'Não informado'}
+
+**HISTÓRIA PATOLÓGICA:** ${dados.historia_patologica.join(', ') || 'Nenhuma'}
+
+**HISTÓRIA FAMILIAR:**
+- Mãe: ${dados.historia_familiar.mae.join(', ') || 'Nenhuma'}
+- Pai: ${dados.historia_familiar.pai.join(', ') || 'Nenhuma'}
+
+**HÁBITOS DE VIDA:** ${dados.habitos_vida.join(', ') || 'Não informado'}
+
+**ALERGIAS:** ${dados.alergias || 'Nenhuma'}
+
+**MEDICAÇÕES:**
+- Contínuas: ${dados.medicacoes?.continuas || 'Nenhuma'}
+- Eventuais: ${dados.medicacoes?.eventuais || 'Nenhuma'}
+
+*Relatório gerado em: ${new Date().toLocaleString('pt-BR')}*
+    `.trim()
+  }
+
+  // Finaliza avaliação
+  const finalizarAvaliacao = async () => {
+    setModoAvaliacao(false)
+    
+    const relatorio = gerarRelatorioNarrativo()
+    setDadosAvaliacao(prev => ({ ...prev, relatorio_narrativo: relatorio }))
+    
+    // Fechamento consensual detalhado
+    const fechamentoConsensual: Message = {
+      id: crypto.randomUUID(),
+      message: `**FECHAMENTO CONSENSUAL**\n\nVamos revisar sua história para garantir que não perdemos nenhum detalhe importante.\n\n**RESUMO DA SUA HISTÓRIA:**\n\n${relatorio}\n\n**O que posso melhorar no meu entendimento?**`,
+      sender: 'noa',
+      timestamp: new Date(),
+      options: ['Está tudo correto', 'Gostaria de adicionar algo', 'Há algo que não entendi bem', 'Posso melhorar alguma resposta']
+    }
+    
+    setMessages(prev => [...prev, fechamentoConsensual])
+    playNoaAudioWithText(fechamentoConsensual.message)
+    
+    // Aguarda resposta do fechamento consensual
+    setTimeout(() => {
+      const concordancia: Message = {
+        id: crypto.randomUUID(),
+        message: `**Você concorda com o meu entendimento?**\n\nHá mais alguma coisa que gostaria de adicionar sobre a história que construímos?`,
+        sender: 'noa',
+        timestamp: new Date(),
+        options: ['Sim, concordo', 'Quero adicionar algo', 'Há algo a corrigir', 'Está perfeito']
+      }
+      
+      setMessages(prev => [...prev, concordancia])
+      playNoaAudioWithText(concordancia.message)
+      
+      // Finalização com recomendação específica
+      setTimeout(() => {
+        const finalizacao: Message = {
+          id: crypto.randomUUID(),
+          message: `**🎉 AVALIAÇÃO CLÍNICA CONCLUÍDA!**\n\n✅ Seu relatório foi gerado e está disponível no seu dashboard.\n\n**RECOMENDAÇÃO FINAL:**\n\nEssa é uma avaliação inicial de acordo com o método desenvolvido pelo Dr. Ricardo Valença com o objetivo de aperfeiçoar o seu atendimento. Ao final, recomendo a marcação de uma consulta com o Dr. Ricardo Valença pelo site.\n\n💡 **Próximos passos:**\n- Agende sua consulta\n- Leve este relatório\n- Prepare suas dúvidas\n\n*Método Triaxial - Dr. Ricardo Valença*`,
+          sender: 'noa',
+          timestamp: new Date()
+        }
+        
+        setMessages(prev => [...prev, finalizacao])
+        // Removido: addNotification('Avaliação Clínica Concluída', 'success')
+        playNoaAudioWithText(finalizacao.message)
+        
+        // Salva avaliação concluída no Supabase
+        saveEvaluationToSupabase(true).then(() => {
+          console.log('Avaliação salva no Supabase:', evaluationId)
+        })
+      }, 3000)
+    }, 3000)
+  }
 
   const handleSendMessage = (messageText?: string) => {
     const messageToSend = messageText || inputMessage
@@ -354,60 +683,52 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     const recognition = new SpeechRecognition()
 
-    recognition.continuous = false // Modo mais estável
-    recognition.interimResults = false // Menos processamento
+    recognition.continuous = false // Para após capturar uma frase (evita eco)
+    recognition.interimResults = false // Não mostra texto intermediário (evita eco)
     recognition.lang = 'pt-BR'
     recognition.maxAlternatives = 1 // Melhor precisão
     
-    // Variável para acumular texto durante a fala
-    let accumulatedText = ''
+    // Reconhecimento single-shot para evitar eco
 
     recognition.onstart = () => {
-      console.log('🎤 Reconhecimento de voz iniciado (modo contínuo)')
-      // Removido: addNotification('🎤 Microfone ativo! Fale quando quiser interromper a NOA!', 'success')
+      console.log('🎤 Reconhecimento de voz iniciado (modo single-shot)')
+      // Removido: addNotification('🎤 Microfone ativo! Fale uma frase!', 'success')
     }
 
     recognition.onresult = (event: any) => {
+      // Para o reconhecimento imediatamente para evitar eco
+      recognition.stop()
+      
       let finalTranscript = ''
-      let interimTranscript = ''
-
-      // Processa resultados finais e intermediários
+      
+      // Processa apenas resultados finais
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript
         if (event.results[i].isFinal) {
-          finalTranscript += transcript
-        } else {
-          interimTranscript += transcript
+          finalTranscript += event.results[i][0].transcript
         }
       }
 
-      // Para o áudio da NOA se usuário falar
-      if (finalTranscript && currentAudioRef.current) {
-        currentAudioRef.current.pause()
-        currentAudioRef.current = null
-        setAudioPlaying(false)
-        console.log('⏹️ Áudio da NOA interrompido')
-      }
-
-      // Se há resultado final, processa imediatamente (mais rápido)
-      if (finalTranscript) {
-        console.log('🎤 Texto final reconhecido:', finalTranscript)
+      // Só processa se não estiver tocando áudio da NOA (evita eco)
+      if (finalTranscript && !audioPlaying) {
+        console.log('🎤 Texto reconhecido:', finalTranscript)
         
-        // Para o reconhecimento primeiro
-        recognition.stop()
-        
-        // Processa imediatamente para ser mais rápido
-        console.log('✅ Processando mensagem final imediatamente:', finalTranscript)
+        // Para o áudio da NOA se estiver tocando
+        if (currentAudioRef.current) {
+          currentAudioRef.current.pause()
+          currentAudioRef.current = null
+          setAudioPlaying(false)
+          console.log('⏹️ Áudio da NOA interrompido')
+        }
         
         setInputMessage(finalTranscript)
-        // Removido: addNotification(`✅ Processando: "${finalTranscript}"`, 'success')
         
-        // Envia automaticamente a mensagem (sem delay)
-        console.log('📤 Enviando mensagem automaticamente...')
+        // Envia automaticamente a mensagem
+        console.log('📤 Enviando mensagem de voz...')
         handleSendMessage(finalTranscript)
         
-        // Atualiza estado após envio
         setIsVoiceListening(false)
+      } else if (audioPlaying) {
+        console.log('🔇 NOA está falando, ignorando detecção de voz para evitar eco')
       }
     }
 
@@ -460,11 +781,7 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
     try {
       console.log('🎵 ElevenLabs gerando APENAS áudio:', { userInteracted, audioPlaying, text: text.substring(0, 50) + '...' })
       
-      // Se o usuário ainda não interagiu, não toca áudio
-      if (!userInteracted) {
-        console.log('⏳ Aguardando interação do usuário para tocar áudio...')
-        return
-      }
+      // Áudio sempre disponível - sem necessidade de liberação
       
       // Se já está tocando áudio, não toca outro
       if (audioPlaying) {
@@ -479,18 +796,7 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
       }
       
       // Remove markdown e formatação para o áudio com melhor processamento
-      const cleanText = text
-        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove **bold**
-        .replace(/\*(.*?)\*/g, '$1') // Remove *italic*
-        .replace(/\[(.*?)\]/g, '$1') // Remove [brackets]
-        .replace(/```[\s\S]*?```/g, '') // Remove blocos de código
-        .replace(/`(.*?)`/g, '$1') // Remove código inline
-        .replace(/#{1,6}\s+/g, '') // Remove headers
-        .replace(/\n\n+/g, '. ') // Substitui múltiplas quebras por pontos
-        .replace(/\n/g, ' ') // Remove quebras de linha simples
-        .replace(/\s+/g, ' ') // Remove espaços múltiplos
-        .replace(/[^\w\s.,!?;:()-]/g, '') // Remove caracteres especiais
-        .trim()
+      const cleanText = cleanTextForAudio(text)
 
       console.log('🎤 Chamando ElevenLabs com texto:', cleanText.substring(0, 100) + '...')
       const audioResponse = await elevenLabsService.textToSpeech(cleanText)
@@ -504,8 +810,6 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
       
       // Armazena referência do áudio atual
       currentAudioRef.current = audio
-      
-      // Inicia o vídeo "falando" um pouco antes do áudio
       setAudioPlaying(true)
       
       // Para o reconhecimento de voz enquanto NOA fala
@@ -513,9 +817,6 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
         console.log('🔇 Pausando reconhecimento de voz enquanto NOA fala')
         setIsVoiceListening(false)
       }
-
-      // Delay para sincronizar vídeo com áudio (pouquinho antes)
-      await new Promise(resolve => setTimeout(resolve, 500))
 
       audio.play().then(() => {
         console.log('🎵 Áudio tocando com sucesso!')
@@ -561,40 +862,27 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
       {/* Layout Principal */}
       <div className="w-full h-full flex items-center justify-center">
         {/* Balão de Pensamento com NOA ao Lado */}
-        <div className="flex items-center gap-2 md:gap-8 justify-center w-full h-full px-2 md:px-0">
+        <div className="flex flex-col lg:flex-row items-center gap-4 lg:gap-8 justify-center w-full h-full lg:-ml-[22%] px-4 lg:px-0">
           {/* Balão de Pensamento */}
-          <div className="flex-1 relative w-[250px] md:w-[40vw] md:max-w-md z-[100]">
+          <div className="flex-1 relative max-w-md w-full lg:w-auto z-[100] lg:-ml-4 order-2 lg:order-1">
             {/* Balão principal */}
-            <div className="bg-white rounded-xl md:rounded-2xl px-2 md:px-3 pb-2 md:pb-3 shadow-lg border border-white/20 relative z-[100] w-full">
+            <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 relative z-[100]">
 
               {/* Área de Mensagens */}
-              <div className="space-y-2 max-h-[clamp(200px,25vh,300px)] md:max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div className="space-y-2 max-h-48 lg:max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 {messages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[clamp(200px,50vw,320px)] md:max-w-xs ${
+                    <div className={`max-w-xs lg:max-w-xs ${
                       message.sender === 'user' 
-                        ? 'bg-blue-500 text-white rounded-md md:rounded-lg p-2 md:p-3' 
-                        : 'bg-gray-100 text-gray-800 rounded-md md:rounded-lg p-2 md:p-3'
+                        ? 'bg-blue-500 text-white rounded-lg p-3' 
+                        : 'bg-gray-100 text-gray-800 rounded-lg p-3'
                     }`}>
-                      <p className="text-xs sm:text-sm md:text-base leading-relaxed whitespace-pre-line">{message.message}</p>
+                      <p className="text-sm leading-relaxed whitespace-pre-line">{message.message}</p>
                       
-                      {/* Opções de resposta rápida */}
-                      {message.options && message.sender === 'noa' && (
-                        <div className="mt-3 space-y-1">
-                          {message.options.map((option, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleOptionClick(option)}
-                              className="block w-full text-left text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 rounded px-2 py-1 transition-colors"
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      {/* Chat limpo - sem comandos clicáveis */}
                       
                       <span className="text-xs opacity-70 mt-1 block">
                         {formatTime(message.timestamp)}
@@ -613,7 +901,7 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
-                        <span className="text-xs sm:text-sm">NOA está digitando...</span>
+                        <span className="text-xs">NOA está digitando...</span>
                   </div>
                 </div>
               </div>
@@ -623,54 +911,57 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
                 </div>
                 
               {/* Input de Mensagem */}
-              <div className="flex gap-2 mt-3">
+              <div className="flex gap-2 mt-3 flex-col sm:flex-row">
                 <input 
                   type="text" 
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Digite sua mensagem..."
-                  className="flex-1 px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-600"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-600 w-full sm:w-auto"
                   aria-label="Campo de mensagem para conversar com NOA"
                 />
-                {/* Botão de voz */}
-                <button
-                  onClick={() => {
-                    if (isVoiceListening) {
-                      setIsVoiceListening(false)
-                      // TODO: Parar reconhecimento de voz
-                    } else {
-                      setIsVoiceListening(true)
-                      // TODO: Iniciar reconhecimento de voz
-                      startVoiceRecognition()
-                    }
-                  }}
-                  className={`px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm ${
-                    isVoiceListening 
-                      ? 'bg-red-500 hover:bg-red-600 text-white' 
-                      : 'bg-green-500 hover:bg-green-600 text-white'
-                  }`}
-                  title={isVoiceListening ? 'Parar gravação' : 'Falar com a NOA'}
-                  aria-label={isVoiceListening ? 'Parar gravação de voz' : 'Iniciar gravação de voz'}
-                >
-                  <i className={`fas ${isVoiceListening ? 'fa-stop' : 'fa-microphone'}`}></i>
-                </button>
-                <button 
-                  onClick={() => handleSendMessage()}
-                  disabled={!inputMessage.trim()}
-                  className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors text-sm"
-                  aria-label="Enviar mensagem para NOA"
-                  title="Enviar mensagem"
-                >
-                  <i className="fas fa-paper-plane"></i>
-                </button>
+                {/* Botões de controle */}
+                <div className="flex gap-2 w-full sm:w-auto">
+                  {/* Botão de voz */}
+                  <button
+                    onClick={() => {
+                      if (isVoiceListening) {
+                        setIsVoiceListening(false)
+                        // TODO: Parar reconhecimento de voz
+                      } else {
+                        setIsVoiceListening(true)
+                        // TODO: Iniciar reconhecimento de voz
+                        startVoiceRecognition()
+                      }
+                    }}
+                    className={`flex-1 sm:flex-none px-4 py-2 rounded-lg transition-colors text-sm ${
+                      isVoiceListening 
+                        ? 'bg-red-500 hover:bg-red-600 text-white' 
+                        : 'bg-green-500 hover:bg-green-600 text-white'
+                    }`}
+                    title={isVoiceListening ? 'Parar gravação' : 'Falar com a NOA'}
+                    aria-label={isVoiceListening ? 'Parar gravação de voz' : 'Iniciar gravação de voz'}
+                  >
+                    <i className={`fas ${isVoiceListening ? 'fa-stop' : 'fa-microphone'}`}></i>
+                  </button>
+                  <button 
+                    onClick={() => handleSendMessage()}
+                    disabled={!inputMessage.trim()}
+                    className="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                    aria-label="Enviar mensagem para NOA"
+                    title="Enviar mensagem"
+                  >
+                    <i className="fas fa-paper-plane"></i>
+                  </button>
+                </div>
                 </div>
               </div>
             </div>
 
           {/* Avatar da NOA - Vídeos Animados */}
-          <div className="flex-shrink-0 flex justify-center items-center relative">
-            <div className="w-[100px] h-[100px] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square">
+          <div className="flex-shrink-0 flex justify-center items-center relative order-1 lg:order-2">
+            <div className="w-[clamp(120px,20vw,135px)] h-[clamp(120px,20vw,135px)] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square">
               {/* Vídeo estático piscando (padrão) */}
               <video 
                 key="estatico"
@@ -715,16 +1006,16 @@ CONTEXTO ATUAL: Conversa geral com ChatGPT`
                     setAudioPlaying(false)
                   }
                 }}
-                className="absolute top-[5%] right-[5%] md:top-4 md:right-4 p-[clamp(8px,2vw,12px)] md:p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
+                className="absolute top-2 right-2 lg:top-4 lg:right-4 p-2 lg:p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
                 title="Parar áudio"
               >
-                <i className="fas fa-stop text-[clamp(0.6rem,3vw,1.125rem)] md:text-lg"></i>
+                <i className="fas fa-stop text-sm lg:text-lg"></i>
               </button>
             )}
             {/* Indicador de escuta de voz */}
             {isVoiceListening && (
-              <div className="absolute top-[5%] left-[5%] md:top-4 md:left-4 p-[clamp(8px,2vw,12px)] md:p-3 bg-green-500 text-white rounded-full shadow-lg animate-pulse">
-                <i className="fas fa-microphone text-[clamp(0.6rem,3vw,1.125rem)] md:text-lg"></i>
+              <div className="absolute top-2 left-2 lg:top-4 lg:left-4 p-2 lg:p-3 bg-green-500 text-white rounded-full shadow-lg animate-pulse">
+                <i className="fas fa-microphone text-sm lg:text-lg"></i>
               </div>
             )}
           </div>

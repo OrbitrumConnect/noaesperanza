@@ -49,8 +49,8 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
   return (
     <div className="h-full overflow-hidden">
       {/* Header */}
-      <div className="max-w-6xl mx-auto px-3 mb-1">
-        <div className="premium-card p-1.5">
+      <div className="max-w-6xl mx-auto px-3 mb-2">
+        <div className="premium-card p-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Link to="/" className="text-yellow-400 hover:text-yellow-300">
@@ -72,18 +72,18 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-3 h-full pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-1.5 h-full">
+      <div className="max-w-6xl mx-auto px-3 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 h-full">
           {/* Seleção de Plano */}
-          <div className="lg:col-span-2 space-y-1.5">
-            <div className="premium-card p-1.5">
-              <h2 className="text-xs font-semibold text-premium mb-1.5">Escolha seu Plano</h2>
+          <div className="lg:col-span-2 space-y-2">
+            <div className="premium-card p-2">
+              <h2 className="text-sm font-semibold text-premium mb-2">Escolha seu Plano</h2>
               
               <div className="space-y-1">
                 {Object.entries(plans).map(([key, plan]) => (
                   <div
                     key={key}
-                    className={`p-1.5 rounded-lg border-2 cursor-pointer transition-all ${
+                    className={`p-2 rounded-lg border-2 cursor-pointer transition-all ${
                       selectedPlan === key 
                         ? `border-${plan.color}-500 bg-${plan.color}-500/10` 
                         : 'border-gray-600 hover:border-gray-500'
@@ -92,7 +92,7 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold text-white text-xs">{plan.name}</h3>
+                        <h3 className="font-semibold text-white text-sm">{plan.name}</h3>
                         <p className="text-gray-400 text-xs">R$ {plan.price}/mês</p>
                       </div>
                       <div className={`w-3 h-3 rounded-full border-2 ${
@@ -122,12 +122,12 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
             </div>
 
             {/* Método de Pagamento */}
-            <div className="premium-card p-1.5">
-              <h2 className="text-xs font-semibold text-premium mb-1.5">Método de Pagamento</h2>
+            <div className="premium-card p-2">
+              <h2 className="text-sm font-semibold text-premium mb-2">Método de Pagamento</h2>
               
               <div className="space-y-1">
                 <div
-                  className={`p-1.5 rounded-lg border-2 cursor-pointer transition-all ${
+                  className={`p-2 rounded-lg border-2 cursor-pointer transition-all ${
                     paymentMethod === 'pix' 
                       ? 'border-green-500 bg-green-500/10' 
                       : 'border-gray-600 hover:border-gray-500'
@@ -135,11 +135,11 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
                   onClick={() => setPaymentMethod('pix')}
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <div className="w-6 h-6 bg-green-500/20 rounded-lg flex items-center justify-center">
                       <i className="fas fa-qrcode text-green-400 text-xs"></i>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-white text-xs">PIX</h3>
+                      <h3 className="font-semibold text-white text-sm">PIX</h3>
                       <p className="text-gray-400 text-xs">Aprovação instantânea</p>
                     </div>
                     <div className={`w-3 h-3 rounded-full border-2 ${
@@ -155,7 +155,7 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
                 </div>
 
                 <div
-                  className={`p-1.5 rounded-lg border-2 cursor-pointer transition-all ${
+                  className={`p-2 rounded-lg border-2 cursor-pointer transition-all ${
                     paymentMethod === 'card' 
                       ? 'border-blue-500 bg-blue-500/10' 
                       : 'border-gray-600 hover:border-gray-500'
@@ -163,11 +163,11 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
                   onClick={() => setPaymentMethod('card')}
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <div className="w-6 h-6 bg-blue-500/20 rounded-lg flex items-center justify-center">
                       <i className="fas fa-credit-card text-blue-400 text-xs"></i>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-white text-xs">Cartão de Crédito</h3>
+                      <h3 className="font-semibold text-white text-sm">Cartão de Crédito</h3>
                       <p className="text-gray-400 text-xs">Visa, Mastercard, Elo</p>
                     </div>
                     <div className={`w-3 h-3 rounded-full border-2 ${
@@ -186,17 +186,17 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
           </div>
 
           {/* Resumo do Pedido */}
-          <div className="lg:col-span-2 space-y-1.5">
-            <div className="premium-card p-1.5">
-              <h2 className="text-xs font-semibold text-premium mb-1.5">Resumo do Pedido</h2>
+          <div className="lg:col-span-2 space-y-2">
+            <div className="premium-card p-2">
+              <h2 className="text-sm font-semibold text-premium mb-2">Resumo do Pedido</h2>
               
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between p-1.5 bg-gray-800/30 rounded-lg">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 bg-gray-800/30 rounded-lg">
                   <div>
-                    <h3 className="font-semibold text-white text-xs">{currentPlan.name}</h3>
+                    <h3 className="font-semibold text-white text-sm">{currentPlan.name}</h3>
                     <p className="text-gray-400 text-xs">Plano mensal</p>
                   </div>
-                  <span className="text-sm font-bold text-premium">R$ {currentPlan.price}</span>
+                  <span className="text-base font-bold text-premium">R$ {currentPlan.price}</span>
                 </div>
 
                 <div className="space-y-1">
@@ -210,8 +210,8 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
                   </div>
                   <div className="border-t border-gray-600 pt-1">
                     <div className="flex justify-between">
-                      <span className="font-semibold text-white text-xs">Total:</span>
-                      <span className="text-sm font-bold text-premium">R$ {currentPlan.price}</span>
+                      <span className="font-semibold text-white text-sm">Total:</span>
+                      <span className="text-lg font-bold text-premium">R$ {currentPlan.price}</span>
                     </div>
                   </div>
                 </div>
@@ -219,11 +219,11 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
             </div>
 
             {/* Botão de Pagamento */}
-            <div className="premium-card p-1.5">
+            <div className="premium-card p-2">
               <button
                 onClick={handlePayment}
                 disabled={isProcessing}
-                className={`w-full py-1.5 rounded-lg font-semibold text-white transition-all text-xs ${
+                className={`w-full py-2 rounded-lg font-semibold text-white transition-all text-sm ${
                   isProcessing 
                     ? 'bg-gray-600 cursor-not-allowed' 
                     : 'bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 transform hover:scale-105'
@@ -251,7 +251,7 @@ const CheckoutPage = ({ addNotification }: CheckoutPageProps) => {
             </div>
 
             {/* Informações de Segurança */}
-            <div className="premium-card p-1.5">
+            <div className="premium-card p-2">
               <h3 className="text-xs font-semibold text-premium mb-1">Por que escolher o Mercado Pago?</h3>
               
               <div className="space-y-1">

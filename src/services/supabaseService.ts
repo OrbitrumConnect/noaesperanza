@@ -1,18 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Configuração do Supabase
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY
-
-// Validação de configuração
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Configuração do Supabase não encontrada. Verifique as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY')
-}
+const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://lhclqebtkyfftkevumix.supabase.co'
+const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY || 'your-anon-key'
+const supabaseProjectId = (import.meta as any).env?.VITE_SUPABASE_PROJECT_ID || 'lhclqebtkyfftkevumix'
 
 console.log('🔧 Supabase configurado:', { 
   url: supabaseUrl, 
-  hasAnonKey: !!supabaseAnonKey
+  projectId: supabaseProjectId,
+  hasAnonKey: !!supabaseAnonKey,
+  isDefaultUrl: supabaseUrl === 'https://lhclqebtkyfftkevumix.supabase.co'
 })
+
+if (!supabaseUrl || !supabaseAnonKey || supabaseAnonKey === 'your-anon-key') {
+  console.warn('⚠️ Configuração do Supabase não encontrada. Verifique o arquivo .env')
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
@@ -523,3 +525,11 @@ export class DataService {
 // Instâncias dos serviços
 export const authService = new AuthService()
 export const dataService = new DataService()
+
+// Stub para compatibilidade com noaGPT
+export const supabaseService = {
+  async salvarArquivoViaTexto(message: string): Promise<string> {
+    console.log('📁 Supabase Service: Funcionalidade em desenvolvimento')
+    return `💾 Supabase: Funcionalidade em desenvolvimento. Comando recebido: "${message}"`
+  }
+}
