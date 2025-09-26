@@ -525,3 +525,11 @@ export class DataService {
 // Instâncias dos serviços
 export const authService = new AuthService()
 export const dataService = new DataService()
+
+// Stub para compatibilidade com noaGPT
+export const supabaseService = {
+  async salvarArquivoViaTexto(message: string): Promise<string> {
+    console.log('📁 Supabase Service: Funcionalidade em desenvolvimento')
+    return `💾 Supabase: Funcionalidade em desenvolvimento. Comando recebido: "${message}"`
+  }
+}

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Header from './components/Header'
-import Sidebar from './components/Sidebar'
+// Sidebar removido - chat limpo sem sidebar
 import Footer from './components/Footer'
 import HomeFooter from './components/HomeFooter'
 import PremiumBackground from './components/PremiumBackground'
@@ -25,6 +25,10 @@ import MeusExames from './pages/MeusExames'
 import Prescricoes from './pages/Prescricoes'
 import Prontuario from './pages/Prontuario'
 import PagamentosPaciente from './pages/PagamentosPaciente'
+import AvaliacaoClinica from './pages/AvaliacaoClinica'
+import Ensino from './pages/Ensino'
+import Pesquisa from './pages/Pesquisa'
+import MedCannLab from './pages/MedCannLab'
 
 export type Specialty = 'rim' | 'neuro' | 'cannabis'
 
@@ -46,7 +50,14 @@ function App() {
       type,
       timestamp: new Date()
     }
-    setNotifications(prev => [newNotification, ...prev.slice(0, 9)]) // Máximo 10 notificações
+    setNotifications(prev => [newNotification, ...prev.slice(0, 2)]) // Máximo 3 notificações
+    
+    // Auto-remove notificação após 4 segundos (exceto erros)
+    if (type !== 'error') {
+      setTimeout(() => {
+        removeNotification(newNotification.id)
+      }, 4000)
+    }
   }, [])
 
   // Remove notificação
@@ -54,25 +65,8 @@ function App() {
     setNotifications(prev => prev.filter(notif => notif.id !== id))
   }
 
-  // Efeito para simular notificações em tempo real
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const messages = [
-        'Novo paciente cadastrado',
-        'Consulta reagendada',
-        'Prescrição atualizada',
-        'Alerta de medicação',
-        'Resultado de exame disponível'
-      ]
-      
-      if (Math.random() < 0.3) { // 30% de chance
-        const randomMessage = messages[Math.floor(Math.random() * messages.length)]
-        addNotification(randomMessage, 'info')
-      }
-    }, 45000) // A cada 45 segundos
-
-    return () => clearInterval(interval)
-  }, [])
+  // Removido: Notificações automáticas que poluíam a tela
+  // Agora apenas notificações importantes são mostradas
 
   // Contexto global da aplicação
   const appContext = {
@@ -102,28 +96,16 @@ function App() {
       {/* Container Principal */}
       <div className="pt-16 pb-20 h-full overflow-hidden"> {/* Padding para compensar header fixo e footer fixo */}
         <Routes>
-          {/* Página inicial com layout completo */}
+          {/* Página inicial - Chat limpo sem Sidebar */}
           <Route path="/" element={
-            <div className="flex h-full overflow-hidden">
-              {/* Sidebar */}
-              <div className="w-80 flex-shrink-0">
-                <Sidebar 
-                  currentSpecialty={currentSpecialty}
-                  isVoiceListening={isVoiceListening}
-                  setIsVoiceListening={setIsVoiceListening}
-                  addNotification={addNotification}
-                />
-              </div>
-              
-              {/* Área Central - Chat */}
-              <div className="flex-1 relative z-50">
-                <Home 
-                  currentSpecialty={currentSpecialty}
-                  isVoiceListening={isVoiceListening}
-                  setIsVoiceListening={setIsVoiceListening}
-                  addNotification={addNotification}
-                />
-              </div>
+            <div className="h-full overflow-hidden">
+              {/* Chat Central - Tela Cheia */}
+              <Home 
+                currentSpecialty={currentSpecialty}
+                isVoiceListening={isVoiceListening}
+                setIsVoiceListening={setIsVoiceListening}
+                addNotification={addNotification}
+              />
             </div>
           } />
 
@@ -189,6 +171,12 @@ function App() {
           <Route path="/prontuario" element={<Prontuario />} />
           <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
 
+          {/* Páginas de Ensino e Pesquisa */}
+          <Route path="/avaliacao-clinica" element={<AvaliacaoClinica />} />
+          <Route path="/ensino" element={<Ensino />} />
+          <Route path="/pesquisa" element={<Pesquisa />} />
+          <Route path="/medcann-lab" element={<MedCannLab />} />
+
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -199,16 +187,16 @@ function App() {
         <HomeFooter />
       </div>
 
-          {/* Notificações Toast */}
+          {/* Notificações Toast - Mais discretas */}
           <div className="fixed top-20 right-4 z-50 space-y-2">
-            {notifications.slice(0, 5).map(notification => (
+            {notifications.slice(0, 3).map(notification => (
               <div
                 key={notification.id}
-                className={`premium-glass p-4 rounded-lg border-l-4 transform transition-all duration-300 animate-pulse ${
-                  notification.type === 'error' ? 'border-red-500' :
-                  notification.type === 'warning' ? 'border-yellow-500' :
-                  notification.type === 'success' ? 'border-green-500' :
-                  'border-blue-500'
+                className={`premium-glass p-3 rounded-lg border-l-4 transform transition-all duration-500 opacity-90 hover:opacity-100 ${
+                  notification.type === 'error' ? 'border-red-500 bg-red-500/10' :
+                  notification.type === 'warning' ? 'border-yellow-500 bg-yellow-500/10' :
+                  notification.type === 'success' ? 'border-green-500 bg-green-500/10' :
+                  'border-blue-500 bg-blue-500/10'
                 }`}
                 onClick={() => removeNotification(notification.id)}
               >
@@ -218,8 +206,8 @@ function App() {
                     notification.type === 'warning' ? 'exclamation-triangle text-yellow-400' :
                     notification.type === 'success' ? 'check-circle text-green-400' :
                     'info-circle text-blue-400'
-                  }`}></i>
-                  <span className="text-sm font-medium">{notification.message}</span>
+                  } text-xs`}></i>
+                  <span className="text-xs font-medium">{notification.message}</span>
                 </div>
               </div>
             ))}

@@ -6,6 +6,7 @@ import { elevenLabsService } from '../services/elevenLabsService'
 import { dataService } from '../services/supabaseService'
 import { aiLearningService } from '../services/aiLearningService'
 import { cleanTextForAudio } from '../utils/textUtils'
+import { NoaGPT } from '../gpt/noaGPT'
 
 interface Message {
   id: string
@@ -174,6 +175,9 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  
+  // Estado do NoaGPT
+  const [noaGPT, setNoaGPT] = useState<NoaGPT | null>(null)
 
   // Estados para Avaliação Clínica Triaxial
   const [modoAvaliacao, setModoAvaliacao] = useState(false)
@@ -243,42 +247,13 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     scrollToBottom()
   }, [messages])
 
-  // Detecta primeira interação do usuário para permitir áudio
+  // Áudio liberado automaticamente - sem necessidade de primeira interação
   useEffect(() => {
-    const handleFirstInteraction = () => {
-      setUserInteracted(true)
-      document.removeEventListener('click', handleFirstInteraction)
-      document.removeEventListener('keydown', handleFirstInteraction)
-      document.removeEventListener('touchstart', handleFirstInteraction)
-      
-      // Ativa microfone automaticamente após primeira interação
-      console.log('🎤 Primeira interação detectada, ativando microfone em 1.5 segundos...')
-      setTimeout(() => {
-        if (!isVoiceListening) {
-          console.log('🎤 Ativação automática inicial do microfone')
-          startVoiceRecognition()
-        }
-      }, 1500) // Reduzido de 3s para 1.5s - mais responsivo
-    }
-
-    document.addEventListener('click', handleFirstInteraction)
-    document.addEventListener('keydown', handleFirstInteraction)
-    document.addEventListener('touchstart', handleFirstInteraction)
-
-    return () => {
-      document.removeEventListener('click', handleFirstInteraction)
-      document.removeEventListener('keydown', handleFirstInteraction)
-      document.removeEventListener('touchstart', handleFirstInteraction)
-    }
+    setUserInteracted(true) // Libera áudio imediatamente
   }, [])
 
-  // Removido: Inicialização automática de mensagem - ChatGPT será completamente livre
-  // useEffect(() => {
-  //   if (messages.length === 0) {
-  //     // Chama ChatGPT para gerar mensagem inicial
-  //     getNoaResponse('iniciar conversa')
-  //   }
-  // }, [userMemory.name])
+  // Chat limpo - sem mensagem inicial automática
+  // O usuário pode começar a conversa naturalmente
 
   // Toca áudio da mensagem inicial da NOA
   useEffect(() => {
@@ -380,25 +355,27 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
           .slice(-8) // Mantém apenas as últimas 8 mensagens + contexto do sistema
       ]
 
-      // Chama OpenAI para gerar resposta (ChatGPT é o agente de resposta)
-      console.log('🤖 ChatGPT gerando resposta da NOA...')
-      console.log('📋 Instruções enviadas para ChatGPT:', systemContext.substring(0, 200) + '...')
-      const response = await openAIService.getNoaResponse(userMessage, conversationHistory)
-      console.log('✅ ChatGPT respondeu:', response.substring(0, 100) + '...')
+      // Chama NoaGPT para gerar resposta (sistema integrado de agentes)
+      console.log('🤖 NoaGPT processando comando...')
+      console.log('📋 Mensagem do usuário:', userMessage.substring(0, 100) + '...')
       
-      // Opções padrão para conversas gerais
-      const defaultOptions = [
-        'Avaliação inicial',
-        'Fazer uma pergunta sobre saúde',
-        'Como você está?'
-      ]
+      // Inicializa o NoaGPT se ainda não foi criado
+      let currentNoaGPT = noaGPT
+      if (!currentNoaGPT) {
+        currentNoaGPT = new NoaGPT()
+        setNoaGPT(currentNoaGPT)
+      }
       
+      const response = await currentNoaGPT.processCommand(userMessage)
+      console.log('✅ NoaGPT respondeu:', response.substring(0, 100) + '...')
+      
+      // Chat limpo - sem comandos clicáveis automáticos
       const noaMessage: Message = {
         id: crypto.randomUUID(),
         message: response,
         sender: 'noa',
-        timestamp: new Date(),
-        options: defaultOptions
+        timestamp: new Date()
+        // options removidas para chat limpo
       }
       
       setMessages(prev => [...prev, noaMessage])
@@ -706,78 +683,52 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     const recognition = new SpeechRecognition()
 
-    recognition.continuous = true // Permite interrupção
-    recognition.interimResults = true // Detecta fala em tempo real
+    recognition.continuous = false // Para após capturar uma frase (evita eco)
+    recognition.interimResults = false // Não mostra texto intermediário (evita eco)
     recognition.lang = 'pt-BR'
     recognition.maxAlternatives = 1 // Melhor precisão
-    recognition.serviceURI = 'wss://www.google.com/speech-api/full-duplex/v1/up' // Melhor performance
     
-    // Variável para acumular texto durante a fala
-    let accumulatedText = ''
+    // Reconhecimento single-shot para evitar eco
 
     recognition.onstart = () => {
-      console.log('🎤 Reconhecimento de voz iniciado (modo contínuo)')
-      // Removido: addNotification('🎤 Microfone ativo! Fale quando quiser interromper a NOA!', 'success')
+      console.log('🎤 Reconhecimento de voz iniciado (modo single-shot)')
+      // Removido: addNotification('🎤 Microfone ativo! Fale uma frase!', 'success')
     }
 
     recognition.onresult = (event: any) => {
+      // Para o reconhecimento imediatamente para evitar eco
+      recognition.stop()
+      
       let finalTranscript = ''
-      let interimTranscript = ''
-
-      // Processa resultados finais e intermediários
+      
+      // Processa apenas resultados finais
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript
         if (event.results[i].isFinal) {
-          finalTranscript += transcript
-        } else {
-          interimTranscript += transcript
+          finalTranscript += event.results[i][0].transcript
         }
       }
 
-      // Se há fala detectada (interim ou final), interrompe áudio da NOA
-      if (interimTranscript || finalTranscript) {
-        // Só interrompe se não estiver tocando áudio da NOA
-        if (!audioPlaying) {
-          console.log('🗣️ Usuário falando detectado, interrompendo áudio da NOA...')
-          
-          // Para o áudio atual da NOA
-          if (currentAudioRef.current) {
-            currentAudioRef.current.pause()
-            currentAudioRef.current = null
-            setAudioPlaying(false)
-            console.log('⏹️ Áudio da NOA interrompido')
-          }
-        } else {
-          console.log('🔇 NOA está falando, ignorando detecção de voz')
+      // Só processa se não estiver tocando áudio da NOA (evita eco)
+      if (finalTranscript && !audioPlaying) {
+        console.log('🎤 Texto reconhecido:', finalTranscript)
+        
+        // Para o áudio da NOA se estiver tocando
+        if (currentAudioRef.current) {
+          currentAudioRef.current.pause()
+          currentAudioRef.current = null
+          setAudioPlaying(false)
+          console.log('⏹️ Áudio da NOA interrompido')
         }
-      }
-
-      // Mostra texto intermediário em tempo real (sem processar ainda)
-      if (interimTranscript) {
-        console.log('🎤 Texto em tempo real:', interimTranscript)
-        setInputMessage(interimTranscript)
-        // Removido: addNotification(`🎤 Escutando: "${interimTranscript}"`, 'info')
-      }
-
-      // Se há resultado final, processa imediatamente (mais rápido)
-      if (finalTranscript) {
-        console.log('🎤 Texto final reconhecido:', finalTranscript)
-        
-        // Para o reconhecimento primeiro
-        recognition.stop()
-        
-        // Processa imediatamente para ser mais rápido
-        console.log('✅ Processando mensagem final imediatamente:', finalTranscript)
         
         setInputMessage(finalTranscript)
-        // Removido: addNotification(`✅ Processando: "${finalTranscript}"`, 'success')
         
-        // Envia automaticamente a mensagem (sem delay)
-        console.log('📤 Enviando mensagem automaticamente...')
+        // Envia automaticamente a mensagem
+        console.log('📤 Enviando mensagem de voz...')
         handleSendMessage(finalTranscript)
         
-        // Atualiza estado após envio
         setIsVoiceListening(false)
+      } else if (audioPlaying) {
+        console.log('🔇 NOA está falando, ignorando detecção de voz para evitar eco')
       }
     }
 
@@ -830,11 +781,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
     try {
       console.log('🎵 ElevenLabs gerando APENAS áudio:', { userInteracted, audioPlaying, text: text.substring(0, 50) + '...' })
       
-      // Se o usuário ainda não interagiu, não toca áudio
-      if (!userInteracted) {
-        console.log('⏳ Aguardando interação do usuário para tocar áudio...')
-        return
-      }
+      // Áudio sempre disponível - sem necessidade de liberação
       
       // Se já está tocando áudio, não toca outro
       if (audioPlaying) {
@@ -935,20 +882,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                     }`}>
                       <p className="text-sm leading-relaxed whitespace-pre-line">{message.message}</p>
                       
-                      {/* Opções de resposta rápida */}
-                      {message.options && message.sender === 'noa' && (
-                        <div className="mt-3 space-y-1">
-                          {message.options.map((option, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleOptionClick(option)}
-                              className="block w-full text-left text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 rounded px-2 py-1 transition-colors"
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                      {/* Chat limpo - sem comandos clicáveis */}
                       
                       <span className="text-xs opacity-70 mt-1 block">
                         {formatTime(message.timestamp)}
