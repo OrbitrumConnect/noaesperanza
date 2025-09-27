@@ -987,8 +987,8 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       
       {/* Layout Principal */}
       <div className="w-full h-full flex relative z-0">
-        {/* Sidebar Esquerdo - Chat */}
-        <div className="w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[79.5vh] overflow-y-auto z-10">
+        {/* Sidebar Esquerdo - Chat - Desktop */}
+        <div className="w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[79.5vh] overflow-y-auto z-10 hidden md:block">
           {/* Balão de Pensamento */}
           <div className="h-full flex flex-col">
             <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 flex-1 flex flex-col">
@@ -1088,7 +1088,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
 
         {/* Área Central - NOA e Pensamentos */}
         <div 
-          className="flex-1 flex items-center justify-center relative min-h-screen ml-80 w-full" 
+          className="flex-1 flex items-center justify-center relative min-h-screen md:ml-80 ml-0 w-full" 
           style={{ transform: 'translate(-10%, -95%)', pointerEvents: 'auto' }}
           onClick={(e) => {
             console.log('🎯 CLIQUE NO CONTAINER PRINCIPAL!', e.target);
@@ -1176,6 +1176,62 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
               )
             })}
           </AnimatePresence>
+        </div>
+
+        {/* Chat Mobile - Entre NOA e rodapé */}
+        <div className="block md:hidden w-full border-t border-white/20 bg-white/10 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 max-h-64 flex flex-col">
+            {/* Área de Mensagens Mobile */}
+            <div className="space-y-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 max-h-32">
+              {messages.slice(-3).map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                      message.sender === 'user'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 text-gray-800'
+                    }`}
+                  >
+                    {message.message}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Input Mobile */}
+            <div className="flex gap-2 mt-3 flex-col">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder="Digite sua mensagem..."
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-600 w-full"
+              />
+              <div className="flex gap-2 w-full">
+                <button
+                  onClick={() => handleSendMessage()}
+                  disabled={isProcessing || !inputMessage.trim()}
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors text-sm ${
+                    isProcessing || !inputMessage.trim()
+                      ? 'bg-gray-400 cursor-not-allowed text-white'
+                      : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                >
+                  {isProcessing ? 'Enviando...' : 'Enviar'}
+                </button>
+                <button
+                  onClick={() => setIsVoiceListening(!isVoiceListening)}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                >
+                  {isVoiceListening ? 'Parar' : 'Falar'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
   )
