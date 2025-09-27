@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Specialty } from '../App'
+import Sidebar from '../components/Sidebar'
 
 interface DashboardMedicoProps {
   currentSpecialty: Specialty
@@ -39,6 +40,52 @@ const DashboardMedico = ({ currentSpecialty, addNotification }: DashboardMedicoP
   const handleActionClick = (action: string) => {
     addNotification(`Ação "${action}" executada para ${currentData.name}`, 'success')
   }
+
+  // Itens da sidebar para médicos
+  const sidebarItems = [
+    {
+      id: 'prescricoes',
+      label: 'Prescrições',
+      icon: 'fa-prescription',
+      color: 'green',
+      action: () => handleActionClick('Prescrições')
+    },
+    {
+      id: 'exames',
+      label: 'Exames',
+      icon: 'fa-vials',
+      color: 'blue',
+      action: () => handleActionClick('Exames')
+    },
+    {
+      id: 'prontuarios',
+      label: 'Prontuários',
+      icon: 'fa-file-medical',
+      color: 'purple',
+      action: () => handleActionClick('Prontuários')
+    },
+    {
+      id: 'relatorios',
+      label: 'Relatórios',
+      icon: 'fa-chart-bar',
+      color: 'yellow',
+      action: () => handleActionClick('Relatórios')
+    },
+    {
+      id: 'agenda',
+      label: 'Agenda',
+      icon: 'fa-calendar-alt',
+      color: 'blue',
+      action: () => handleActionClick('Agenda')
+    },
+    {
+      id: 'pacientes',
+      label: 'Pacientes',
+      icon: 'fa-users',
+      color: 'green',
+      action: () => handleActionClick('Lista de Pacientes')
+    }
+  ]
 
   return (
     <div className="h-full overflow-hidden">
@@ -81,51 +128,22 @@ const DashboardMedico = ({ currentSpecialty, addNotification }: DashboardMedicoP
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-3 h-full">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 h-full items-start">
-          {/* Acesso Rápido - Lateral Esquerda */}
-          <div className="lg:col-span-1">
-            <div className="premium-card p-3">
-              <h3 className="text-premium text-base font-semibold mb-3">Acesso Rápido</h3>
-              
-              <div className="space-y-3">
-                <button
-                  onClick={() => handleActionClick('Prescrições')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
-                >
-                  <i className="fas fa-prescription text-green-400 text-base"></i>
-                  <span className="text-base text-gray-300">Prescrições</span>
-                </button>
-                
-                <button
-                  onClick={() => handleActionClick('Exames')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
-                >
-                  <i className="fas fa-vials text-blue-400 text-base"></i>
-                  <span className="text-base text-gray-300">Exames</span>
-                </button>
-                
-                <button
-                  onClick={() => handleActionClick('Prontuários')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
-                >
-                  <i className="fas fa-file-medical text-purple-400 text-base"></i>
-                  <span className="text-base text-gray-300">Prontuários</span>
-                </button>
-                
-                <button
-                  onClick={() => handleActionClick('Relatórios')}
-                  className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4"
-                >
-                  <i className="fas fa-chart-bar text-yellow-400 text-base"></i>
-                  <span className="text-base text-gray-300">Relatórios</span>
-                </button>
-              </div>
-            </div>
-          </div>
+      <div className="h-full flex">
+        {/* Sidebar Fixa - Lateral Esquerda */}
+        <div className="w-80 flex-shrink-0 bg-white/10 backdrop-blur-sm border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[79.5vh] overflow-y-auto z-20">
+          <Sidebar 
+            title="Acesso Rápido" 
+            items={sidebarItems}
+            className="h-full"
+          />
+        </div>
 
-          {/* Métricas Principais */}
-          <div className="lg:col-span-2 space-y-3">
+        {/* Conteúdo Principal */}
+        <div className="flex-1 ml-80 p-4 h-full overflow-y-auto">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 h-full items-start">
+              {/* Métricas Principais */}
+              <div className="lg:col-span-2 space-y-3">
             {/* Cards de Métricas */}
             <div className="premium-card p-3">
               <div className="grid grid-cols-3 gap-3">
@@ -214,8 +232,8 @@ const DashboardMedico = ({ currentSpecialty, addNotification }: DashboardMedicoP
             </div>
           </div>
 
-          {/* Painel Lateral */}
-          <div className="space-y-2">
+              {/* Painel Lateral */}
+              <div className="lg:col-span-1 space-y-2">
             {/* Agenda do Dia */}
             <div className="premium-card p-2">
               <h3 className="text-premium text-sm font-semibold mb-2">Agenda de Hoje</h3>
@@ -245,6 +263,8 @@ const DashboardMedico = ({ currentSpecialty, addNotification }: DashboardMedicoP
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
               </div>
             </div>
           </div>

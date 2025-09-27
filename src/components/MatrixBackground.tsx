@@ -52,8 +52,8 @@ const MatrixBackground: React.FC<MatrixBackgroundProps> = ({
       // Velocidades variadas (ainda mais lentas)
       speeds[i] = 0.1 + Math.random() * 0.4; // Entre 0.1 e 0.5
       
-      // Brilhos variados (neon mais forte em algumas - mais aceso)
-      brightness[i] = 0.4 + Math.random() * 0.6; // Entre 0.4 e 1.0 (mais brilhante)
+      // Brilho uniforme para todas as linhas
+      brightness[i] = 0.8; // Brilho fixo para todas as linhas (aumentado 10%)
     }
 
     const draw = () => {
@@ -74,15 +74,15 @@ const MatrixBackground: React.FC<MatrixBackgroundProps> = ({
         if (shouldDraw && drops[i] > 0) {
           const text = charArray[Math.floor(Math.random() * charArray.length)];
           
-          // Aplicar brilho neon variado
+          // Aplicar brilho neon uniforme
           const neonIntensity = brightness[i];
           const r = Math.floor(0 * neonIntensity);
           const g = Math.floor(255 * neonIntensity);
           const b = Math.floor(68 * neonIntensity);
           
-          // Efeito neon com sombra (mais forte para linhas brilhantes)
+          // Efeito neon com sombra uniforme
           ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${neonIntensity})`;
-          ctx.shadowBlur = 20 * neonIntensity; // Aumentado para 20
+          ctx.shadowBlur = 18; // Brilho fixo para todas as linhas (aumentado 10%)
           ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
           
           ctx.fillText(text, i * fontSize, drops[i] * fontSize);

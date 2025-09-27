@@ -982,8 +982,8 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
 
   return (
     <div className="h-full overflow-hidden relative">
-      {/* Background Matrix - DESABILITADO TEMPORARIAMENTE PARA DEBUG */}
-      {/* <MatrixBackground isActive={matrixActive} opacity={0.05} /> */}
+      {/* Background Matrix */}
+      <MatrixBackground isActive={matrixActive} opacity={0.05} />
       
       {/* Layout Principal */}
       <div className="w-full h-full flex relative z-0">
