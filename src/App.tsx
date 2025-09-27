@@ -82,7 +82,7 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <div className="app-wrapper h-screen overflow-hidden" style={{
+        <div className="h-screen overflow-hidden" style={{
           background: 'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)'
         }}>
       

@@ -988,7 +988,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       {/* Layout Principal */}
       <div className="w-full h-full flex relative z-0">
         {/* Sidebar Esquerdo - Chat */}
-        <div className="w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[79.5vh] overflow-y-auto z-10">
+        <div className="sidebar-mobile w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[79.5vh] overflow-y-auto z-10">
           {/* Balão de Pensamento */}
           <div className="h-full flex flex-col">
             <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 flex-1 flex flex-col">
