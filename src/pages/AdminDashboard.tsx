@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getAdminMetrics, getRecentUsers, getSystemStats, AdminMetrics } from '../services/supabaseService'
+import AILearningDashboard from '../components/AILearningDashboard'
+import DocumentUploadModal from '../components/DocumentUploadModal'
+import ManualTrainingModal from '../components/ManualTrainingModal'
 
 interface AdminDashboardProps {
   addNotification: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void
@@ -20,6 +23,9 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
   const [loading, setLoading] = useState(true)
   const [recentUsers, setRecentUsers] = useState<any[]>([])
   const [systemStats, setSystemStats] = useState<any>({ aiStats: [], topKeywords: [] })
+  const [showAILearningDashboard, setShowAILearningDashboard] = useState(false)
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false)
+  const [showManualTraining, setShowManualTraining] = useState(false)
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -217,15 +223,51 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
               <span className="text-xs font-medium text-white">Analytics</span>
             </button>
 
-            <button className="flex flex-col items-center p-1 border border-gray-600 rounded-lg hover:bg-purple-500/10 transition-colors">
+            <button 
+              onClick={() => setShowAILearningDashboard(true)}
+              className="flex flex-col items-center p-1 border border-gray-600 rounded-lg hover:bg-purple-500/10 transition-colors"
+            >
               <div className="w-6 h-6 bg-purple-500/20 rounded-lg flex items-center justify-center mb-1">
-                <i className="fas fa-cogs text-purple-400 text-xs"></i>
+                <i className="fas fa-brain text-purple-400 text-xs"></i>
               </div>
-              <span className="text-xs font-medium text-white">Sistema</span>
+              <span className="text-xs font-medium text-white">IA Learning</span>
+            </button>
+
+            <button 
+              onClick={() => setShowDocumentUpload(true)}
+              className="flex flex-col items-center p-1 border border-gray-600 rounded-lg hover:bg-orange-500/10 transition-colors"
+            >
+              <div className="w-6 h-6 bg-orange-500/20 rounded-lg flex items-center justify-center mb-1">
+                <i className="fas fa-upload text-orange-400 text-xs"></i>
+              </div>
+              <span className="text-xs font-medium text-white">Upload Docs</span>
+            </button>
+
+            <button 
+              onClick={() => setShowManualTraining(true)}
+              className="flex flex-col items-center p-1 border border-gray-600 rounded-lg hover:bg-red-500/10 transition-colors"
+            >
+              <div className="w-6 h-6 bg-red-500/20 rounded-lg flex items-center justify-center mb-1">
+                <i className="fas fa-edit text-red-400 text-xs"></i>
+              </div>
+              <span className="text-xs font-medium text-white">Treinar IA</span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Modais de IA */}
+      {showAILearningDashboard && (
+        <AILearningDashboard onClose={() => setShowAILearningDashboard(false)} />
+      )}
+
+      {showDocumentUpload && (
+        <DocumentUploadModal onClose={() => setShowDocumentUpload(false)} />
+      )}
+
+      {showManualTraining && (
+        <ManualTrainingModal onClose={() => setShowManualTraining(false)} />
+      )}
     </div>
   )
 }

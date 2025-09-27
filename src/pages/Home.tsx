@@ -1127,8 +1127,13 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                 loop
                 muted
                 playsInline
+                ref={(video) => {
+                  if (video) {
+                    video.playbackRate = 0.8;
+                  }
+                }}
               >
-                <source src="./Noafalando.mp4" type="video/mp4" />
+                <source src="./AGENTEFALANDO.mp4?v=2" type="video/mp4" />
               </video>
             </div>
             {/* Botão para parar áudio */}
