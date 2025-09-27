@@ -2,17 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { useAuth } from '../contexts/AuthContext'
 import { Specialty } from '../App'
 
 const LandingPage = () => {
   const [currentFeature, setCurrentFeature] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
-  const [showRegisterModal, setShowRegisterModal] = useState(false)
-  const [showLoginModal, setShowLoginModal] = useState(false)
   const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('rim')
   
-  const { signUp, signIn } = useAuth()
 
   useEffect(() => {
     setIsVisible(true)
@@ -125,18 +121,18 @@ const LandingPage = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <button 
-                onClick={() => setShowLoginModal(true)}
-                className="px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300"
+              <Link 
+                to="/login"
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300 text-center"
               >
                 Começar Agora
-              </button>
-              <button 
-                onClick={() => setShowRegisterModal(true)}
-                className="px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300"
+              </Link>
+              <Link 
+                to="/register"
+                className="px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300 text-center"
               >
                 Cadastrar-se
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -282,18 +278,18 @@ const LandingPage = () => {
             Junte-se a milhares de pacientes e médicos que já confiam na NOA Esperanza
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
-              onClick={() => setShowRegisterModal(true)}
-              className="px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transform hover:scale-105 transition-all duration-300"
+            <Link 
+              to="/register"
+              className="px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 text-center"
             >
               Começar Gratuitamente
-            </button>
-            <button 
-              onClick={() => setShowLoginModal(true)}
-              className="px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300"
+            </Link>
+            <Link 
+              to="/login"
+              className="px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300 text-center"
             >
               Já tenho conta
-            </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -301,339 +297,7 @@ const LandingPage = () => {
       {/* Footer */}
       <Footer />
 
-      {/* Modal de Cadastro */}
-      {showRegisterModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="premium-card p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white">Criar Conta</h2>
-              <button 
-                onClick={() => setShowRegisterModal(false)}
-                className="text-gray-400 hover:text-white text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            
-            <RegisterForm onSuccess={() => setShowRegisterModal(false)} />
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Login */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="premium-card p-8 max-w-md w-full">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white">Entrar</h2>
-              <button 
-                onClick={() => setShowLoginModal(false)}
-                className="text-gray-400 hover:text-white text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            
-            <LoginForm onSuccess={() => setShowLoginModal(false)} />
-          </div>
-        </div>
-      )}
     </div>
-  )
-}
-
-// Componente de Formulário de Cadastro
-const RegisterForm = ({ onSuccess }: { onSuccess: () => void }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'patient' as 'patient' | 'doctor' | 'admin',
-    specialty: 'rim' as Specialty,
-    crm: '',
-    phone: ''
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  
-  const { signUp } = useAuth()
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!formData.name || !formData.email || !formData.password) {
-      setError('Por favor, preencha todos os campos obrigatórios')
-      return
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('As senhas não coincidem')
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres')
-      return
-    }
-
-    if (formData.role === 'doctor' && !formData.crm) {
-      setError('CRM é obrigatório para médicos')
-      return
-    }
-
-    try {
-      setError('')
-      setLoading(true)
-      
-      const userData = {
-        name: formData.name,
-        role: formData.role,
-        specialty: formData.role === 'doctor' ? formData.specialty : undefined
-      }
-
-      await signUp(formData.email, formData.password, userData)
-      onSuccess()
-    } catch (error: any) {
-      setError(error.message || 'Erro ao criar conta')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-          <p className="text-red-400 text-sm">{error}</p>
-        </div>
-      )}
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Nome Completo *</label>
-        <input
-          name="name"
-          type="text"
-          value={formData.name}
-          onChange={handleChange}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400"
-          placeholder="Seu nome completo"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
-        <input
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400"
-          placeholder="seu@email.com"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Tipo de Usuário *</label>
-        <select
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-400"
-          required
-        >
-          <option value="patient">Paciente</option>
-          <option value="doctor">Médico</option>
-          <option value="admin">Administrador</option>
-        </select>
-      </div>
-
-      {formData.role === 'doctor' && (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Especialidade *</label>
-            <select
-              name="specialty"
-              value={formData.specialty}
-              onChange={handleChange}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-green-400"
-              required
-            >
-              <option value="rim">Nefrologia</option>
-              <option value="neuro">Neurologia</option>
-              <option value="cannabis">Cannabis Medicinal</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">CRM *</label>
-            <input
-              name="crm"
-              type="text"
-              value={formData.crm}
-              onChange={handleChange}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400"
-              placeholder="123456"
-              required
-            />
-          </div>
-        </>
-      )}
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
-        <input
-          name="phone"
-          type="tel"
-          value={formData.phone}
-          onChange={handleChange}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400"
-          placeholder="(11) 99999-9999"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Senha *</label>
-        <input
-          name="password"
-          type="password"
-          value={formData.password}
-          onChange={handleChange}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400"
-          placeholder="••••••••"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Confirmar Senha *</label>
-        <input
-          name="confirmPassword"
-          type="password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400"
-          placeholder="••••••••"
-          required
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className={`w-full py-3 rounded-lg font-semibold text-white transition-all ${
-          loading 
-            ? 'bg-gray-600 cursor-not-allowed' 
-            : 'bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600'
-        }`}
-      >
-        {loading ? 'Criando conta...' : 'Criar Conta'}
-      </button>
-    </form>
-  )
-}
-
-// Componente de Formulário de Login
-const LoginForm = ({ onSuccess }: { onSuccess: () => void }) => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  
-  const { signIn } = useAuth()
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!email || !password) {
-      setError('Por favor, preencha todos os campos')
-      return
-    }
-
-    try {
-      setError('')
-      setLoading(true)
-      await signIn(email, password)
-      onSuccess()
-    } catch (error: any) {
-      setError(error.message || 'Erro ao fazer login')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-          <p className="text-red-400 text-sm">{error}</p>
-        </div>
-      )}
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400"
-          placeholder="seu@email.com"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Senha</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400"
-          placeholder="••••••••"
-          required
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className={`w-full py-3 rounded-lg font-semibold text-white transition-all ${
-          loading 
-            ? 'bg-gray-600 cursor-not-allowed' 
-            : 'bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600'
-        }`}
-      >
-        {loading ? 'Entrando...' : 'Entrar'}
-      </button>
-
-      {/* Demo Accounts */}
-      <div className="mt-4 p-3 bg-gray-800/50 rounded-lg">
-        <h4 className="text-sm font-medium text-gray-300 mb-2">Contas Demo:</h4>
-        <div className="space-y-1 text-xs">
-          <div className="flex justify-between">
-            <span className="text-gray-400">Admin:</span>
-            <span className="text-yellow-400">phpg69@gmail.com / p6p7p8P9!</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Médico:</span>
-            <span className="text-green-400">medico@noa.com / 123456</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Paciente:</span>
-            <span className="text-blue-400">paciente@noa.com / 123456</span>
-          </div>
-        </div>
-      </div>
-    </form>
   )
 }
 

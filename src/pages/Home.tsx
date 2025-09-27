@@ -209,7 +209,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
   
   const currentAudioRef = useRef<HTMLAudioElement | null>(null)
   const navigate = useNavigate()
-  
+
   // Memória do usuário
   const [userMemory, setUserMemory] = useState(() => {
     const saved = localStorage.getItem('noa_user_memory')
@@ -402,6 +402,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         const newThoughts = generateThoughtsFromResponse(response)
         console.log('💭 Gerando pensamentos:', newThoughts)
         console.log('💭 Número de pensamentos:', newThoughts.length)
+        console.log('💭 IDs dos pensamentos:', newThoughts.map(t => t.id))
         setThoughts(newThoughts)
         setIsProcessing(false)
       }, 1500) // Delay de 1.5s para aparecer após a resposta
@@ -766,10 +767,9 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       }
     ]
 
-    // SEMPRE mostrar pensamentos (não filtrar por conteúdo)
-    // Misturar aleatoriamente e pegar 3-5 pensamentos
-    const shuffled = [...availableThoughts].sort(() => Math.random() - 0.5)
-    return shuffled.slice(0, 3 + Math.floor(Math.random() * 3)) // 3-5 pensamentos
+    // CORRIGIDO: Pensamentos fixos, não aleatórios
+    // Mostrar sempre os mesmos 4 pensamentos principais
+    return availableThoughts.slice(0, 4)
   }
 
   // Função para lidar com clique nos pensamentos
@@ -982,13 +982,13 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
 
   return (
     <div className="h-full overflow-hidden relative">
-      {/* Background Matrix */}
-      <MatrixBackground isActive={matrixActive} opacity={0.05} />
+      {/* Background Matrix - DESABILITADO TEMPORARIAMENTE PARA DEBUG */}
+      {/* <MatrixBackground isActive={matrixActive} opacity={0.05} /> */}
       
       {/* Layout Principal */}
-      <div className="w-full h-full flex relative z-10">
+      <div className="w-full h-full flex relative z-0">
         {/* Sidebar Esquerdo - Chat */}
-        <div className="w-80 flex-shrink-0 bg-white/10 backdrop-blur-sm border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[79.5vh] overflow-y-auto z-20">
+        <div className="w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[79.5vh] overflow-y-auto z-10">
           {/* Balão de Pensamento */}
           <div className="h-full flex flex-col">
             <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 flex-1 flex flex-col">
@@ -1087,7 +1087,13 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         </div>
 
         {/* Área Central - NOA e Pensamentos */}
-        <div className="flex-1 flex items-center justify-center relative min-h-screen ml-80 w-full" style={{ transform: 'translate(-10%, -95%)' }}>
+        <div 
+          className="flex-1 flex items-center justify-center relative min-h-screen ml-80 w-full" 
+          style={{ transform: 'translate(-10%, -95%)', pointerEvents: 'auto' }}
+          onClick={(e) => {
+            console.log('🎯 CLIQUE NO CONTAINER PRINCIPAL!', e.target);
+          }}
+        >
           {/* Avatar da NOA - Vídeos Animados */}
           <div className="flex-shrink-0 flex justify-center items-center relative">
             <div className="w-[clamp(120px,20vw,135px)] h-[clamp(120px,20vw,135px)] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square">
@@ -1151,15 +1157,24 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
 
           {/* Pensamentos Flutuantes */}
           <AnimatePresence>
-            {thoughts.map((thought, index) => (
-              <ThoughtBubble
-                key={thought.id}
-                thought={thought}
-                index={index}
-                onClick={() => handleThoughtClick(thought)}
-                onClose={() => handleThoughtClose(thought.id)}
-              />
-            ))}
+            {thoughts.map((thought, index) => {
+              console.log('🎯 Renderizando ThoughtBubble:', thought.title, 'index:', index)
+              return (
+                <ThoughtBubble
+                  key={thought.id}
+                  thought={thought}
+                  index={index}
+                  onClick={() => {
+                    console.log('🎯 onClick chamado para:', thought.title)
+                    handleThoughtClick(thought)
+                  }}
+                  onClose={() => {
+                    console.log('🎯 onClose chamado para:', thought.id)
+                    handleThoughtClose(thought.id)
+                  }}
+                />
+              )
+            })}
           </AnimatePresence>
         </div>
       </div>
