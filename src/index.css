@@ -1,4 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Mobile Scale Technique */
+.app-wrapper {
+  width: 1280px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1280px) {
+  .app-wrapper {
+    transform: scale(calc(100vw / 1280));
+    transform-origin: top left;
+  }
+}
+
+html, body {
+  overflow-x: hidden;
+}
 @import './layout-fix.css';
 
 @tailwind base;
