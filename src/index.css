@@ -2,13 +2,13 @@
 
 /* Mobile Scale Technique */
 .app-wrapper {
-  width: 1280px;
+  width: 800px;
   margin: 0 auto;
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 800px) {
   .app-wrapper {
-    transform: scale(calc(100vw / 1280));
+    transform: scale(calc(100vw / 800));
     transform-origin: top left;
   }
 }
