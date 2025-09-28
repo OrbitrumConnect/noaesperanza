@@ -20,6 +20,15 @@ interface Message {
   options?: string[] // Opções de resposta rápida
 }
 
+// Interface para cards expandidos
+interface ExpandedCard {
+  id: string
+  title: string
+  description: string
+  content: string
+  type: 'consulta' | 'analise' | 'protocolo' | 'pesquisa'
+}
+
 // Interface para Avaliação Clínica Triaxial
 interface AvaliacaoClinicaData {
   sessionId: string
@@ -179,6 +188,35 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  
+  // Estados para expansão de cards
+  const [expandedCard, setExpandedCard] = useState<ExpandedCard | null>(null)
+  const [isCardExpanded, setIsCardExpanded] = useState(false)
+
+  // Função para expandir card
+  const expandCard = (card: ExpandedCard) => {
+    setExpandedCard(card)
+    setIsCardExpanded(true)
+    
+    // NOA inicia ministrando o conteúdo
+    const noaMessage: Message = {
+      id: crypto.randomUUID(),
+      message: `Vou te ajudar com ${card.title.toLowerCase()}. ${card.content}`,
+      sender: 'noa',
+      timestamp: new Date()
+    }
+    setMessages(prev => [...prev, noaMessage])
+  }
+
+  // Função para fechar card expandido
+  const closeExpandedCard = () => {
+    setIsCardExpanded(false)
+    setExpandedCard(null)
+    
+    // Gerar novos pensamentos quando fechar o card
+    const newThoughts = generateThoughtsFromResponse('')
+    setThoughts(newThoughts)
+  }
   
   // Estado do NoaGPT
   const [noaGPT, setNoaGPT] = useState<NoaGPT | null>(null)
@@ -703,6 +741,15 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         action: 'Iniciar Curso'
       },
       {
+        id: 'pdf-1',
+        type: 'pdf',
+        icon: '📄',
+        title: 'Protocolo CKD',
+        description: 'Classificação por estágios renais',
+        route: '/medcann-lab',
+        action: 'Baixar PDF'
+      },
+      {
         id: 'curso-2',
         type: 'curso',
         icon: '🎓',
@@ -775,12 +822,99 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
   // Função para lidar com clique nos pensamentos
   const handleThoughtClick = (thought: any) => {
     console.log('🎯 handleThoughtClick chamado:', thought.title, thought.route)
-    if (thought.route) {
-      console.log('🚀 Navegando para:', thought.route)
-      navigate(thought.route)
+    
+    // Se há um card expandido, fechar primeiro
+    if (isCardExpanded) {
+      closeExpandedCard()
+      return
     }
+    
+    // Criar card expandido baseado no pensamento
+    const cardContent = getCardContent(thought.type, thought.title)
+    const expandedCard: ExpandedCard = {
+      id: thought.id,
+      title: thought.title,
+      description: thought.description,
+      content: cardContent,
+      type: thought.type
+    }
+    
+    // Expandir card ao invés de navegar
+    expandCard(expandedCard)
+    
     // Remove o pensamento clicado
     setThoughts(prev => prev.filter(t => t.id !== thought.id))
+  }
+
+  // Função para obter conteúdo do card baseado no tipo
+  const getCardContent = (type: string, title: string): string => {
+    switch (type) {
+      case 'consulta':
+        return `Vou te ajudar com sua consulta médica. Vamos começar coletando algumas informações sobre seus sintomas e histórico médico. Como você está se sentindo hoje?`
+      case 'analise':
+        return `Vou realizar uma análise clínica completa. Preciso entender melhor seu quadro para fornecer as melhores orientações. Pode me contar mais sobre seus sintomas?`
+      case 'protocolo':
+        return `Vou explicar este protocolo médico detalhadamente. É importante entender cada etapa para garantir o melhor tratamento. Tem alguma dúvida específica?`
+      case 'pesquisa':
+        return `Vou apresentar os resultados desta pesquisa médica. Os dados são muito interessantes e podem ajudar no seu tratamento. O que gostaria de saber primeiro?`
+      case 'curso':
+        return `Vou te guiar através deste curso médico. Vamos começar com os conceitos básicos e evoluir gradualmente. Está pronto para aprender?`
+      case 'pdf':
+        return `Tenho um documento importante para você. Este PDF contém informações valiosas sobre o tópico. Gostaria de baixar e revisar?`
+      default:
+        return `Vou te ajudar com ${title.toLowerCase()}. Como posso ser útil para você hoje?`
+    }
+  }
+
+  // Função para obter ação específica do card
+  const getCardAction = (type: string, title: string) => {
+    switch (type) {
+      case 'curso':
+        return {
+          label: 'Iniciar Curso',
+          action: () => {
+            const message = `Vamos começar o curso sobre ${title.toLowerCase()}. Primeiro, vou explicar os objetivos e estrutura do curso.`
+            const noaMessage: Message = {
+              id: crypto.randomUUID(),
+              message: message,
+              sender: 'noa',
+              timestamp: new Date()
+            }
+            setMessages(prev => [...prev, noaMessage])
+          },
+          color: 'bg-blue-500 hover:bg-blue-600'
+        }
+      case 'pdf':
+        return {
+          label: 'Baixar PDF',
+          action: () => {
+            // Simular download do PDF
+            const link = document.createElement('a')
+            link.href = '#' // Aqui seria o link real do PDF
+            link.download = `${title}.pdf`
+            link.click()
+            
+            const message = `PDF "${title}" baixado com sucesso! Você pode revisar o documento e me fazer perguntas sobre o conteúdo.`
+            const noaMessage: Message = {
+              id: crypto.randomUUID(),
+              message: message,
+              sender: 'noa',
+              timestamp: new Date()
+            }
+            setMessages(prev => [...prev, noaMessage])
+          },
+          color: 'bg-red-500 hover:bg-red-600'
+        }
+      default:
+        return {
+          label: `Explorar ${title}`,
+          action: () => {
+            const question = `Me explique mais sobre ${title.toLowerCase()}`
+            setInputMessage(question)
+          },
+          color: 'bg-green-500 hover:bg-green-600'
+        }
+    }
   }
 
   // Função para fechar pensamento
@@ -1095,7 +1229,9 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
           }}
         >
           {/* Avatar da NOA - Vídeos Animados */}
-          <div className="flex-shrink-0 flex justify-center items-center relative">
+          <div className={`flex-shrink-0 flex justify-center items-center relative transition-all duration-500 ${
+            isCardExpanded ? 'scale-75 translate-x-24' : 'scale-100 translate-x-0'
+          }`}>
             <div className="w-[clamp(120px,20vw,135px)] h-[clamp(120px,20vw,135px)] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square">
               {/* Vídeo estático piscando (padrão) */}
               <video 
@@ -1160,9 +1296,9 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
             )}
           </div>
 
-          {/* Pensamentos Flutuantes */}
+          {/* Pensamentos Flutuantes - Só aparecem quando card NÃO está expandido */}
           <AnimatePresence>
-            {thoughts.map((thought, index) => {
+            {!isCardExpanded && thoughts.map((thought, index) => {
               console.log('🎯 Renderizando ThoughtBubble:', thought.title, 'index:', index)
               return (
                 <ThoughtBubble
@@ -1180,6 +1316,75 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                 />
               )
             })}
+          </AnimatePresence>
+
+          {/* Card Expandido */}
+          <AnimatePresence>
+            {isCardExpanded && expandedCard && (
+              <motion.div
+                initial={{ x: -100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -100, opacity: 0 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+                className="fixed left-64 top-1/3 transform -translate-y-1/2 z-50 w-96 max-h-[80vh] overflow-y-auto"
+                style={{ pointerEvents: 'auto' }}
+              >
+                <div className="premium-card w-full">
+                  {/* Header do Card */}
+                  <div className="flex justify-between items-center p-4 border-b border-white/20">
+                    <div>
+                      <h2 className="text-lg font-bold text-white mb-1">{expandedCard.title}</h2>
+                      <p className="text-gray-300 text-sm">{expandedCard.description}</p>
+                    </div>
+                    <button
+                      onClick={closeExpandedCard}
+                      className="text-white hover:text-gray-300 text-xl transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  {/* Conteúdo do Card */}
+                  <div className="p-4">
+                    <div className="bg-white/10 rounded-lg p-3 mb-3">
+                      <p className="text-white text-sm leading-relaxed">{expandedCard.content}</p>
+                    </div>
+                    
+                    {/* Área de interação */}
+                    <div className="space-y-3">
+                      <p className="text-gray-300 text-xs">
+                        💬 Faça perguntas no chat
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {/* Ação específica do card */}
+                        {(() => {
+                          const cardAction = getCardAction(expandedCard.type, expandedCard.title)
+                          return (
+                            <button
+                              onClick={cardAction.action}
+                              className={`px-3 py-2 ${cardAction.color} text-white rounded-lg transition-colors text-xs`}
+                            >
+                              {cardAction.label}
+                            </button>
+                          )
+                        })()}
+                        
+                        {/* Botão de pergunta geral */}
+                        <button
+                          onClick={() => {
+                            const question = `Me explique mais sobre ${expandedCard.title.toLowerCase()}`
+                            setInputMessage(question)
+                          }}
+                          className="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors text-xs"
+                        >
+                          Perguntar sobre {expandedCard.title}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </div>
