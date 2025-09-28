@@ -1,4 +1,5 @@
 // src/gpt/courseAdminAgent.ts
+import { supabase } from '../integrations/supabase/client'
 
 export const courseAdminAgent = {
     async executarTarefa(mensagem: string): Promise<string> {
@@ -14,8 +15,24 @@ export const courseAdminAgent = {
           return '⚠️ Para criar uma aula, diga algo como: "criar aula Introdução à Nefrologia".'
         }
   
-        // Simula criação da aula em banco ou arquivo (substituir por Supabase)
-        return `✅ Aula "${titulo}" criada com sucesso!`
+        try {
+          const { data, error } = await supabase
+            .from('cursos_licoes')
+            .insert({
+              titulo: titulo,
+              conteudo: 'Conteúdo da aula será adicionado posteriormente',
+              ordem: 1,
+              ativo: true
+            })
+            .select()
+          
+          if (error) throw error
+          
+          return `✅ Aula "${titulo}" criada com sucesso no sistema!`
+        } catch (error) {
+          console.error('Erro ao criar aula:', error)
+          return '❌ Erro ao criar aula no sistema.'
+        }
       }
   
       // Editar aula existente
@@ -28,16 +45,47 @@ export const courseAdminAgent = {
           return '⚠️ Para editar uma aula, diga: "editar aula NomeDaAula com o conteúdo Novo conteúdo..."'
         }
   
-        // Simula atualização da aula (substituir por Supabase)
-        return `✅ Aula "${nome}" atualizada com o novo conteúdo!`
+        try {
+          const { data, error } = await supabase
+            .from('cursos_licoes')
+            .update({ conteudo: novoConteudo })
+            .eq('titulo', nome)
+            .select()
+          
+          if (error) throw error
+          
+          if (!data || data.length === 0) {
+            return `❌ Aula "${nome}" não encontrada.`
+          }
+          
+          return `✅ Aula "${nome}" atualizada com o novo conteúdo!`
+        } catch (error) {
+          console.error('Erro ao editar aula:', error)
+          return '❌ Erro ao editar aula no sistema.'
+        }
       }
   
-      // Listar aulas (simulação)
+      // Listar aulas
       if (lower.includes('listar aulas')) {
-        return `📚 Aulas disponíveis:
-  1. Introdução à AEC
-  2. Cannabis e Saúde
-  3. Fundamentos da Nefrologia`
+        try {
+          const { data, error } = await supabase
+            .from('cursos_licoes')
+            .select('titulo, conteudo, ordem, ativo')
+            .eq('ativo', true)
+            .order('ordem', { ascending: true })
+          
+          if (error) throw error
+          
+          if (!data || data.length === 0) {
+            return '📚 Nenhuma aula disponível no momento.'
+          }
+          
+          const lista = data.map((aula, i) => `${i + 1}. ${aula.titulo}`).join('\n')
+          return `📚 Aulas disponíveis (${data.length}):\n${lista}`
+        } catch (error) {
+          console.error('Erro ao listar aulas:', error)
+          return '❌ Erro ao acessar aulas do sistema.'
+        }
       }
   
       return '⚠️ Comando de curso não reconhecido. Use: "criar aula", "editar aula", "listar aulas"...'

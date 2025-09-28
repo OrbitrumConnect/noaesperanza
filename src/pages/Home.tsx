@@ -9,6 +9,7 @@ import { dataService } from '../services/supabaseService'
 import { aiLearningService } from '../services/aiLearningService'
 import { cleanTextForAudio } from '../utils/textUtils'
 import { NoaGPT } from '../gpt/noaGPT'
+import { clinicalAgent } from '../gpt/clinicalAgent'
 import ThoughtBubble from '../components/ThoughtBubble'
 import MatrixBackground from '../components/MatrixBackground'
 
@@ -319,16 +320,35 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     setIsTyping(true)
     
     try {
-      // Verifica se o usuário quer iniciar avaliação inicial
-      // Avaliação inicial (removido - usa ChatGPT)
+      // 🩺 SISTEMA DE AVALIAÇÃO CLÍNICA TRIAXIAL INTEGRADO
+      // Verifica se deve iniciar avaliação clínica usando o clinicalAgent
+      const inicioAvaliacao = await clinicalAgent.detectarInicioAvaliacao(userMessage)
+      if (inicioAvaliacao) {
+        setModoAvaliacao(true)
+        const noaMessage: Message = {
+          id: crypto.randomUUID(),
+          message: inicioAvaliacao.mensagem,
+          sender: 'noa',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, noaMessage])
+        setIsTyping(false)
+        return
+      }
 
-      // Quebra-gelo: Ensino - Módulos Educativos (removido - usa ChatGPT)
-      
-      // Quebra-gelo: Pesquisa - Projetos de Investigação (removido - usa ChatGPT)
-
-      // Se está em modo avaliação, processa a resposta
+      // Se está em modo avaliação, processa a resposta usando clinicalAgent
       if (modoAvaliacao) {
-        await processarRespostaAvaliacao(userMessage)
+        console.log('🩺 Modo avaliação ativo, processando com clinicalAgent...')
+        console.log('📝 Mensagem do usuário:', userMessage)
+        const respostaAvaliacao = await clinicalAgent.executarFluxo(userMessage)
+        console.log('📝 Resposta do clinicalAgent:', respostaAvaliacao)
+        const noaMessage: Message = {
+          id: crypto.randomUUID(),
+          message: typeof respostaAvaliacao === 'string' ? respostaAvaliacao : respostaAvaliacao.mensagem,
+          sender: 'noa',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, noaMessage])
         setIsTyping(false)
         return
       }
@@ -419,11 +439,23 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       
       const response = await currentNoaGPT.processCommand(userMessage)
       console.log('✅ NoaGPT respondeu:', response.substring(0, 100) + '...')
+      console.log('🔍 Response completo:', response)
+      
+      // Se NoaGPT não reconheceu o comando, usa OpenAI para resposta geral
+      let finalResponse = response
+      if (response === 'OPENAI_FALLBACK' || response.includes('⚠️') || response.includes('não reconhecido') || response.includes('Funcionalidade em desenvolvimento')) {
+        console.log('🤖 NoaGPT não reconheceu, usando OpenAI...')
+        
+        // Chama OpenAI para resposta geral
+        const openAIResponse = await openAIService.getNoaResponse(userMessage)
+        finalResponse = openAIResponse
+        console.log('✅ OpenAI respondeu:', finalResponse.substring(0, 100) + '...')
+      }
       
       // Chat limpo - sem comandos clicáveis automáticos
       const noaMessage: Message = {
         id: crypto.randomUUID(),
-        message: response,
+        message: finalResponse,
         sender: 'noa',
         timestamp: new Date()
         // options removidas para chat limpo
@@ -433,11 +465,11 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       // Removido: addNotification('Resposta da NOA Esperanza recebida', 'success')
       
       // 🧠 APRENDIZADO AUTOMÁTICO - IA aprende com a conversa
-      aiLearningService.saveInteraction(userMessage, response, 'general')
+      aiLearningService.saveInteraction(userMessage, finalResponse, 'general')
       
       // 💭 GERAR PENSAMENTOS FLUTUANTES baseados na resposta
       setTimeout(() => {
-        const newThoughts = generateThoughtsFromResponse(response)
+        const newThoughts = generateThoughtsFromResponse(finalResponse)
         console.log('💭 Gerando pensamentos:', newThoughts)
         console.log('💭 Número de pensamentos:', newThoughts.length)
         console.log('💭 IDs dos pensamentos:', newThoughts.map(t => t.id))
@@ -447,7 +479,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       
       // ElevenLabs gera APENAS áudio (texto já vem do ChatGPT)
       console.log('🎤 Enviando texto do ChatGPT para ElevenLabs gerar áudio...')
-      await playNoaAudioWithText(response)
+      await playNoaAudioWithText(finalResponse)
       
     } catch (error) {
       console.error('Erro ao obter resposta da NOA:', error)
@@ -1298,9 +1330,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
 
           {/* Pensamentos Flutuantes - Só aparecem quando card NÃO está expandido */}
           <AnimatePresence>
-            {!isCardExpanded && thoughts.map((thought, index) => {
-              console.log('🎯 Renderizando ThoughtBubble:', thought.title, 'index:', index)
-              return (
+            {!isCardExpanded && thoughts.map((thought, index) => (
                 <ThoughtBubble
                   key={thought.id}
                   thought={thought}
@@ -1314,8 +1344,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                     handleThoughtClose(thought.id)
                   }}
                 />
-              )
-            })}
+            ))}
           </AnimatePresence>
 
           {/* Card Expandido */}
