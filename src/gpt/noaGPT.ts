@@ -5,18 +5,29 @@ import { knowledgeBaseAgent } from './knowledgeBaseAgent'
 import { supabaseService } from '../services/supabaseService'
 import { clinicalAgent } from './clinicalAgent'
 import { symbolicAgent } from './symbolicAgent'
-// import { voiceControlAgent } from './voiceControlAgent'
+import { voiceControlAgent } from './voiceControlAgent'
 
 export class NoaGPT {
   async processCommand(message: string): Promise<string> {
     const lower = message.toLowerCase().trim()
 
-    // 🔑 ATIVAÇÃO DE VOZ (em desenvolvimento)
+    // 🔑 ATIVAÇÃO DE VOZ
     if (
       lower.includes('ativar controle por voz') ||
-      lower.includes('modo voz noa')
+      lower.includes('modo voz noa') ||
+      lower.includes('ativar voz') ||
+      lower.includes('controle por voz')
     ) {
-      return `🎤 Controle por voz: Funcionalidade em desenvolvimento.`
+      return await voiceControlAgent.ativarControle()
+    }
+
+    // 🔇 DESATIVAÇÃO DE VOZ
+    if (
+      lower.includes('desativar voz') ||
+      lower.includes('parar voz') ||
+      lower.includes('desativar controle por voz')
+    ) {
+      return await voiceControlAgent.desativarControle()
     }
 
     // 📎 ADICIONAR DOCUMENTO
