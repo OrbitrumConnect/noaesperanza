@@ -1,7 +1,7 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Helmet } from "../components/Helmet";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../hooks/use-toast";
 import { NoaAvaliacaoClinica } from "../components/NoaAvaliacaoClinica";
@@ -13,7 +13,20 @@ const AvaliacaoClinica: React.FC = () => {
   const isClient = useIsClient();
 
   // Evita erro no SSR da Vercel
-  const { user } = isClient ? useAuth() : { user: null };
+  const authData = isClient ? useAuth() : { user: null, userProfile: null, loading: false };
+  const { user, userProfile, loading } = authData;
+  
+  // Debug: verificar estado da autenticação
+  console.log('AvaliacaoClinica - isClient:', isClient);
+  console.log('AvaliacaoClinica - user:', user);
+  console.log('AvaliacaoClinica - userProfile:', userProfile);
+  console.log('AvaliacaoClinica - loading:', loading);
+  
+  // Verificar localStorage para debug
+  if (isClient) {
+    console.log('localStorage keys:', Object.keys(localStorage));
+    console.log('supabase.auth.token:', localStorage.getItem('sb-localhost-auth-token'));
+  }
 
   const handleAvaliacaoComplete = (data: any) => {
     toast({
@@ -25,7 +38,21 @@ const AvaliacaoClinica: React.FC = () => {
     console.log("Dados da avaliação:", data);
   };
 
-  if (!user) {
+  // Mostrar loading enquanto verifica autenticação
+  if (loading || !isClient) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Header currentSpecialty="rim" setCurrentSpecialty={() => {}} />
+        <div className="text-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg text-muted-foreground">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Verificar se o usuário está logado (incluindo admin demo)
+  if (!user && !userProfile) {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <Header currentSpecialty="rim" setCurrentSpecialty={() => {}} />
@@ -34,6 +61,24 @@ const AvaliacaoClinica: React.FC = () => {
           <p className="text-lg text-muted-foreground">
             Você precisa estar logado para realizar a avaliação clínica inicial.
           </p>
+          <div className="mt-4 space-x-4">
+            <Link to="/login" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              Fazer Login
+            </Link>
+            <button 
+              onClick={() => {
+                console.log('=== DEBUG AUTENTICAÇÃO ===');
+                console.log('isClient:', isClient);
+                console.log('user:', user);
+                console.log('userProfile:', userProfile);
+                console.log('loading:', loading);
+                console.log('========================');
+              }}
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Debug Auth
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -82,8 +127,6 @@ const AvaliacaoClinica: React.FC = () => {
             <NoaAvaliacaoClinica onComplete={handleAvaliacaoComplete} />
           </section>
         </main>
-
-        <Footer />
       </div>
     </>
   );

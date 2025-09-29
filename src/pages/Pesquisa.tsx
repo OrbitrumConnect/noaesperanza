@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Helmet } from "../components/Helmet";
 import { useToast } from "../hooks/use-toast";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
 import { useIsClient } from '../hooks/useIsClient';
@@ -407,7 +406,6 @@ const Pesquisa = () => {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     </>
   );

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Helmet } from "../components/Helmet";
 import { useToast } from "../hooks/use-toast";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Link } from "react-router-dom";
@@ -401,7 +400,6 @@ const Ensino = () => {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
 
       {/* Modal do Curso */}

@@ -4,6 +4,7 @@ import { getAdminMetrics, getRecentUsers, getSystemStats, AdminMetrics } from '.
 import AILearningDashboard from '../components/AILearningDashboard'
 import DocumentUploadModal from '../components/DocumentUploadModal'
 import ManualTrainingModal from '../components/ManualTrainingModal'
+import Sidebar from '../components/Sidebar'
 
 interface AdminDashboardProps {
   addNotification: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void
@@ -26,6 +27,67 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
   const [showAILearningDashboard, setShowAILearningDashboard] = useState(false)
   const [showDocumentUpload, setShowDocumentUpload] = useState(false)
   const [showManualTraining, setShowManualTraining] = useState(false)
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false)
+
+  // Itens do sidebar administrativo
+  const adminSidebarItems = [
+    {
+      id: 'payments',
+      label: 'Gestão de Pagamentos',
+      icon: 'fa-credit-card',
+      color: 'green',
+      route: '/payment'
+    },
+    {
+      id: 'users',
+      label: 'Gestão de Usuários',
+      icon: 'fa-users',
+      color: 'blue',
+      action: () => addNotification('Funcionalidade em desenvolvimento', 'info')
+    },
+    {
+      id: 'analytics',
+      label: 'Analytics & Relatórios',
+      icon: 'fa-chart-line',
+      color: 'yellow',
+      action: () => addNotification('Funcionalidade em desenvolvimento', 'info')
+    },
+    {
+      id: 'ai-learning',
+      label: 'IA Learning Dashboard',
+      icon: 'fa-brain',
+      color: 'purple',
+      action: () => setShowAILearningDashboard(true)
+    },
+    {
+      id: 'document-upload',
+      label: 'Upload de Documentos',
+      icon: 'fa-upload',
+      color: 'orange',
+      action: () => setShowDocumentUpload(true)
+    },
+    {
+      id: 'manual-training',
+      label: 'Treinamento Manual da IA',
+      icon: 'fa-edit',
+      color: 'red',
+      action: () => setShowManualTraining(true)
+    },
+    {
+      id: 'system-settings',
+      label: 'Configurações do Sistema',
+      icon: 'fa-cog',
+      color: 'gray',
+      action: () => addNotification('Funcionalidade em desenvolvimento', 'info')
+    },
+    {
+      id: 'backup-restore',
+      label: 'Backup & Restore',
+      icon: 'fa-database',
+      color: 'indigo',
+      action: () => addNotification('Funcionalidade em desenvolvimento', 'info')
+    }
+  ]
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -62,16 +124,38 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
 
   return (
     <div className="h-full overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 h-full">
+      <div className="flex h-full gap-4 p-4">
         
-        {/* Header */}
-        <div className="mb-2">
-          <Link to="/" className="inline-block text-yellow-400 hover:text-yellow-300 mb-1">
-            <i className="fas fa-arrow-left text-sm"></i> Voltar
-          </Link>
-          <h1 className="text-lg font-bold text-premium mb-1">Dashboard Administrativo</h1>
-          <p className="text-gray-300 text-xs">Gestão completa do sistema NeuroCanLab</p>
+        {/* Sidebar com Ações Administrativas */}
+        <div className="w-80 flex-shrink-0 hidden lg:block">
+          <Sidebar 
+            title="Ações Administrativas" 
+            items={adminSidebarItems}
+            className="h-full"
+          />
         </div>
+
+        {/* Conteúdo Principal */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-6 h-full">
+            
+            {/* Header */}
+            <div className="mb-2">
+              <div className="flex items-center justify-between mb-1">
+                <Link to="/" className="inline-block text-yellow-400 hover:text-yellow-300">
+                  <i className="fas fa-arrow-left text-sm"></i> Voltar
+                </Link>
+                {/* Botão para mostrar sidebar em mobile */}
+                <button 
+                  onClick={() => setShowMobileSidebar(true)}
+                  className="lg:hidden text-yellow-400 hover:text-yellow-300 p-2"
+                >
+                  <i className="fas fa-bars text-lg"></i>
+                </button>
+              </div>
+              <h1 className="text-lg font-bold text-premium mb-1">Dashboard Administrativo</h1>
+              <p className="text-gray-300 text-xs">Gestão completa do sistema NeuroCanLab</p>
+            </div>
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
@@ -197,64 +281,39 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="premium-card p-2">
-          <h2 className="text-sm font-semibold text-premium mb-2">Ações Administrativas</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-1">
-            
-            <Link to="/payment" className="flex flex-col items-center p-1 border border-gray-600 rounded-lg hover:bg-green-500/10 transition-colors">
-              <div className="w-6 h-6 bg-green-500/20 rounded-lg flex items-center justify-center mb-1">
-                <i className="fas fa-credit-card text-green-400 text-xs"></i>
-              </div>
-              <span className="text-xs font-medium text-white">Pagamentos</span>
-            </Link>
-
-            <button className="flex flex-col items-center p-1 border border-gray-600 rounded-lg hover:bg-blue-500/10 transition-colors">
-              <div className="w-6 h-6 bg-blue-500/20 rounded-lg flex items-center justify-center mb-1">
-                <i className="fas fa-users text-blue-400 text-xs"></i>
-              </div>
-              <span className="text-xs font-medium text-white">Usuários</span>
-            </button>
-
-            <button className="flex flex-col items-center p-1 border border-gray-600 rounded-lg hover:bg-yellow-500/10 transition-colors">
-              <div className="w-6 h-6 bg-yellow-500/20 rounded-lg flex items-center justify-center mb-1">
-                <i className="fas fa-chart-line text-yellow-400 text-xs"></i>
-              </div>
-              <span className="text-xs font-medium text-white">Analytics</span>
-            </button>
-
-            <button 
-              onClick={() => setShowAILearningDashboard(true)}
-              className="flex flex-col items-center p-1 border border-gray-600 rounded-lg hover:bg-purple-500/10 transition-colors"
-            >
-              <div className="w-6 h-6 bg-purple-500/20 rounded-lg flex items-center justify-center mb-1">
-                <i className="fas fa-brain text-purple-400 text-xs"></i>
-              </div>
-              <span className="text-xs font-medium text-white">IA Learning</span>
-            </button>
-
-            <button 
-              onClick={() => setShowDocumentUpload(true)}
-              className="flex flex-col items-center p-1 border border-gray-600 rounded-lg hover:bg-orange-500/10 transition-colors"
-            >
-              <div className="w-6 h-6 bg-orange-500/20 rounded-lg flex items-center justify-center mb-1">
-                <i className="fas fa-upload text-orange-400 text-xs"></i>
-              </div>
-              <span className="text-xs font-medium text-white">Upload Docs</span>
-            </button>
-
-            <button 
-              onClick={() => setShowManualTraining(true)}
-              className="flex flex-col items-center p-1 border border-gray-600 rounded-lg hover:bg-red-500/10 transition-colors"
-            >
-              <div className="w-6 h-6 bg-red-500/20 rounded-lg flex items-center justify-center mb-1">
-                <i className="fas fa-edit text-red-400 text-xs"></i>
-              </div>
-              <span className="text-xs font-medium text-white">Treinar IA</span>
-            </button>
           </div>
         </div>
       </div>
+
+      {/* Sidebar Mobile Overlay */}
+      {showMobileSidebar && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black bg-opacity-50"
+            onClick={() => setShowMobileSidebar(false)}
+          ></div>
+          
+          {/* Sidebar Mobile */}
+          <div className="absolute left-0 top-0 h-full w-80 bg-slate-800 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-premium text-lg font-semibold">Ações Administrativas</h3>
+              <button 
+                onClick={() => setShowMobileSidebar(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <i className="fas fa-times text-lg"></i>
+              </button>
+            </div>
+            
+            <Sidebar 
+              title="" 
+              items={adminSidebarItems}
+              className="h-full"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Modais de IA */}
       {showAILearningDashboard && (

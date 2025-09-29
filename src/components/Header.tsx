@@ -17,7 +17,7 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
   
   // Agora temos um laboratório unificado
   const labInfo = {
-    name: 'NOA Esperanza',
+    name: 'NOA Esperanza - By MedCanLab',
     fullName: 'Neurologia • Cannabis • Rim',
     icon: 'fa-flask',
     description: 'Assistente IA Médica Inteligente'
@@ -46,7 +46,9 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
               />
             </div>
             <div>
-              <div className="text-lg font-bold text-white drop-shadow-md">{labInfo.name}</div>
+              <div className="text-lg font-bold text-white drop-shadow-md">
+                NOA Esperanza <span className="text-sm font-normal text-yellow-200">By MedCanLab</span>
+              </div>
               <div className="text-xs text-yellow-100 drop-shadow-sm">{labInfo.fullName}</div>
             </div>
           </div>
@@ -60,54 +62,47 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
               />
             </div>
             <div>
-              <div className="text-lg font-bold text-white drop-shadow-md">{labInfo.name}</div>
+              <div className="text-lg font-bold text-white drop-shadow-md">
+                NOA Esperanza <span className="text-sm font-normal text-yellow-200">By MedCanLab</span>
+              </div>
               <div className="text-xs text-yellow-100 drop-shadow-sm">{labInfo.fullName}</div>
             </div>
           </Link>
         )}
 
 
-        {/* Menu de Navegação Principal - não mostrar na landing page */}
+        {/* Menu de Tipos de Usuário - não mostrar na landing page */}
         {location.pathname !== '/landing' && (
           <nav className="hidden lg:flex gap-1">
-            <Link to="/avaliacao-clinica" className="nav-item text-xs px-2 py-1">
-              <i className="fas fa-stethoscope text-xs"></i>
-              <span className="text-xs">Avaliação</span>
+            <Link to="/paciente" className="nav-item text-xs px-3 py-2">
+              <i className="fas fa-user text-xs"></i>
+              <span className="text-xs">Paciente</span>
             </Link>
-            <Link to="/ensino" className="nav-item text-xs px-2 py-1">
+            <Link to="/medico" className="nav-item text-xs px-3 py-2">
+              <i className="fas fa-user-md text-xs"></i>
+              <span className="text-xs">Médico</span>
+            </Link>
+            <Link to="/estudante" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-graduation-cap text-xs"></i>
-              <span className="text-xs">Ensino</span>
+              <span className="text-xs">Estudante</span>
             </Link>
-            <Link to="/pesquisa" className="nav-item text-xs px-2 py-1">
-              <i className="fas fa-flask text-xs"></i>
-              <span className="text-xs">Pesquisa</span>
+            <Link to="/checkout" className="nav-item text-xs px-3 py-2">
+              <i className="fas fa-credit-card text-xs"></i>
+              <span className="text-xs">Pagar</span>
             </Link>
-            <Link to="/medcann-lab" className="nav-item text-xs px-2 py-1">
-              <i className="fas fa-leaf text-xs"></i>
-              <span className="text-xs">MedCann</span>
-            </Link>
+            {/* Mostrar ADM/CONFIG apenas para administradores */}
+            {user?.user_metadata?.role === 'admin' && (
+              <Link to="/admin" className="nav-item text-xs px-3 py-2">
+                <i className="fas fa-cog text-xs"></i>
+                <span className="text-xs">ADM/CONFIG</span>
+              </Link>
+            )}
           </nav>
         )}
 
         {/* Seção do Usuário - não mostrar na landing page */}
         {location.pathname !== '/landing' && (
           <div className="flex items-center gap-4">
-            {/* Menu adicional - ícones compactos */}
-            <div className="flex items-center gap-2">
-              <Link to="/paciente" className="text-white/80 hover:text-yellow-300 transition-colors" title="Paciente">
-                <i className="fas fa-user text-lg"></i>
-              </Link>
-              <Link to="/medico" className="text-white/80 hover:text-yellow-300 transition-colors" title="Médico">
-                <i className="fas fa-user-md text-lg"></i>
-              </Link>
-              <Link to="/checkout" className="text-white/80 hover:text-yellow-300 transition-colors" title="Pagamento">
-                <i className="fas fa-credit-card text-lg"></i>
-              </Link>
-              <Link to="/admin" className="text-white/80 hover:text-yellow-300 transition-colors" title="Admin">
-                <i className="fas fa-cog text-lg"></i>
-              </Link>
-            </div>
-
             {/* Avatar e Logout */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">

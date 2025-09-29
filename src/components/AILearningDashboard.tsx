@@ -82,10 +82,10 @@ const AILearningDashboard: React.FC<AILearningDashboardProps> = ({ onClose }) =>
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="ai-learning-modal rounded-lg shadow-xl w-full max-w-6xl h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+        <div className="modal-header text-white p-6">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold">🧠 Sistema de Aprendizado da IA</h2>
@@ -93,7 +93,7 @@ const AILearningDashboard: React.FC<AILearningDashboardProps> = ({ onClose }) =>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:text-gray-200 text-2xl"
+              className="text-white hover:text-gray-200 text-2xl transition-colors"
             >
               ×
             </button>
@@ -101,7 +101,7 @@ const AILearningDashboard: React.FC<AILearningDashboardProps> = ({ onClose }) =>
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200">
+        <div className="modal-tabs">
           <nav className="flex space-x-8 px-6">
             {[
               { id: 'overview', label: '📊 Visão Geral', icon: '📊' },
@@ -112,10 +112,8 @@ const AILearningDashboard: React.FC<AILearningDashboardProps> = ({ onClose }) =>
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-4 px-2 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                className={`tab-button py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id ? 'active' : ''
                 }`}
               >
                 {tab.label}
@@ -125,33 +123,33 @@ const AILearningDashboard: React.FC<AILearningDashboardProps> = ({ onClose }) =>
         </div>
 
         {/* Content */}
-        <div className="p-6 h-[calc(90vh-200px)] overflow-y-auto">
+        <div className="modal-content p-6 h-[calc(90vh-200px)] overflow-y-auto">
           {activeTab === 'overview' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-blue-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold text-blue-800">Total de Interações</h3>
-                  <p className="text-3xl font-bold text-blue-600">{stats?.totalInteractions || 0}</p>
+                <div className="card p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold text-primary">Total de Interações</h3>
+                  <p className="text-3xl font-bold text-primary">{stats?.totalInteractions || 0}</p>
                 </div>
-                <div className="bg-green-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold text-green-800">Palavras-chave</h3>
-                  <p className="text-3xl font-bold text-green-600">{stats?.totalKeywords || 0}</p>
+                <div className="card p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold text-success">Palavras-chave</h3>
+                  <p className="text-3xl font-bold text-success">{stats?.totalKeywords || 0}</p>
                 </div>
-                <div className="bg-purple-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold text-purple-800">Confiança Média</h3>
-                  <p className="text-3xl font-bold text-purple-600">
+                <div className="card p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold text-warning">Confiança Média</h3>
+                  <p className="text-3xl font-bold text-warning">
                     {stats?.avgConfidence ? (stats.avgConfidence * 100).toFixed(1) + '%' : '0%'}
                   </p>
                 </div>
               </div>
 
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4">📊 Distribuição por Categoria</h3>
+              <div className="card p-6">
+                <h3 className="text-lg font-semibold mb-4 text-primary">📊 Distribuição por Categoria</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {stats?.categories && Object.entries(stats.categories).map(([category, count]) => (
-                    <div key={category} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                      <span className="capitalize">{category}</span>
-                      <span className="font-bold">{count as number}</span>
+                    <div key={category} className="flex justify-between items-center p-3 bg-gray-800 bg-opacity-50 rounded border border-gray-600">
+                      <span className="capitalize text-gray-200">{category}</span>
+                      <span className="font-bold text-primary">{count as number}</span>
                     </div>
                   ))}
                 </div>

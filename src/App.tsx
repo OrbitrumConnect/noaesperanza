@@ -112,6 +112,11 @@ function App() {
                         setIsVoiceListening={setIsVoiceListening}
                         addNotification={addNotification}
                       />
+                      
+                      {/* Footer Compacto apenas para Home */}
+                      <div className="fixed bottom-0 left-0 right-0 z-30">
+                        <HomeFooter />
+                      </div>
                     </div>
                   } />
 
@@ -182,9 +187,9 @@ function App() {
                 </Routes>
               </div>
 
-              {/* Footer Compacto para Home - Fixo na parte inferior */}
+              {/* Footer Fixo para todas as páginas (exceto Home) */}
               <div className="fixed bottom-0 left-0 right-0 z-30">
-                <HomeFooter />
+                <Footer />
               </div>
             </div>
           } />

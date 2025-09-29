@@ -29,17 +29,17 @@ const Sidebar: React.FC<SidebarProps> = ({ title, items, className = '' }) => {
 
   return (
     <div className={`premium-card p-3 ${className}`}>
-      <h3 className="text-premium text-base font-semibold mb-3">{title}</h3>
+      {title && <h3 className="text-premium text-base font-semibold mb-3">{title}</h3>}
       
       <div className="space-y-3">
         {items.map((item) => (
           <button
             key={item.id}
             onClick={() => handleItemClick(item)}
-            className="w-full p-3 bg-gray-800 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors text-left flex items-center gap-4 group"
+            className="sidebar-admin-card w-full p-3 rounded-lg transition-all duration-200 text-left flex items-center gap-4 group"
           >
-            <i className={`fas ${item.icon} text-${item.color}-400 text-base group-hover:scale-110 transition-transform`}></i>
-            <span className="text-base text-gray-300 group-hover:text-white transition-colors">{item.label}</span>
+            <i className={`fas ${item.icon} text-${item.color}-400 text-base group-hover:scale-110 transition-transform flex-shrink-0`}></i>
+            <span className="sidebar-admin-text text-sm leading-relaxed">{item.label}</span>
           </button>
         ))}
       </div>

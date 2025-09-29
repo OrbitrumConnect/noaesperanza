@@ -3,7 +3,6 @@ import { Helmet } from "../components/Helmet";
 import { useToast } from "../hooks/use-toast";
 import { useIsClient } from "../hooks/useIsClient";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 // import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
@@ -290,7 +289,6 @@ const MedCannLab = () => {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     </>
   );

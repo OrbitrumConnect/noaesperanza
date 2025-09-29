@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -189,6 +188,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   
   // Estados para expansão de cards
   const [expandedCard, setExpandedCard] = useState<ExpandedCard | null>(null)
@@ -258,7 +258,10 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
 
   // Auto scroll para a última mensagem
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messagesContainerRef.current) {
+      // Usar scrollTop para melhor compatibilidade
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
   }
 
   // Salva memória do usuário
@@ -294,7 +297,12 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
   }
 
   useEffect(() => {
-    scrollToBottom()
+    // Usar setTimeout para garantir que o DOM foi atualizado
+    const timer = setTimeout(() => {
+      scrollToBottom()
+    }, 100)
+    
+    return () => clearTimeout(timer)
   }, [messages])
 
   // Áudio liberado automaticamente - sem necessidade de primeira interação
@@ -1160,7 +1168,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
             <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 flex-1 flex flex-col">
 
               {/* Área de Mensagens */}
-              <div className="space-y-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div ref={messagesContainerRef} className="messages-container space-y-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 {messages.map((message) => (
                   <div
                     key={message.id}
