@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { Specialty } from '../App'
+import { useAuth } from '../contexts/AuthContext'
 
 const LandingPage = () => {
   const [currentFeature, setCurrentFeature] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
   const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('rim')
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  
+  const { signIn, signUp, user } = useAuth()
+  const navigate = useNavigate()
   
 
   useEffect(() => {
@@ -17,6 +23,27 @@ const LandingPage = () => {
     }, 3000)
     return () => clearInterval(interval)
   }, [])
+
+  // Redirecionar se já estiver logado
+  useEffect(() => {
+    if (user) {
+      navigate('/')
+    }
+  }, [user, navigate])
+
+  const handleAuth = async (email: string, password: string, userData?: any) => {
+    try {
+      if (authMode === 'login') {
+        await signIn(email, password)
+      } else {
+        await signUp(email, password, userData || {})
+      }
+      setShowAuthModal(false)
+      navigate('/')
+    } catch (error) {
+      console.error('Erro na autenticação:', error)
+    }
+  }
 
   const features = [
     {
@@ -120,19 +147,25 @@ const LandingPage = () => {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <Link 
-                to="/login"
-                className="px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300 text-center"
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-16">
+              <button 
+                onClick={() => {
+                  setAuthMode('register')
+                  setShowAuthModal(true)
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-blue-600 transition-all duration-300 text-center"
               >
                 Começar Agora
-              </Link>
-              <Link 
-                to="/register"
-                className="px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300 text-center"
+              </button>
+              <button 
+                onClick={() => {
+                  setAuthMode('login')
+                  setShowAuthModal(true)
+                }}
+                className="px-6 py-3 border-2 border-white/30 text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300 text-center"
               >
-                Cadastrar-se
-              </Link>
+                Já tenho conta
+              </button>
             </div>
           </div>
         </div>
@@ -140,113 +173,81 @@ const LandingPage = () => {
         {/* Floating Elements */}
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4" style={{
-        background: 'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)'
-      }}>
+      {/* Features Section - Como Funciona */}
+      <section className="py-16 px-4 bg-black">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center text-white mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-white mb-12">
             Como Funciona
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <div 
-                key={index}
-                className={`premium-card p-8 text-center transition-all duration-500 ${
-                  currentFeature === index ? 'scale-105 shadow-2xl' : 'opacity-70'
-                }`}
-              >
-                <div className={`w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r ${feature.color} flex items-center justify-center text-3xl`}>
+              <div key={index} className="premium-card p-8 text-center group hover:scale-105 transition-all duration-300">
+                <div className={`w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r ${feature.color} flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300`}>
                   {feature.icon}
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">{feature.title}</h3>
+                <h3 className="text-xl font-bold text-white mb-4">{feature.title}</h3>
                 <p className="text-gray-400">{feature.description}</p>
               </div>
             ))}
           </div>
-
-          {/* NOA Demo */}
-          <div className="premium-card p-8 max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="flex-shrink-0">
-                <div className="w-32 h-32 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-full flex items-center justify-center">
-                  <img 
-                    src="/logo-noa-triangulo.gif" 
-                    alt="NOA" 
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-2xl font-bold text-white mb-4">Conheça a NOA</h3>
-                <p className="text-gray-300 mb-4">
-                  Nossa assistente virtual especializada em medicina, pronta para ajudar com diagnósticos, 
-                  informações médicas e orientações personalizadas.
-                </p>
-                <div className="bg-gray-800/50 p-4 rounded-lg">
-                  <p className="text-green-400 italic">"Olá! Sou a NOA, sua assistente médica virtual. Como posso ajudar você hoje?"</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* Specialties Section */}
-      <section className="py-20 px-4 bg-black">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center text-white mb-16">
+      {/* Specialties Section - Simplificada */}
+      <section className="py-12 px-4 bg-black">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-white mb-8">
             Especialidades
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {specialties.map((specialty, index) => (
-              <div key={index} className="premium-card p-8 text-center group hover:scale-105 transition-all duration-300">
-                <div className={`w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-r ${specialty.color} flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-300`}>
+              <div key={index} className="premium-card p-6 text-center">
+                <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${specialty.color} flex items-center justify-center text-2xl`}>
                   {specialty.icon}
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">{specialty.name}</h3>
-                <p className="text-gray-400">{specialty.description}</p>
+                <h3 className="text-lg font-bold text-white mb-2">{specialty.name}</h3>
+                <p className="text-gray-400 text-sm">{specialty.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Plans Section */}
-      <section className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center text-white mb-16">
+      {/* Plans Section - Simplificada */}
+      <section className="py-12 px-4 bg-gradient-to-b from-black to-gray-900">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-white mb-8">
             Planos e Preços
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {plans.map((plan, index) => (
               <div 
                 key={index} 
-                className={`premium-card p-8 relative ${plan.popular ? 'ring-2 ring-green-500 scale-105' : ''}`}
+                className={`premium-card p-6 relative ${plan.popular ? 'ring-2 ring-green-500' : ''}`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                      Mais Popular
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                      Popular
                     </span>
                   </div>
                 )}
                 
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-4">{plan.name}</h3>
+                <div className="text-center mb-6">
+                  <h3 className="text-lg font-bold text-white mb-2">{plan.name}</h3>
                   <div className="flex items-baseline justify-center">
-                    <span className="text-4xl font-bold text-white">{plan.price}</span>
-                    <span className="text-gray-400 ml-2">{plan.period}</span>
+                    <span className="text-2xl font-bold text-white">{plan.price}</span>
+                    <span className="text-gray-400 ml-1 text-sm">{plan.period}</span>
                   </div>
                 </div>
                 
-                <ul className="space-y-4 mb-8">
-                  {plan.features.map((feature, featureIndex) => (
+                <ul className="space-y-2 mb-6 text-sm">
+                  {plan.features.slice(0, 3).map((feature, featureIndex) => (
                     <li key={featureIndex} className="flex items-center text-gray-300">
-                      <span className="text-green-400 mr-3">✓</span>
+                      <span className="text-green-400 mr-2">✓</span>
                       {feature}
                     </li>
                   ))}
@@ -254,13 +255,13 @@ const LandingPage = () => {
                 
                 <Link 
                   to="/checkout"
-                  className={`w-full py-3 rounded-lg font-semibold text-center transition-all duration-300 ${
+                  className={`w-full py-2 rounded-lg font-semibold text-center transition-all duration-300 text-sm ${
                     plan.popular 
                       ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600' 
                       : 'bg-gray-700 text-white hover:bg-gray-600'
                   }`}
                 >
-                  Escolher Plano
+                  Escolher
                 </Link>
               </div>
             ))}
@@ -268,36 +269,140 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Footer CTA */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-900 via-green-900 to-yellow-900">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-            Pronto para Revolucionar sua Saúde?
-          </h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Junte-se a milhares de pacientes e médicos que já confiam na NOA Esperanza
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              to="/register"
-              className="px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 text-center"
-            >
-              Começar Gratuitamente
-            </Link>
-            <Link 
-              to="/login"
-              className="px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all duration-300 text-center"
-            >
-              Já tenho conta
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <Footer />
 
+      {/* Modal de Autenticação */}
+      {showAuthModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="premium-card w-full max-w-md">
+            {/* Header */}
+            <div className="p-4 border-b border-white/20 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white">
+                {authMode === 'login' ? 'Entrar' : 'Cadastrar'}
+              </h2>
+              <button 
+                onClick={() => setShowAuthModal(false)} 
+                className="text-white hover:text-gray-300 text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <AuthForm 
+                mode={authMode} 
+                onSubmit={handleAuth}
+                onSwitchMode={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
+  )
+}
+
+// Componente de Formulário de Autenticação
+const AuthForm: React.FC<{
+  mode: 'login' | 'register'
+  onSubmit: (email: string, password: string, userData?: any) => void
+  onSwitchMode: () => void
+}> = ({ mode, onSubmit, onSwitchMode }) => {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    
+    try {
+      const userData = mode === 'register' ? { name } : undefined
+      await onSubmit(email, password, userData)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {mode === 'register' && (
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-white mb-1">
+            Nome
+          </label>
+          <input
+            type="text"
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400"
+            placeholder="Seu nome completo"
+            required
+          />
+        </div>
+      )}
+
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-white mb-1">
+          Email
+        </label>
+        <input
+          type="email"
+          id="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400"
+          placeholder="seu@email.com"
+          required
+        />
+      </div>
+
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium text-white mb-1">
+          Senha
+        </label>
+        <input
+          type="password"
+          id="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400"
+          placeholder="Sua senha"
+          required
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 ${
+          loading 
+            ? 'bg-gray-600 cursor-not-allowed' 
+            : 'bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 hover:scale-105'
+        }`}
+      >
+        {loading ? 'Processando...' : (mode === 'login' ? 'Entrar' : 'Cadastrar')}
+      </button>
+
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={onSwitchMode}
+          className="text-sm text-gray-300 hover:text-white transition-colors"
+        >
+          {mode === 'login' 
+            ? 'Não tem conta? Cadastre-se' 
+            : 'Já tem conta? Faça login'
+          }
+        </button>
+      </div>
+    </form>
   )
 }
 

@@ -1,11 +1,15 @@
 // src/gpt/knowledgeBaseAgent.ts
+import { supabase } from '../integrations/supabase/client'
 
 interface KnowledgeEntry {
+    id?: string
     titulo: string
     conteudo: string
-  }
-  
-  const bancoDeConhecimento: KnowledgeEntry[] = []
+    categoria?: string
+    tags?: string[]
+    created_at?: string
+    updated_at?: string
+}
   
   export const knowledgeBaseAgent = {
     async executarAcao(message: string): Promise<string> {
@@ -21,8 +25,25 @@ interface KnowledgeEntry {
         const titulo = match[1].trim()
         const conteudo = match[2].trim()
   
-        bancoDeConhecimento.push({ titulo, conteudo })
-        return `✅ Conhecimento "${titulo}" adicionado com sucesso.`
+        try {
+          const { data, error } = await supabase
+            .from('ai_learning')
+            .insert({
+              keyword: titulo,
+              context: 'knowledge_base',
+              user_message: 'Criação de conhecimento',
+              ai_response: conteudo,
+              category: 'knowledge'
+            })
+            .select()
+          
+          if (error) throw error
+          
+          return `✅ Conhecimento "${titulo}" salvo na base de dados!`
+        } catch (error) {
+          console.error('Erro ao salvar conhecimento:', error)
+          return '❌ Erro ao salvar conhecimento na base de dados.'
+        }
       }
   
       // Editar conhecimento
@@ -35,26 +56,48 @@ interface KnowledgeEntry {
         const titulo = match[1].trim()
         const novoConteudo = match[2].trim()
   
-        const entry = bancoDeConhecimento.find(k => k.titulo === titulo)
-        if (!entry) {
-          return `❌ Conhecimento "${titulo}" não encontrado.`
+        try {
+          const { data, error } = await supabase
+            .from('ai_learning')
+            .update({ ai_response: novoConteudo })
+            .eq('keyword', titulo)
+            .eq('context', 'knowledge_base')
+            .select()
+          
+          if (error) throw error
+          
+          if (!data || data.length === 0) {
+            return `❌ Conhecimento "${titulo}" não encontrado.`
+          }
+          
+          return `✅ Conhecimento "${titulo}" atualizado com sucesso.`
+        } catch (error) {
+          console.error('Erro ao atualizar conhecimento:', error)
+          return '❌ Erro ao atualizar conhecimento na base de dados.'
         }
-  
-        entry.conteudo = novoConteudo
-        return `✅ Conhecimento "${titulo}" atualizado com sucesso.`
       }
   
       // Listar conhecimentos
       if (lower.includes('listar conhecimentos')) {
-        if (bancoDeConhecimento.length === 0) {
-          return 'ℹ️ Nenhum conteúdo na base de conhecimento ainda.'
+        try {
+          const { data, error } = await supabase
+            .from('ai_learning')
+            .select('keyword, ai_response, created_at')
+            .eq('context', 'knowledge_base')
+            .order('created_at', { ascending: false })
+          
+          if (error) throw error
+          
+          if (!data || data.length === 0) {
+            return 'ℹ️ Nenhum conteúdo na base de conhecimento ainda.'
+          }
+  
+          const lista = data.map((k, i) => `${i + 1}. ${k.keyword}`).join('\n')
+          return `📚 Conhecimentos disponíveis (${data.length}):\n${lista}`
+        } catch (error) {
+          console.error('Erro ao listar conhecimentos:', error)
+          return '❌ Erro ao acessar base de conhecimento.'
         }
-  
-        const lista = bancoDeConhecimento
-          .map((k, i) => `${i + 1}. ${k.titulo}`)
-          .join('\n')
-  
-        return `📚 Conhecimentos disponíveis:\n${lista}`
       }
   
       return '⚠️ Comando de base de conhecimento não reconhecido. Use: criar, editar ou listar conhecimentos.'

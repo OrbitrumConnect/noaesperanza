@@ -4,19 +4,30 @@ import { courseAdminAgent } from './courseAdminAgent'
 import { knowledgeBaseAgent } from './knowledgeBaseAgent'
 import { supabaseService } from '../services/supabaseService'
 import { clinicalAgent } from './clinicalAgent'
-// import { symbolicAgent } from './symbolicAgent'
-// import { voiceControlAgent } from './voiceControlAgent'
+import { symbolicAgent } from './symbolicAgent'
+import { voiceControlAgent } from './voiceControlAgent'
 
 export class NoaGPT {
   async processCommand(message: string): Promise<string> {
     const lower = message.toLowerCase().trim()
 
-    // 🔑 ATIVAÇÃO DE VOZ (em desenvolvimento)
+    // 🔑 ATIVAÇÃO DE VOZ
     if (
       lower.includes('ativar controle por voz') ||
-      lower.includes('modo voz noa')
+      lower.includes('modo voz noa') ||
+      lower.includes('ativar voz') ||
+      lower.includes('controle por voz')
     ) {
-      return `🎤 Controle por voz: Funcionalidade em desenvolvimento.`
+      return await voiceControlAgent.ativarControle()
+    }
+
+    // 🔇 DESATIVAÇÃO DE VOZ
+    if (
+      lower.includes('desativar voz') ||
+      lower.includes('parar voz') ||
+      lower.includes('desativar controle por voz')
+    ) {
+      return await voiceControlAgent.desativarControle()
     }
 
     // 📎 ADICIONAR DOCUMENTO
@@ -70,7 +81,14 @@ export class NoaGPT {
       return await knowledgeBaseAgent.executarAcao(message)
     }
 
-    // 🩺 AVALIAÇÃO CLÍNICA (DRC, AEC, Risco)
+    // 🩺 AVALIAÇÃO CLÍNICA TRIAXIAL (Sistema Inteligente)
+    // Primeiro, verifica se deve iniciar avaliação clínica
+    const inicioAvaliacao = await clinicalAgent.detectarInicioAvaliacao(message)
+    if (inicioAvaliacao) {
+      return inicioAvaliacao.mensagem
+    }
+
+    // Comandos específicos de avaliação clínica
     if (
       lower.includes('avaliação clínica') ||
       lower.includes('avaliacao clinica') ||
@@ -83,20 +101,30 @@ export class NoaGPT {
       lower.includes('avaliação inicial') ||
       lower.includes('avaliacao inicial') ||
       lower.includes('começar avaliação') ||
-      lower.includes('comecar avaliacao')
+      lower.includes('comecar avaliacao') ||
+      lower.includes('consulta com dr ricardo') ||
+      lower.includes('consulta com dr. ricardo') ||
+      lower.includes('consulta com ricardo valença') ||
+      lower.includes('quero fazer uma avaliação') ||
+      lower.includes('preciso de uma consulta') ||
+      lower.includes('avaliação triaxial')
     ) {
-      return await clinicalAgent.executarFluxo(message)
+      const resultado = await clinicalAgent.executarFluxo(message)
+      return typeof resultado === 'string' ? resultado : resultado.mensagem
     }
 
-    // 🌀 EIXO SIMBÓLICO (em desenvolvimento)
+    // 🌀 EIXO SIMBÓLICO
     if (
       lower.includes('curadoria simbólica') ||
+      lower.includes('curadoria simbolica') ||
       lower.includes('ancestralidade') ||
       lower.includes('projeto cultural') ||
       lower.includes('tradição') ||
-      lower.includes('diagnóstico simbólico')
+      lower.includes('tradicao') ||
+      lower.includes('diagnóstico simbólico') ||
+      lower.includes('diagnostico simbolico')
     ) {
-      return `🌀 Eixo Simbólico: Funcionalidade em desenvolvimento.`
+      return await symbolicAgent.executarAcao(message)
     }
 
     // 💾 SUPABASE: AÇÕES EM ARQUIVOS
@@ -109,20 +137,16 @@ export class NoaGPT {
       return await supabaseService.salvarArquivoViaTexto(message)
     }
 
-    // 💬 SAUDAÇÕES E CONVERSAS GERAIS
+    // 💬 SAUDAÇÕES BÁSICAS (apenas primeira interação - exato)
     if (
-      lower.includes('ola') ||
-      lower.includes('olá') ||
-      lower.includes('oi') ||
-      lower.includes('bom dia') ||
-      lower.includes('boa tarde') ||
-      lower.includes('boa noite') ||
-      lower.includes('como você está') ||
-      lower.includes('tudo bem') ||
-      lower.includes('como vai') ||
-      lower.includes('e aí') ||
-      lower.includes('hey') ||
-      lower.includes('hi')
+      lower === 'ola' ||
+      lower === 'olá' ||
+      lower === 'oi' ||
+      lower === 'bom dia' ||
+      lower === 'boa tarde' ||
+      lower === 'boa noite' ||
+      lower === 'hey' ||
+      lower === 'hi'
     ) {
       return `Olá! Sou a NOA Esperanza, assistente médica do Dr. Ricardo Valença. Estou aqui para ajudar com avaliações clínicas nas especialidades de neurologia, cannabis medicinal e nefrologia. Como posso ajudá-lo hoje?`
     }
@@ -145,13 +169,7 @@ export class NoaGPT {
     }
 
     // 💬 RESPOSTA NATURAL PARA CONVERSAS GERAIS
-    return `Entendo sua pergunta. Como assistente médica especializada em neurologia, cannabis medicinal e nefrologia, posso ajudá-lo com:
-
-• Avaliações clínicas estruturadas
-• Orientações sobre tratamentos
-• Informações sobre especialidades médicas
-• Criação de conteúdo educativo
-
-Como posso ajudá-lo especificamente hoje?`
+    // Se chegou até aqui, deixa o OpenAI responder
+    return 'OPENAI_FALLBACK'
   }
 }

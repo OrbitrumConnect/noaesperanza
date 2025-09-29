@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -8,8 +8,15 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
-  const { signIn } = useAuth()
+  const { signIn, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
+
+  // Redirecionar se já estiver logado
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate('/')
+    }
+  }, [user, authLoading, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,6 +36,18 @@ const LoginPage = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Mostrar loading enquanto verifica autenticação
+  if (authLoading) {
+    return (
+      <div className="h-full overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Verificando autenticação...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

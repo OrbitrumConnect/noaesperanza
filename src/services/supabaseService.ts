@@ -1,22 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../integrations/supabase/client'
 
-// Configuração do Supabase
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://lhclqebtkyfftkevumix.supabase.co'
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY || 'your-anon-key'
-const supabaseProjectId = (import.meta as any).env?.VITE_SUPABASE_PROJECT_ID || 'lhclqebtkyfftkevumix'
-
-console.log('🔧 Supabase configurado:', { 
-  url: supabaseUrl, 
-  projectId: supabaseProjectId,
-  hasAnonKey: !!supabaseAnonKey,
-  isDefaultUrl: supabaseUrl === 'https://lhclqebtkyfftkevumix.supabase.co'
-})
-
-if (!supabaseUrl || !supabaseAnonKey || supabaseAnonKey === 'your-anon-key') {
-  console.warn('⚠️ Configuração do Supabase não encontrada. Verifique o arquivo .env')
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+console.log('🔧 Supabase configurado via client centralizado')
 
 // Funções para dashboard administrativo
 export interface AdminMetrics {

@@ -1,5 +1,5 @@
 // Serviço para sistema de aprendizado da IA
-import { supabase } from './supabaseService'
+import { supabase } from '../integrations/supabase/client'
 
 export interface AILearning {
   id: string
