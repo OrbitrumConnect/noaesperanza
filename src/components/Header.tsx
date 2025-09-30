@@ -53,7 +53,7 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
             </div>
           </div>
         ) : (
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/app/" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
               <img 
                 src="/logo-noa-triangulo.gif" 
@@ -74,25 +74,25 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
         {/* Menu de Tipos de Usuário - não mostrar na landing page */}
         {location.pathname !== '/landing' && (
           <nav className="hidden lg:flex gap-1">
-            <Link to="/paciente" className="nav-item text-xs px-3 py-2">
+            <Link to="/app/paciente" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-user text-xs"></i>
               <span className="text-xs">Paciente</span>
             </Link>
-            <Link to="/medico" className="nav-item text-xs px-3 py-2">
+            <Link to="/app/medico" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-user-md text-xs"></i>
               <span className="text-xs">Médico</span>
             </Link>
-            <Link to="/estudante" className="nav-item text-xs px-3 py-2">
+            <Link to="/app/estudante" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-graduation-cap text-xs"></i>
               <span className="text-xs">Estudante</span>
             </Link>
-            <Link to="/checkout" className="nav-item text-xs px-3 py-2">
+            <Link to="/app/checkout" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-credit-card text-xs"></i>
               <span className="text-xs">Pagar</span>
             </Link>
             {/* Mostrar ADM/CONFIG apenas para administradores */}
             {user?.user_metadata?.role === 'admin' && (
-              <Link to="/admin" className="nav-item text-xs px-3 py-2">
+              <Link to="/app/admin" className="nav-item text-xs px-3 py-2">
                 <i className="fas fa-cog text-xs"></i>
                 <span className="text-xs">ADM/CONFIG</span>
               </Link>

@@ -11,6 +11,7 @@ import { aiLearningService } from '../services/aiLearningService'
 import { cleanTextForAudio } from '../utils/textUtils'
 import { NoaGPT } from '../gpt/noaGPT'
 import { clinicalAgent } from '../gpt/clinicalAgent'
+import { MedicalImageService, MedicalData } from '../services/medicalImageService'
 import ThoughtBubble from '../components/ThoughtBubble'
 import MatrixBackground from '../components/MatrixBackground'
 
@@ -190,8 +191,9 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const [medicalData, setMedicalData] = useState<MedicalData[]>([])
+  const [isProcessingImage, setIsProcessingImage] = useState(false)
+  // messagesContainerRef removido para evitar scroll infinito
   
   // Estados para expansão de cards
   const [expandedCard, setExpandedCard] = useState<ExpandedCard | null>(null)
@@ -258,29 +260,8 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     return saved ? JSON.parse(saved) : { name: '', preferences: {}, lastVisit: null }
   })
   const [showAILearningDashboard, setShowAILearningDashboard] = useState(false)
-  const [showScrollButton, setShowScrollButton] = useState(false)
 
-  // Auto scroll para a última mensagem
-  const scrollToBottom = () => {
-    if (messagesContainerRef.current) {
-      // Usar scrollTop para melhor compatibilidade
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
-    }
-    // Fallback usando messagesEndRef
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
-
-  // Função para rolagem suave
-  const smoothScrollToBottom = () => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
-        behavior: 'smooth'
-      })
-    }
-  }
+  // Funções de scroll REMOVIDAS para evitar scroll infinito
 
   // Salva memória do usuário
   const saveUserMemory = (newMemory: any) => {
@@ -314,73 +295,13 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     }
   }
 
-  useEffect(() => {
-    // Usar setTimeout para garantir que o DOM foi atualizado
-    const timer = setTimeout(() => {
-      scrollToBottom()
-    }, 100)
+  // useEffect de scroll DESABILITADO para evitar scroll infinito
 
-    return () => clearTimeout(timer)
-  }, [messages])
+  // useEffect removido para evitar conflito de scroll
 
-  // useEffect adicional para garantir rolagem quando isTyping muda
-  useEffect(() => {
-    if (!isTyping) {
-      const timer = setTimeout(() => {
-        scrollToBottom()
-      }, 50)
-      return () => clearTimeout(timer)
-    }
-  }, [isTyping])
+  // Listener de scroll removido para evitar conflitos
 
-  // Listener para detectar scroll e mostrar/esconder botão
-  useEffect(() => {
-    const container = messagesContainerRef.current
-    if (!container) return
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10 // 10px de tolerância
-      setShowScrollButton(!isAtBottom)
-    }
-
-    container.addEventListener('scroll', handleScroll)
-    return () => container.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // Listener para respostas refinadas
-  useEffect(() => {
-    const handleResponseRefined = (event: CustomEvent) => {
-      const { userMessage, refinedResponse } = event.detail
-      console.log('🔄 Resposta refinada recebida:', refinedResponse.substring(0, 100) + '...')
-      
-      // Atualizar a última mensagem da NOA com a resposta refinada
-      setMessages(prev => {
-        const updatedMessages = [...prev]
-        const lastNoaMessageIndex = updatedMessages.map((msg: Message, index: number) => ({ msg, index }))
-          .filter(({ msg }) => msg.sender === 'noa')
-          .pop()?.index ?? -1
-        
-        if (lastNoaMessageIndex !== -1) {
-          updatedMessages[lastNoaMessageIndex] = {
-            ...updatedMessages[lastNoaMessageIndex],
-            message: refinedResponse,
-            timestamp: new Date()
-          }
-        }
-        
-        return updatedMessages
-      })
-    }
-
-    // Adicionar listener
-    window.addEventListener('noaResponseRefined', handleResponseRefined as EventListener)
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('noaResponseRefined', handleResponseRefined as EventListener)
-    }
-  }, [])
+  // Listener para respostas refinadas - REMOVIDO para evitar scroll infinito
 
   // Áudio liberado automaticamente - sem necessidade de primeira interação
   useEffect(() => {
@@ -1145,6 +1066,61 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
     handleSendMessage()
   }
 
+  // Função para processar upload de imagem médica
+  const handleMedicalImageUpload = async (file: File) => {
+    try {
+      setIsProcessingImage(true);
+      addNotification('🏥 Processando imagem médica...', 'info');
+      
+      // Processar imagem com OCR e IA
+      const processedData = await MedicalImageService.processMedicalImage(file, 'current_user');
+      
+      if (processedData.length > 0) {
+        // Adicionar dados médicos ao estado
+        setMedicalData(prev => [...prev, ...processedData]);
+        
+        // Criar mensagem com resultados
+        const resultsMessage = processedData.map(data => {
+          const statusEmoji = data.status === 'normal' ? '✅' : 
+                             data.status === 'alto' ? '⚠️' : 
+                             data.status === 'baixo' ? '📉' : '❓';
+          
+          return `${statusEmoji} **${data.exame.toUpperCase()}**: ${data.valor} ${data.unidade} (${data.referencia}) - ${data.status.toUpperCase()}`;
+        }).join('\n');
+        
+        const alertasMessage = processedData
+          .flatMap(data => data.alertas || [])
+          .map(alerta => `🔔 ${alerta.mensagem}`)
+          .join('\n');
+        
+        const fullMessage = `**📋 EXAMES PROCESSADOS:**\n\n${resultsMessage}\n\n**🚨 ALERTAS:**\n${alertasMessage}`;
+        
+        // Adicionar mensagem da NOA com resultados
+        const noaMessage: Message = {
+          id: Date.now().toString(),
+          message: fullMessage,
+          sender: 'noa',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, noaMessage]);
+        addNotification(`✅ ${processedData.length} exames processados com sucesso!`, 'success');
+        
+        // TODO: Salvar no Supabase
+        console.log('💾 Dados para salvar no banco:', processedData);
+        
+      } else {
+        addNotification('❌ Nenhum exame encontrado na imagem', 'warning');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro no processamento:', error);
+      addNotification('❌ Erro ao processar imagem médica', 'error');
+    } finally {
+      setIsProcessingImage(false);
+    }
+  }
+
   // Função para iniciar reconhecimento de voz
   const startVoiceRecognition = () => {
     if (!noaVoiceService.isSpeechRecognitionAvailable()) {
@@ -1189,7 +1165,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         console.log('🎤 Ativação automática do reconhecimento de voz')
         startVoiceRecognition()
       }
-    }, APP_CONFIG.ui.voice.typingDelay) // Usando configuração interna
+    }, 1000) // Delay de 1 segundo para iniciar reconhecimento de voz
   }
 
   // Função para tocar áudio da NOA com texto sincronizado
@@ -1247,13 +1223,67 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       {/* Layout Principal */}
       <div className="w-full h-full flex relative z-0">
         {/* Sidebar Esquerdo - Chat */}
-        <div className="sidebar-mobile w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[79.5vh] z-10">
+        <div className="sidebar-mobile w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[calc(100vh-7vh-80px)] z-10" style={{ overflow: 'hidden' }}>
           {/* Balão de Pensamento */}
           <div className="h-full flex flex-col">
-            <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 flex-1 flex flex-col">
+            <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 flex-1 flex flex-col" style={{ overflow: 'hidden' }}>
 
-              {/* Área de Mensagens */}
-              <div ref={messagesContainerRef} className="messages-container space-y-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 min-h-0 max-h-full p-2" style={{ scrollBehavior: 'smooth' }}>
+              {/* Triggers Fixos no Topo */}
+              <div className="px-3 pt-3 pb-2 border-b border-gray-200">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = async (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) {
+                          console.log('📸 Imagem médica selecionada:', file.name);
+                          await handleMedicalImageUpload(file);
+                        }
+                      };
+                      input.click();
+                    }}
+                    disabled={isProcessingImage}
+                    className={`px-3 py-1.5 rounded-lg text-xs transition-colors border ${
+                      isProcessingImage 
+                        ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed' 
+                        : 'bg-red-100 hover:bg-red-200 border-red-300 text-red-800'
+                    }`}
+                    title={isProcessingImage ? "Processando imagem..." : "Enviar exame/receita/laudo"}
+                  >
+                    {isProcessingImage ? '⏳ Processando' : '🖼️ Imagem'}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleOptionClick('Hipertensão')}
+                    className="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 border border-purple-300 rounded-lg text-xs text-purple-800 transition-colors"
+                  >
+                    🏥 Histórico
+                  </button>
+                </div>
+              </div>
+
+              {/* Área de Mensagens - Melhorada */}
+              <div 
+                className="messages-container space-y-3 flex-1 overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 min-h-0 max-h-full px-3 pt-3 pb-6" 
+                style={{ 
+                  scrollBehavior: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  overflowAnchor: 'none',
+                  position: 'relative',
+                  scrollSnapType: 'none',
+                  scrollPadding: '0',
+                  scrollMargin: '0',
+                  overflowY: 'scroll',
+                  height: '100%',
+                  maxHeight: '100%',
+                  /* FORÇAR SCROLL MANUAL */
+                  scrollSnapAlign: 'none',
+                  scrollSnapStop: 'normal'
+                }}
+              >
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -1265,8 +1295,6 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                         : 'bg-gray-100 text-gray-800 rounded-lg p-3'
                     }`}>
                       <p className="text-sm leading-relaxed whitespace-pre-line">{message.message}</p>
-                      
-                      {/* Chat limpo - sem comandos clicáveis */}
                       
                       <span className="text-xs opacity-70 mt-1 block">
                         {formatTime(message.timestamp)}
@@ -1291,35 +1319,12 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
               </div>
                 )}
                 
-                <div ref={messagesEndRef} />
                 </div>
                 
               {/* Input de Mensagem */}
-              <div className="flex gap-2 mt-3 flex-col sm:flex-row">
-                <input 
-                  type="text" 
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Digite sua mensagem..."
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-600 w-full sm:w-auto"
-                  aria-label="Campo de mensagem para conversar com NOA"
-                />
-                {/* Botões de controle */}
-                <div className="flex gap-2 w-full sm:w-auto">
-                  {/* Botão de rolagem para baixo - aparece apenas quando necessário */}
-                  {showScrollButton && (
-                    <button
-                      onClick={smoothScrollToBottom}
-                      className="px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors duration-200 flex items-center justify-center animate-pulse"
-                      title="Rolar para baixo"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                      </svg>
-                    </button>
-                  )}
-                  {/* Botão de voz */}
+              <div className="mt-3">
+                <div className="flex gap-2 border border-gray-300 rounded-lg p-2 bg-white">
+                  {/* Botão de voz - Esquerda */}
                   <button
                     onClick={() => {
                       if (isVoiceListening) {
@@ -1331,7 +1336,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                         startVoiceRecognition()
                       }
                     }}
-                    className={`flex-1 sm:flex-none px-4 py-2 rounded-lg transition-colors text-sm ${
+                    className={`px-2 py-1.5 rounded-md transition-colors text-xs ${
                       isVoiceListening 
                         ? 'bg-red-500 hover:bg-red-600 text-white' 
                         : 'bg-green-500 hover:bg-green-600 text-white'
@@ -1341,17 +1346,30 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                   >
                     <i className={`fas ${isVoiceListening ? 'fa-stop' : 'fa-microphone'}`}></i>
                   </button>
+                  
+                  {/* Input no meio */}
+                  <input 
+                    type="text" 
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Digite sua mensagem..."
+                    className="flex-1 px-3 py-2 text-sm focus:outline-none text-black placeholder-gray-600"
+                    aria-label="Campo de mensagem para conversar com NOA"
+                  />
+                  
+                  {/* Botão Enviar - Direita */}
                   <button 
                     onClick={() => handleSendMessage()}
                     disabled={!inputMessage.trim()}
-                    className="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-2 py-1.5 rounded-md transition-colors text-xs"
                     aria-label="Enviar mensagem para NOA"
                     title="Enviar mensagem"
                   >
                     <i className="fas fa-paper-plane"></i>
                   </button>
                 </div>
-                </div>
+              </div>
               </div>
             </div>
           </div>
@@ -1369,7 +1387,14 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
           <div className={`flex-shrink-0 flex justify-center items-center relative transition-all duration-500 ${
             isCardExpanded ? 'scale-75 translate-x-24' : 'scale-100 translate-x-0'
           }`}>
-            <div className="w-[clamp(120px,20vw,135px)] h-[clamp(120px,20vw,135px)] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square">
+            <div className="w-[200px] h-[200px] md:w-[400px] md:h-[400px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center">
+              {/* Avatar da NOA - Imagem estática por enquanto */}
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-white text-6xl md:text-8xl animate-pulse">
+                  🤖
+                </div>
+              </div>
+              
               {/* Vídeo estático piscando (padrão) */}
               <video 
                 key="estatico"
@@ -1380,14 +1405,12 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                 loop
                 muted
                 playsInline
+                onCanPlay={() => {
+                  console.log('✅ Vídeo estático carregado!')
+                }}
+                onError={(e) => console.log('⚠️ Vídeo estático não disponível')}
               >
-                <source src="./estatica piscando.mp4" type="video/mp4" />
-                {/* Fallback para imagem caso o vídeo não carregue */}
-                <img 
-                  src="./avatar-default.jpg" 
-                  alt="NOA Esperanza" 
-                  className="w-full h-full object-cover"
-                />
+                <source src="/estatica piscando.mp4" type="video/mp4" />
               </video>
               
               {/* Vídeo falando (quando áudio está tocando) */}
@@ -1405,8 +1428,12 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                     video.playbackRate = 0.8;
                   }
                 }}
+                onCanPlay={() => {
+                  console.log('✅ Vídeo falando carregado!')
+                }}
+                onError={(e) => console.log('⚠️ Vídeo falando não disponível')}
               >
-                <source src="./AGENTEFALANDO.mp4?v=2" type="video/mp4" />
+                <source src="/AGENTEFALANDO.mp4" type="video/mp4" />
               </video>
             </div>
             {/* Botão para parar áudio */}
@@ -1546,38 +1573,6 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
               ))}
             </div>
 
-            {/* Input Mobile */}
-            <div className="flex gap-2 mt-3 flex-col">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Digite sua mensagem..."
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-600 w-full"
-                data-testid="chat-input"
-              />
-              <div className="flex gap-2 w-full">
-                <button
-                  onClick={() => handleSendMessage()}
-                  disabled={isProcessing || !inputMessage.trim()}
-                  className={`flex-1 px-4 py-2 rounded-lg transition-colors text-sm ${
-                    isProcessing || !inputMessage.trim()
-                      ? 'bg-gray-400 cursor-not-allowed text-white'
-                      : 'bg-green-500 hover:bg-green-600 text-white'
-                  }`}
-                  data-testid="send-button"
-                >
-                  {isProcessing ? 'Enviando...' : 'Enviar'}
-                </button>
-                <button
-                  onClick={() => setIsVoiceListening(!isVoiceListening)}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors text-sm"
-                >
-                  {isVoiceListening ? 'Parar' : 'Falar'}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>

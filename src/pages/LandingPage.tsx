@@ -27,7 +27,7 @@ const LandingPage = () => {
   // Redirecionar se já estiver logado
   useEffect(() => {
     if (user) {
-      navigate('/')
+      navigate('/app/')
     }
   }, [user, navigate])
 
@@ -39,7 +39,7 @@ const LandingPage = () => {
         await signUp(email, password, userData || {})
       }
       setShowAuthModal(false)
-      navigate('/')
+      navigate('/app/')
     } catch (error) {
       console.error('Erro na autenticação:', error)
     }
@@ -122,11 +122,11 @@ const LandingPage = () => {
         setCurrentSpecialty={setCurrentSpecialty}
       />
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 -mt-[7%]">
+      <section className="relative min-h-screen flex items-center justify-center px-4 pt-20">
         <div className="absolute inset-0" style={{
           background: 'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)'
         }}></div>
-        <div className="relative z-10 max-w-6xl mx-auto text-center">
+        <div className="relative z-10 max-w-6xl mx-auto text-center mt-16">
           <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             {/* Logo NOA */}
             <div className="mb-8">

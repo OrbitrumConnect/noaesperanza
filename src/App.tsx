@@ -1,6 +1,6 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Header from './components/Header'
 // Sidebar removido - chat limpo sem sidebar
@@ -31,6 +31,27 @@ import Pesquisa from './pages/Pesquisa'
 import MedCannLab from './pages/MedCannLab'
 
 export type Specialty = 'rim' | 'neuro' | 'cannabis'
+
+// Componente para rotas protegidas
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth()
+  
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{
+        background: 'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)'
+      }}>
+        <div className="text-white text-xl">Carregando...</div>
+      </div>
+    )
+  }
+  
+  if (!user) {
+    return <Navigate to="/landing" replace />
+  }
+  
+  return <>{children}</>
+}
 
 function App() {
   const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('rim')
@@ -83,110 +104,115 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <Routes>
+          {/* Rota inicial - LandingPage */}
+          <Route path="/" element={<LandingPage />} />
+          
           {/* Rotas de autenticação - SEM header/footer */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/landing" element={<LandingPage />} />
           
-          {/* Rotas do app - COM header/footer */}
-          <Route path="/*" element={
-            <div className="h-screen overflow-hidden" style={{
-              background: 'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)'
-            }}>
-              {/* Header */}
-              <Header 
-                currentSpecialty={currentSpecialty}
-                setCurrentSpecialty={setCurrentSpecialty}
-              />
+          {/* Rotas do app - COM header/footer - PROTEGIDAS */}
+          <Route path="/app/*" element={
+            <ProtectedRoute>
+              <div className="h-screen overflow-hidden" style={{
+                background: 'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)'
+              }}>
+                {/* Header */}
+                <Header 
+                  currentSpecialty={currentSpecialty}
+                  setCurrentSpecialty={setCurrentSpecialty}
+                />
 
-              {/* Container Principal */}
-              <div className="pt-16 pb-20 h-full overflow-hidden">
-                <Routes>
-                  {/* Página inicial - Chat limpo sem Sidebar */}
-                  <Route path="/" element={
-                    <div className="h-full overflow-hidden">
-                      {/* Chat Central - Tela Cheia */}
-                      <Home 
+                {/* Container Principal */}
+                <div className="pt-16 pb-20 h-full overflow-hidden">
+                  <Routes>
+                    {/* Página inicial do app - Chat limpo sem Sidebar */}
+                    <Route path="/" element={
+                      <div className="h-full overflow-hidden">
+                        {/* Chat Central - Tela Cheia */}
+                        <Home 
+                          currentSpecialty={currentSpecialty}
+                          isVoiceListening={isVoiceListening}
+                          setIsVoiceListening={setIsVoiceListening}
+                          addNotification={addNotification}
+                        />
+                      </div>
+                    } />
+
+                    {/* Páginas específicas */}
+                    
+                    <Route path="/medico" element={
+                      <DashboardMedico 
                         currentSpecialty={currentSpecialty}
-                        isVoiceListening={isVoiceListening}
-                        setIsVoiceListening={setIsVoiceListening}
                         addNotification={addNotification}
                       />
-                    </div>
-                  } />
+                    } />
+                    
+                    <Route path="/paciente" element={
+                      <DashboardPaciente 
+                        currentSpecialty={currentSpecialty}
+                        addNotification={addNotification}
+                      />
+                    } />
+                    
+                    <Route path="/profissional" element={
+                      <DashboardProfissional 
+                        currentSpecialty={currentSpecialty}
+                        addNotification={addNotification}
+                      />
+                    } />
+                    
+                    <Route path="/admin" element={
+                      <AdminDashboard addNotification={addNotification} />
+                    } />
+                    
+                    <Route path="/payment" element={
+                      <PaymentPage />
+                    } />
+                    
+                    <Route path="/checkout" element={
+                      <CheckoutPage addNotification={addNotification} />
+                    } />
+                    
+                    <Route path="/relatorio" element={
+                      <RelatorioNarrativo 
+                        currentSpecialty={currentSpecialty}
+                        addNotification={addNotification}
+                      />
+                    } />
+                    
+                    <Route path="/config" element={
+                      <Configuracoes addNotification={addNotification} />
+                    } />
+                    
+                    <Route path="/perfil" element={
+                      <Perfil addNotification={addNotification} />
+                    } />
 
-                  {/* Páginas específicas */}
-                  
-                  <Route path="/medico" element={
-                    <DashboardMedico 
-                      currentSpecialty={currentSpecialty}
-                      addNotification={addNotification}
-                    />
-                  } />
-                  
-                  <Route path="/paciente" element={
-                    <DashboardPaciente 
-                      currentSpecialty={currentSpecialty}
-                      addNotification={addNotification}
-                    />
-                  } />
-                  
-                  <Route path="/profissional" element={
-                    <DashboardProfissional 
-                      currentSpecialty={currentSpecialty}
-                      addNotification={addNotification}
-                    />
-                  } />
-                  
-                  <Route path="/admin" element={
-                    <AdminDashboard addNotification={addNotification} />
-                  } />
-                  
-                  <Route path="/payment" element={
-                    <PaymentPage />
-                  } />
-                  
-                  <Route path="/checkout" element={
-                    <CheckoutPage addNotification={addNotification} />
-                  } />
-                  
-                  <Route path="/relatorio" element={
-                    <RelatorioNarrativo 
-                      currentSpecialty={currentSpecialty}
-                      addNotification={addNotification}
-                    />
-                  } />
-                  
-                  <Route path="/config" element={
-                    <Configuracoes addNotification={addNotification} />
-                  } />
-                  
-                  <Route path="/perfil" element={
-                    <Perfil addNotification={addNotification} />
-                  } />
+                    {/* Páginas do Paciente */}
+                    <Route path="/exames" element={<MeusExames />} />
+                    <Route path="/prescricoes" element={<Prescricoes />} />
+                    <Route path="/prontuario" element={<Prontuario />} />
+                    <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
 
-                  {/* Páginas do Paciente */}
-                  <Route path="/exames" element={<MeusExames />} />
-                  <Route path="/prescricoes" element={<Prescricoes />} />
-                  <Route path="/prontuario" element={<Prontuario />} />
-                  <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
+                    {/* Páginas de Ensino e Pesquisa */}
+                    <Route path="/avaliacao-clinica" element={<AvaliacaoClinica />} />
+                    <Route path="/ensino" element={<Ensino />} />
+                    <Route path="/pesquisa" element={<Pesquisa />} />
+                    <Route path="/medcann-lab" element={<MedCannLab />} />
 
-                  {/* Páginas de Ensino e Pesquisa */}
-                  <Route path="/avaliacao-clinica" element={<AvaliacaoClinica />} />
-                  <Route path="/ensino" element={<Ensino />} />
-                  <Route path="/pesquisa" element={<Pesquisa />} />
-                  <Route path="/medcann-lab" element={<MedCannLab />} />
+                    {/* 404 */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
 
-                  {/* 404 */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                {/* Footer Compacto para Home - Fixo na parte inferior */}
+                <div className="fixed bottom-0 left-0 right-0 z-30">
+                  <HomeFooter />
+                </div>
               </div>
-
-              {/* Footer Compacto para Home - Fixo na parte inferior */}
-              <div className="fixed bottom-0 left-0 right-0 z-30">
-                <HomeFooter />
-              </div>
-            </div>
+            </ProtectedRoute>
           } />
         </Routes>
 

@@ -465,10 +465,21 @@ body {
    💬 CHAT SCROLL FIXES
    ============================================ */
 
-/* Garantir que o scroll funcione corretamente no chat */
+/* Chat sem scroll automático - CORRIGIDO DEFINITIVAMENTE */
 .messages-container {
-  scroll-behavior: smooth;
+  scroll-behavior: auto !important;
   -webkit-overflow-scrolling: touch;
+  overflow-anchor: none !important;
+  overflow-y: scroll !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  position: relative;
+  scroll-snap-type: none !important;
+  scroll-padding: 0 !important;
+  scroll-margin: 0 !important;
+  /* FORÇAR SCROLL MANUAL */
+  scroll-snap-align: none !important;
+  scroll-snap-stop: normal !important;
 }
 
 /* Fix para o sidebar mobile não interferir no scroll */

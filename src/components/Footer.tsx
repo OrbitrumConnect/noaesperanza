@@ -4,12 +4,12 @@ import { Link } from 'react-router-dom'
 const Footer = () => {
   return (
     <footer className="bg-gradient-to-r from-gray-900 via-purple-900 to-amber-600 border-t border-white/20">
-      <div className="max-w-7xl mx-auto px-3 py-1">
-        <div className="grid md:grid-cols-3 gap-1.5">
+      <div className="max-w-7xl mx-auto px-1.5 py-0.5">
+        <div className="grid md:grid-cols-3 gap-0.5">
           {/* Logo e Descrição */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-1.5 mb-0">
-              <div className="w-7 h-7 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="flex items-center gap-0.5 mb-0">
+              <div className="w-5 h-5 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
                 <img 
                   src="/logo-noa-triangulo.gif" 
                   alt="NOA Esperanza" 
@@ -17,7 +17,7 @@ const Footer = () => {
                 />
               </div>
               <div>
-                <div className="text-sm font-bold text-white">NOA ESPERANZA</div>
+                <div className="text-xs font-bold text-white">NOA ESPERANZA</div>
                 <div className="text-xs text-yellow-100">Medicina Digital Inteligente</div>
               </div>
             </div>
@@ -32,7 +32,7 @@ const Footer = () => {
                 href="https://instagram.com/noaesperanza" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-5 h-5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-300"
+                className="w-4 h-4 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-300"
               >
                 <i className="fab fa-instagram text-xs"></i>
               </a>
@@ -40,7 +40,7 @@ const Footer = () => {
                 href="https://linkedin.com/company/noaesperanza" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-5 h-5 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-300"
+                className="w-4 h-4 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-300"
               >
                 <i className="fab fa-linkedin text-xs"></i>
               </a>
@@ -48,7 +48,7 @@ const Footer = () => {
                 href="https://twitter.com/noaesperanza" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-5 h-5 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-300"
+                className="w-4 h-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-300"
               >
                 <i className="fab fa-twitter text-xs"></i>
               </a>
@@ -81,12 +81,12 @@ const Footer = () => {
         </div>
 
         {/* Linha de Separação */}
-        <div className="border-t border-white/20 mt-1.5 pt-1">
+        <div className="border-t border-white/20 mt-1 pt-0.5">
           <div className="flex flex-col md:flex-row justify-between items-center gap-0.5">
             <div className="text-gray-400 text-xs">
               © 2024 NOA Esperanza. Todos os direitos reservados.
             </div>
-            <div className="flex gap-1.5 text-xs">
+            <div className="flex gap-1 text-xs">
               <Link to="/privacy" className="text-gray-400 hover:text-white transition-colors">
                 Política de Privacidade
               </Link>

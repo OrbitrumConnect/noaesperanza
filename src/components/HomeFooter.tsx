@@ -26,7 +26,7 @@ const HomeFooter = () => {
             <Link to="/landing" className="text-gray-300 hover:text-white transition-colors">
               Conheça NOA
             </Link>
-            <Link to="/checkout" className="text-gray-300 hover:text-white transition-colors">
+            <Link to="/app/checkout" className="text-gray-300 hover:text-white transition-colors">
               Planos
             </Link>
             <a href="mailto:contato@noaesperanza.com" className="text-gray-300 hover:text-white transition-colors">
