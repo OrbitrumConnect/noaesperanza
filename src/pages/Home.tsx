@@ -18,6 +18,7 @@ interface Message {
   sender: 'user' | 'noa'
   timestamp: Date
   options?: string[] // Opções de resposta rápida
+  isTyping?: boolean // Indicador de digitação
 }
 
 // Interface para cards expandidos
@@ -301,9 +302,43 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     const timer = setTimeout(() => {
       scrollToBottom()
     }, 100)
-    
+
     return () => clearTimeout(timer)
   }, [messages])
+
+  // Listener para respostas refinadas
+  useEffect(() => {
+    const handleResponseRefined = (event: CustomEvent) => {
+      const { userMessage, refinedResponse } = event.detail
+      console.log('🔄 Resposta refinada recebida:', refinedResponse.substring(0, 100) + '...')
+      
+      // Atualizar a última mensagem da NOA com a resposta refinada
+      setMessages(prev => {
+        const updatedMessages = [...prev]
+        const lastNoaMessageIndex = updatedMessages.map((msg: Message, index: number) => ({ msg, index }))
+          .filter(({ msg }) => msg.sender === 'noa')
+          .pop()?.index ?? -1
+        
+        if (lastNoaMessageIndex !== -1) {
+          updatedMessages[lastNoaMessageIndex] = {
+            ...updatedMessages[lastNoaMessageIndex],
+            message: refinedResponse,
+            timestamp: new Date()
+          }
+        }
+        
+        return updatedMessages
+      })
+    }
+
+    // Adicionar listener
+    window.addEventListener('noaResponseRefined', handleResponseRefined as EventListener)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('noaResponseRefined', handleResponseRefined as EventListener)
+    }
+  }, [])
 
   // Áudio liberado automaticamente - sem necessidade de primeira interação
   useEffect(() => {
@@ -325,40 +360,77 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
 
   // Resposta real da NOA usando OpenAI
   const getNoaResponse = async (userMessage: string) => {
+    console.log('🚀 INICIANDO getNoaResponse com:', userMessage)
     setIsTyping(true)
+    
+    // Feedback imediato para o usuário
+    const typingMessage: Message = {
+      id: crypto.randomUUID(),
+      message: 'NOA está pensando...',
+      sender: 'noa',
+      timestamp: new Date(),
+      isTyping: true
+    }
+    setMessages(prev => [...prev, typingMessage])
     
     try {
       // 🩺 SISTEMA DE AVALIAÇÃO CLÍNICA TRIAXIAL INTEGRADO
       // Verifica se deve iniciar avaliação clínica usando o clinicalAgent
-      const inicioAvaliacao = await clinicalAgent.detectarInicioAvaliacao(userMessage)
-      if (inicioAvaliacao) {
-        setModoAvaliacao(true)
-        const noaMessage: Message = {
-          id: crypto.randomUUID(),
-          message: inicioAvaliacao.mensagem,
-          sender: 'noa',
-          timestamp: new Date()
+      console.log('🔍 Verificando se deve iniciar avaliação clínica...')
+      try {
+        const inicioAvaliacao = await clinicalAgent.detectarInicioAvaliacao(userMessage)
+        console.log('🔍 Resultado detectarInicioAvaliacao:', inicioAvaliacao)
+        if (inicioAvaliacao && inicioAvaliacao.iniciar) {
+          console.log('✅ Iniciando avaliação clínica!')
+          setModoAvaliacao(true)
+          const noaMessage: Message = {
+            id: crypto.randomUUID(),
+            message: inicioAvaliacao.mensagem,
+            sender: 'noa',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, noaMessage])
+          setIsTyping(false)
+          console.log('✅ Avaliação iniciada, saindo da função')
+          return
+        } else if (inicioAvaliacao && !inicioAvaliacao.iniciar) {
+          // Erro de conexão ou problema - mostrar mensagem de erro
+          console.log('❌ Não foi possível iniciar avaliação:', inicioAvaliacao.mensagem)
+          const noaMessage: Message = {
+            id: crypto.randomUUID(),
+            message: inicioAvaliacao.mensagem,
+            sender: 'noa',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, noaMessage])
+          setIsTyping(false)
+          return
         }
-        setMessages(prev => [...prev, noaMessage])
-        setIsTyping(false)
-        return
+      } catch (error) {
+        console.error('❌ Erro no clinicalAgent.detectarInicioAvaliacao:', error)
+        // Continua para o fluxo normal se houver erro
       }
 
       // Se está em modo avaliação, processa a resposta usando clinicalAgent
       if (modoAvaliacao) {
-        console.log('🩺 Modo avaliação ativo, processando com clinicalAgent...')
-        console.log('📝 Mensagem do usuário:', userMessage)
-        const respostaAvaliacao = await clinicalAgent.executarFluxo(userMessage)
-        console.log('📝 Resposta do clinicalAgent:', respostaAvaliacao)
-        const noaMessage: Message = {
-          id: crypto.randomUUID(),
-          message: typeof respostaAvaliacao === 'string' ? respostaAvaliacao : respostaAvaliacao.mensagem,
-          sender: 'noa',
-          timestamp: new Date()
+        try {
+          console.log('🩺 Modo avaliação ativo, processando com clinicalAgent...')
+          console.log('📝 Mensagem do usuário:', userMessage)
+          const respostaAvaliacao = await clinicalAgent.executarFluxo(userMessage)
+          console.log('📝 Resposta do clinicalAgent:', respostaAvaliacao)
+          const noaMessage: Message = {
+            id: crypto.randomUUID(),
+            message: typeof respostaAvaliacao === 'string' ? respostaAvaliacao : respostaAvaliacao.mensagem,
+            sender: 'noa',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, noaMessage])
+          setIsTyping(false)
+          return
+        } catch (error) {
+          console.error('Erro no clinicalAgent.executarFluxo:', error)
+          // Continua para o fluxo normal se houver erro
         }
-        setMessages(prev => [...prev, noaMessage])
-        setIsTyping(false)
-        return
       }
 
       // Detecta se o usuário está se apresentando (salva nome, mas usa ChatGPT para resposta)
@@ -377,6 +449,59 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
         }
       }
 
+      // 🤖 TENTAR NoaGPT PRIMEIRO (conforme Documento Mestre v.2.0)
+      console.log('🤖 Chamando NoaGPT.processCommand...')
+      
+      // Inicializa o NoaGPT se ainda não foi criado
+      let currentNoaGPT = noaGPT
+      if (!currentNoaGPT) {
+        currentNoaGPT = new NoaGPT()
+        setNoaGPT(currentNoaGPT)
+      }
+      
+      // 🤖 SISTEMA HÍBRIDO: NoaGPT + ChatGPT Fine-tuned
+      console.log('🤖 Chamando sistema híbrido...')
+      
+      // Preparar histórico da conversa
+      const chatHistory = messages
+        .filter(msg => msg.sender === 'user' || msg.sender === 'noa')
+        .slice(-10) // Últimas 10 mensagens
+        .map(msg => `${msg.sender}: ${msg.message}`)
+      
+      // Usar sistema híbrido inteligente
+      const noaResponse = await currentNoaGPT.processCommandWithFineTuned(userMessage, chatHistory)
+      console.log('✅ Sistema híbrido respondeu:', noaResponse.substring(0, 100) + '...')
+      
+      // Se sistema híbrido reconheceu o comando, usar sua resposta
+      if (noaResponse !== 'OPENAI_FALLBACK') {
+        console.log('✅ Usando resposta imediata do sistema híbrido')
+        
+        // Remove a mensagem de "pensando" e adiciona a resposta real
+        setMessages(prev => {
+          const withoutTyping = prev.filter(msg => !msg.isTyping)
+          const noaMessage: Message = {
+            id: crypto.randomUUID(),
+            message: noaResponse,
+            sender: 'noa',
+            timestamp: new Date()
+          }
+          return [...withoutTyping, noaMessage]
+        })
+        
+        // Salvar interação no sistema de aprendizado
+        aiLearningService.saveInteraction(userMessage, noaResponse, 'general')
+        
+        // Salvar conversa na tabela noa_conversations
+        await currentNoaGPT.saveResponse(userMessage, noaResponse, 'chat_interaction', 'general')
+        
+        // Gerar áudio
+        await playNoaAudioWithText(noaResponse)
+        setIsTyping(false)
+        return
+      }
+      
+      console.log('🔄 NoaGPT não reconheceu, usando OpenAI fallback...')
+      
       // Obter contexto de aprendizado da IA
       const learningContext = await aiLearningService.getLearningContext(userMessage)
       
@@ -434,50 +559,34 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
           .slice(-8) // Mantém apenas as últimas 8 mensagens + contexto do sistema
       ]
 
-      // Chama NoaGPT para gerar resposta (sistema integrado de agentes)
-      console.log('🤖 NoaGPT processando comando...')
-      console.log('📋 Mensagem do usuário:', userMessage.substring(0, 100) + '...')
+      // Chama OpenAI para gerar resposta (fallback quando NoaGPT não reconhece)
+      const openAIResponse = await openAIService.getNoaResponse(userMessage)
+      console.log('✅ OpenAI respondeu:', openAIResponse.substring(0, 100) + '...')
       
-      // Inicializa o NoaGPT se ainda não foi criado
-      let currentNoaGPT = noaGPT
-      if (!currentNoaGPT) {
-        currentNoaGPT = new NoaGPT()
-        setNoaGPT(currentNoaGPT)
-      }
-      
-      const response = await currentNoaGPT.processCommand(userMessage)
-      console.log('✅ NoaGPT respondeu:', response.substring(0, 100) + '...')
-      console.log('🔍 Response completo:', response)
-      
-      // Se NoaGPT não reconheceu o comando, usa OpenAI para resposta geral
-      let finalResponse = response
-      if (response === 'OPENAI_FALLBACK' || response.includes('⚠️') || response.includes('não reconhecido') || response.includes('Funcionalidade em desenvolvimento')) {
-        console.log('🤖 NoaGPT não reconheceu, usando OpenAI...')
-        
-        // Chama OpenAI para resposta geral
-        const openAIResponse = await openAIService.getNoaResponse(userMessage)
-        finalResponse = openAIResponse
-        console.log('✅ OpenAI respondeu:', finalResponse.substring(0, 100) + '...')
-      }
-      
-      // Chat limpo - sem comandos clicáveis automáticos
-      const noaMessage: Message = {
-        id: crypto.randomUUID(),
-        message: finalResponse,
-        sender: 'noa',
-        timestamp: new Date()
-        // options removidas para chat limpo
-      }
-      
-      setMessages(prev => [...prev, noaMessage])
+      // Remove a mensagem de "pensando" e adiciona a resposta real
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => !msg.isTyping)
+        const noaMessage: Message = {
+          id: crypto.randomUUID(),
+          message: openAIResponse,
+          sender: 'noa',
+          timestamp: new Date()
+        }
+        return [...withoutTyping, noaMessage]
+      })
       // Removido: addNotification('Resposta da NOA Esperanza recebida', 'success')
       
       // 🧠 APRENDIZADO AUTOMÁTICO - IA aprende com a conversa
-      aiLearningService.saveInteraction(userMessage, finalResponse, 'general')
+      aiLearningService.saveInteraction(userMessage, openAIResponse, 'general')
+      
+      // Salvar conversa na tabela noa_conversations
+      if (currentNoaGPT) {
+        await currentNoaGPT.saveResponse(userMessage, openAIResponse, 'openai_fallback', 'general')
+      }
       
       // 💭 GERAR PENSAMENTOS FLUTUANTES baseados na resposta
       setTimeout(() => {
-        const newThoughts = generateThoughtsFromResponse(finalResponse)
+        const newThoughts = generateThoughtsFromResponse(openAIResponse)
         console.log('💭 Gerando pensamentos:', newThoughts)
         console.log('💭 Número de pensamentos:', newThoughts.length)
         console.log('💭 IDs dos pensamentos:', newThoughts.map(t => t.id))
@@ -487,12 +596,13 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       
       // ElevenLabs gera APENAS áudio (texto já vem do ChatGPT)
       console.log('🎤 Enviando texto do ChatGPT para ElevenLabs gerar áudio...')
-      await playNoaAudioWithText(finalResponse)
+      await playNoaAudioWithText(openAIResponse)
       
     } catch (error) {
-      console.error('Erro ao obter resposta da NOA:', error)
+      console.error('❌ Erro ao obter resposta da NOA:', error)
       // Removido: addNotification('Erro ao conectar com NOA. Verifique sua conexão.', 'error')
     } finally {
+      console.log('🏁 FINALIZANDO getNoaResponse - setIsTyping(false)')
       setIsTyping(false)
     }
   }
@@ -1099,7 +1209,29 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       const audioResponse = await elevenLabsService.textToSpeech(cleanText)
       console.log('✅ ElevenLabs respondeu:', audioResponse)
       
-      // Cria e toca o áudio
+      // Se é Web Speech API (fallback), não precisa criar áudio
+      if (audioResponse.content_type === 'audio/web-speech') {
+        console.log('🎤 Áudio reproduzido via Web Speech API (fallback)')
+        setAudioPlaying(true)
+        
+        // Para o reconhecimento de voz enquanto NOA fala
+        if (isVoiceListening) {
+          console.log('🔇 Pausando reconhecimento de voz enquanto NOA fala')
+          setIsVoiceListening(false)
+        }
+        
+        // Simular duração do áudio baseada no texto
+        const estimatedDuration = Math.max(cleanText.length * 50, 2000) // ~50ms por caractere, mínimo 2s
+        setTimeout(() => {
+          console.log('🏁 Áudio Web Speech terminou de tocar')
+          setAudioPlaying(false)
+          autoActivateVoiceAfterResponse()
+        }, estimatedDuration)
+        
+        return
+      }
+      
+      // Cria e toca o áudio (apenas para ElevenLabs)
       const audioBlob = new Blob([audioResponse.audio], { type: 'audio/mpeg' })
       const audioUrl = URL.createObjectURL(audioBlob)
       const audio = new Audio(audioUrl)
@@ -1434,6 +1566,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                 <div
                   key={message.id}
                   className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  data-testid={message.sender === 'user' ? 'user-message' : 'ai-message'}
                 >
                   <div
                     className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
@@ -1457,6 +1590,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Digite sua mensagem..."
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black placeholder-gray-600 w-full"
+                data-testid="chat-input"
               />
               <div className="flex gap-2 w-full">
                 <button
@@ -1467,6 +1601,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                       ? 'bg-gray-400 cursor-not-allowed text-white'
                       : 'bg-green-500 hover:bg-green-600 text-white'
                   }`}
+                  data-testid="send-button"
                 >
                   {isProcessing ? 'Enviando...' : 'Enviar'}
                 </button>

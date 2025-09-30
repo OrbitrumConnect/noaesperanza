@@ -36,16 +36,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Obter sessão inicial
     const getInitialSession = async () => {
       try {
+        // Verificar se há sessão ativa
         const { data, error } = await supabase.auth.getSession()
         if (error) throw error
         
-        setUser(data.session?.user ?? null)
+        // Se não há sessão, garantir que usuário é null
+        if (!data.session) {
+          setUser(null)
+          setUserProfile(null)
+          setLoading(false)
+          return
+        }
         
-        if (data.session?.user) {
+        setUser(data.session.user)
+        
+        if (data.session.user) {
           await loadUserProfile(data.session.user.id)
         }
       } catch (error) {
         console.error('Erro ao obter sessão inicial:', error)
+        setUser(null)
+        setUserProfile(null)
       } finally {
         setLoading(false)
       }
@@ -73,10 +84,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      const profile = await authService.getUserProfile(userId)
+      const profile: User = await authService.getUserProfile(userId)
       setUserProfile(profile)
     } catch (error) {
-      console.error('Erro ao carregar perfil do usuário:', error)
+      console.warn('⚠️ Erro ao carregar perfil do usuário (modo local):', error)
+      // Cria perfil local se não conseguir carregar do Supabase
+      const localProfile: User = {
+        id: userId,
+        email: 'usuario@local.com',
+        name: 'Usuário Local',
+        role: 'patient',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      setUserProfile(localProfile)
     }
   }
 
@@ -110,29 +131,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true)
-      
-      // Usuários demo para desenvolvimento
-      if (email === 'phpg69@gmail.com' && password === 'p6p7p8P9!') {
-        // Simular login de admin
-        const mockUser = {
-          id: 'admin-demo',
-          email: 'phpg69@gmail.com',
-          user_metadata: {
-            name: 'Admin NOA',
-            role: 'admin'
-          }
-        }
-        setUser(mockUser as any)
-        setUserProfile({
-          id: 'admin-demo',
-          email: 'phpg69@gmail.com',
-          name: 'Admin NOA',
-          role: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        return
-      }
       
       // Login normal com Supabase
       const data = await authService.signIn(email, password)

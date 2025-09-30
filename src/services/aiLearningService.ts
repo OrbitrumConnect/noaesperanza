@@ -179,7 +179,7 @@ class AILearningService {
         for (const keyword of keywords) {
           const learning = await this.getLearningByKeyword(keyword.keyword)
           if (learning.length > 0) {
-            context += `- ${keyword.keyword}: ${learning[0].ai_response}\n`
+            context += `- ${keyword.keyword}: ${learning[0].ai_response || 'Sem resposta'}\n`
           }
         }
       }
