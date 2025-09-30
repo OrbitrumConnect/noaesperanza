@@ -19,7 +19,10 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
     totalDoctors: 0,
     totalPatients: 0,
     totalInteractions: 0,
-    aiLearningCount: 0
+    aiLearningCount: 0,
+    totalAvaliacoes: 0,
+    avaliacoesCompletas: 0,
+    avaliacoesEmAndamento: 0
   })
   const [loading, setLoading] = useState(true)
   const [recentUsers, setRecentUsers] = useState<any[]>([])
@@ -208,14 +211,14 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
           <div className="premium-card p-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-300 text-xs">Palavras-chave</p>
+                <p className="text-gray-300 text-xs">Avaliações Clínicas</p>
                 <p className="text-lg font-bold text-premium">
-                  {loading ? '...' : metrics.aiLearningCount.toLocaleString()}
+                  {loading ? '...' : metrics.totalAvaliacoes.toLocaleString()}
                 </p>
-                <p className="text-yellow-400 text-xs">Conhecimento</p>
+                <p className="text-green-400 text-xs">{metrics.avaliacoesCompletas} completas</p>
               </div>
-              <div className="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                <i className="fas fa-key text-yellow-400 text-sm"></i>
+              <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                <i className="fas fa-stethoscope text-green-400 text-sm"></i>
               </div>
             </div>
           </div>

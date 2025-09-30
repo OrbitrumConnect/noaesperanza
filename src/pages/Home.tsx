@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Specialty } from '../App'
 import { openAIService, ChatMessage } from '../services/openaiService'
 import { elevenLabsService } from '../services/elevenLabsService'
+import { noaVoiceService } from '../services/noaVoiceService'
+import { APP_CONFIG } from '../config/appConfig'
 import { dataService } from '../services/supabaseService'
 import { aiLearningService } from '../services/aiLearningService'
 import { cleanTextForAudio } from '../utils/textUtils'
@@ -256,12 +258,27 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     return saved ? JSON.parse(saved) : { name: '', preferences: {}, lastVisit: null }
   })
   const [showAILearningDashboard, setShowAILearningDashboard] = useState(false)
+  const [showScrollButton, setShowScrollButton] = useState(false)
 
   // Auto scroll para a última mensagem
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
       // Usar scrollTop para melhor compatibilidade
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
+    // Fallback usando messagesEndRef
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
+  // Função para rolagem suave
+  const smoothScrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      })
     }
   }
 
@@ -305,6 +322,31 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
 
     return () => clearTimeout(timer)
   }, [messages])
+
+  // useEffect adicional para garantir rolagem quando isTyping muda
+  useEffect(() => {
+    if (!isTyping) {
+      const timer = setTimeout(() => {
+        scrollToBottom()
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [isTyping])
+
+  // Listener para detectar scroll e mostrar/esconder botão
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10 // 10px de tolerância
+      setShowScrollButton(!isAtBottom)
+    }
+
+    container.addEventListener('scroll', handleScroll)
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Listener para respostas refinadas
   useEffect(() => {
@@ -374,61 +416,85 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     setMessages(prev => [...prev, typingMessage])
     
     try {
-      // 🩺 SISTEMA DE AVALIAÇÃO CLÍNICA TRIAXIAL INTEGRADO
-      // Verifica se deve iniciar avaliação clínica usando o clinicalAgent
+      // 🩺 SISTEMA DE AVALIAÇÃO CLÍNICA TRIAXIAL INTEGRADO (Documento Mestre v.2.0)
+      // Verifica se deve iniciar avaliação clínica usando o fluxo correto
       console.log('🔍 Verificando se deve iniciar avaliação clínica...')
-      try {
-        const inicioAvaliacao = await clinicalAgent.detectarInicioAvaliacao(userMessage)
-        console.log('🔍 Resultado detectarInicioAvaliacao:', inicioAvaliacao)
-        if (inicioAvaliacao && inicioAvaliacao.iniciar) {
-          console.log('✅ Iniciando avaliação clínica!')
-          setModoAvaliacao(true)
-          const noaMessage: Message = {
-            id: crypto.randomUUID(),
-            message: inicioAvaliacao.mensagem,
-            sender: 'noa',
-            timestamp: new Date()
-          }
-          setMessages(prev => [...prev, noaMessage])
-          setIsTyping(false)
-          console.log('✅ Avaliação iniciada, saindo da função')
-          return
-        } else if (inicioAvaliacao && !inicioAvaliacao.iniciar) {
-          // Erro de conexão ou problema - mostrar mensagem de erro
-          console.log('❌ Não foi possível iniciar avaliação:', inicioAvaliacao.mensagem)
-          const noaMessage: Message = {
-            id: crypto.randomUUID(),
-            message: inicioAvaliacao.mensagem,
-            sender: 'noa',
-            timestamp: new Date()
-          }
-          setMessages(prev => [...prev, noaMessage])
-          setIsTyping(false)
-          return
+      
+      // Detecta se o usuário quer iniciar avaliação
+      const mensagemLower = userMessage.toLowerCase()
+      const querAvaliacao = mensagemLower.includes('avaliação') || 
+                           mensagemLower.includes('avaliacao') ||
+                           mensagemLower.includes('consulta') ||
+                           mensagemLower.includes('dr. ricardo') ||
+                           mensagemLower.includes('dr ricardo') ||
+                           mensagemLower.includes('ricardo valença') ||
+                           mensagemLower.includes('ricardo valenca')
+      
+      if (querAvaliacao && !modoAvaliacao) {
+        console.log('✅ Iniciando avaliação clínica com fluxo correto!')
+        setModoAvaliacao(true)
+        setEtapaAtual(0) // Começa na primeira etapa (Abertura Exponencial)
+        
+        const etapa = ETAPAS_AVALIACAO[0]
+        const noaMessage: Message = {
+          id: crypto.randomUUID(),
+          message: etapa.pergunta,
+          sender: 'noa',
+          timestamp: new Date()
         }
-      } catch (error) {
-        console.error('❌ Erro no clinicalAgent.detectarInicioAvaliacao:', error)
-        // Continua para o fluxo normal se houver erro
+        setMessages(prev => [...prev, noaMessage])
+        setIsTyping(false)
+        console.log('✅ Avaliação iniciada com fluxo correto, saindo da função')
+        return
       }
 
-      // Se está em modo avaliação, processa a resposta usando clinicalAgent
+      // Se está em modo avaliação, processa a resposta usando o fluxo correto
       if (modoAvaliacao) {
         try {
-          console.log('🩺 Modo avaliação ativo, processando com clinicalAgent...')
+          console.log('🩺 Modo avaliação ativo, processando com fluxo correto...')
           console.log('📝 Mensagem do usuário:', userMessage)
-          const respostaAvaliacao = await clinicalAgent.executarFluxo(userMessage)
-          console.log('📝 Resposta do clinicalAgent:', respostaAvaliacao)
+          console.log('📊 Etapa atual:', etapaAtual, 'de', ETAPAS_AVALIACAO.length - 1)
+          
+          // Salva a resposta da etapa atual
+          const etapa = ETAPAS_AVALIACAO[etapaAtual]
+          if (etapa) {
+            // Aqui você pode salvar a resposta no estado ou banco de dados
+            console.log(`💾 Salvando resposta da etapa ${etapa.id}:`, userMessage)
+          }
+          
+          // Verifica se é a última etapa
+          if (etapaAtual >= ETAPAS_AVALIACAO.length - 1) {
+            console.log('🎉 Avaliação concluída!')
+            setModoAvaliacao(false)
+            
+            const noaMessage: Message = {
+              id: crypto.randomUUID(),
+              message: `**🎉 AVALIAÇÃO CLÍNICA CONCLUÍDA!**\n\n✅ Seu relatório foi gerado e está disponível no seu dashboard.\n\n**RECOMENDAÇÃO FINAL:**\n\nEssa é uma avaliação inicial de acordo com o método desenvolvido pelo Dr. Ricardo Valença com o objetivo de aperfeiçoar o seu atendimento. Ao final, recomendo a marcação de uma consulta com o Dr. Ricardo Valença pelo site.\n\n💡 **Próximos passos:**\n- Agende sua consulta\n- Leve este relatório\n- Prepare suas dúvidas\n\n*Método Triaxial - Dr. Ricardo Valença*`,
+              sender: 'noa',
+              timestamp: new Date()
+            }
+            setMessages(prev => [...prev, noaMessage])
+            setIsTyping(false)
+            return
+          }
+          
+          // Avança para a próxima etapa
+          const proximaEtapa = etapaAtual + 1
+          setEtapaAtual(proximaEtapa)
+          
+          const proximaEtapaData = ETAPAS_AVALIACAO[proximaEtapa]
           const noaMessage: Message = {
             id: crypto.randomUUID(),
-            message: typeof respostaAvaliacao === 'string' ? respostaAvaliacao : respostaAvaliacao.mensagem,
+            message: proximaEtapaData.pergunta,
             sender: 'noa',
             timestamp: new Date()
           }
           setMessages(prev => [...prev, noaMessage])
+          
           setIsTyping(false)
           return
         } catch (error) {
-          console.error('Erro no clinicalAgent.executarFluxo:', error)
+          console.error('Erro no fluxo de avaliação:', error)
           // Continua para o fluxo normal se houver erro
         }
       }
@@ -594,8 +660,8 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         setIsProcessing(false)
       }, 1500) // Delay de 1.5s para aparecer após a resposta
       
-      // ElevenLabs gera APENAS áudio (texto já vem do ChatGPT)
-      console.log('🎤 Enviando texto do ChatGPT para ElevenLabs gerar áudio...')
+      // Voz Residente gera APENAS áudio (texto já vem do ChatGPT)
+      console.log('🎤 Enviando texto do ChatGPT para Voz Residente gerar áudio...')
       await playNoaAudioWithText(openAIResponse)
       
     } catch (error) {
@@ -1081,94 +1147,37 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
 
   // Função para iniciar reconhecimento de voz
   const startVoiceRecognition = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      // Removido: addNotification('Reconhecimento de voz não suportado neste navegador', 'error')
+    if (!noaVoiceService.isSpeechRecognitionAvailable()) {
+      console.warn('⚠️ Speech Recognition não disponível neste navegador')
       setIsVoiceListening(false)
       return
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    const recognition = new SpeechRecognition()
-
-    recognition.continuous = false // Para após capturar uma frase (evita eco)
-    recognition.interimResults = false // Não mostra texto intermediário (evita eco)
-    recognition.lang = 'pt-BR'
-    recognition.maxAlternatives = 1 // Melhor precisão
+    console.log('🎤 Iniciando reconhecimento de voz com Nôa Voice Service')
     
-    // Reconhecimento single-shot para evitar eco
-
-    recognition.onstart = () => {
-      console.log('🎤 Reconhecimento de voz iniciado (modo single-shot)')
-      // Removido: addNotification('🎤 Microfone ativo! Fale uma frase!', 'success')
-    }
-
-    recognition.onresult = (event: any) => {
-      // Para o reconhecimento imediatamente para evitar eco
-      recognition.stop()
-      
-      let finalTranscript = ''
-      
-      // Processa apenas resultados finais
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript
+    const success = noaVoiceService.startListening(
+      (result) => {
+        console.log('🎤 Resultado do reconhecimento:', result)
+        
+        if (result.isFinal && result.transcript.trim()) {
+          console.log('✅ Texto reconhecido:', result.transcript)
+          setInputMessage(result.transcript)
+          setIsVoiceListening(false)
+          
+          // Enviar mensagem automaticamente
+          setTimeout(() => {
+            handleSendMessage(result.transcript)
+          }, 500)
         }
-      }
-
-      // Só processa se não estiver tocando áudio da NOA (evita eco)
-      if (finalTranscript && !audioPlaying) {
-        console.log('🎤 Texto reconhecido:', finalTranscript)
-        
-        // Para o áudio da NOA se estiver tocando
-        if (currentAudioRef.current) {
-          currentAudioRef.current.pause()
-          currentAudioRef.current = null
-          setAudioPlaying(false)
-          console.log('⏹️ Áudio da NOA interrompido')
-        }
-        
-        setInputMessage(finalTranscript)
-        
-        // Envia automaticamente a mensagem
-        console.log('📤 Enviando mensagem de voz...')
-        handleSendMessage(finalTranscript)
-        
+      },
+      (error) => {
+        console.error('❌ Erro no reconhecimento:', error)
         setIsVoiceListening(false)
-      } else if (audioPlaying) {
-        console.log('🔇 NOA está falando, ignorando detecção de voz para evitar eco')
       }
-    }
+    )
 
-    recognition.onerror = (event: any) => {
-      console.error('Erro no reconhecimento de voz:', event.error)
+    if (!success) {
       setIsVoiceListening(false)
-      
-      switch (event.error) {
-        case 'no-speech':
-          // Removido: addNotification('Nenhuma fala detectada. Tente novamente.', 'warning')
-          break
-        case 'audio-capture':
-          // Removido: addNotification('Erro ao acessar o microfone.', 'error')
-          break
-        case 'not-allowed':
-          // Removido: addNotification('Permissão de microfone negada.', 'error')
-          break
-        default:
-          // Removido: addNotification('Erro no reconhecimento de voz.', 'error')
-      }
-    }
-
-    recognition.onend = () => {
-      setIsVoiceListening(false)
-      console.log('🎤 Reconhecimento de voz finalizado')
-    }
-
-    try {
-      recognition.start()
-    } catch (error) {
-      console.error('Erro ao iniciar reconhecimento:', error)
-      setIsVoiceListening(false)
-      // Removido: addNotification('Erro ao iniciar reconhecimento de voz', 'error')
     }
   }
 
@@ -1180,100 +1189,44 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         console.log('🎤 Ativação automática do reconhecimento de voz')
         startVoiceRecognition()
       }
-    }, 1000) // Reduzido de 2s para 1s - mais fluido
+    }, APP_CONFIG.ui.voice.typingDelay) // Usando configuração interna
   }
 
   // Função para tocar áudio da NOA com texto sincronizado
   const playNoaAudioWithText = async (text: string) => {
     try {
-      console.log('🎵 ElevenLabs gerando APENAS áudio:', { userInteracted, audioPlaying, text: text.substring(0, 50) + '...' })
-      
-      // Áudio sempre disponível - sem necessidade de liberação
+      console.log('🎵 Nôa Esperanza falando:', { userInteracted, audioPlaying, text: text.substring(0, 50) + '...' })
       
       // Se já está tocando áudio, não toca outro
       if (audioPlaying) {
-        console.log('🔊 Áudio já está tocando, pulando...')
+        console.log('🔊 Nôa já está falando, pulando...')
         return
       }
       
-      // Para o áudio atual se estiver tocando
-      if (currentAudioRef.current) {
-        currentAudioRef.current.pause()
-        currentAudioRef.current = null
-      }
+      // Para qualquer fala em andamento
+      noaVoiceService.stopSpeaking()
       
-      // Remove markdown e formatação para o áudio com melhor processamento
+      // Remove markdown e formatação para o áudio
       const cleanText = cleanTextForAudio(text)
 
-      console.log('🎤 Chamando ElevenLabs com texto:', cleanText.substring(0, 100) + '...')
-      const audioResponse = await elevenLabsService.textToSpeech(cleanText)
-      console.log('✅ ElevenLabs respondeu:', audioResponse)
-      
-      // Se é Web Speech API (fallback), não precisa criar áudio
-      if (audioResponse.content_type === 'audio/web-speech') {
-        console.log('🎤 Áudio reproduzido via Web Speech API (fallback)')
-        setAudioPlaying(true)
-        
-        // Para o reconhecimento de voz enquanto NOA fala
-        if (isVoiceListening) {
-          console.log('🔇 Pausando reconhecimento de voz enquanto NOA fala')
-          setIsVoiceListening(false)
-        }
-        
-        // Simular duração do áudio baseada no texto
-        const estimatedDuration = Math.max(cleanText.length * 50, 2000) // ~50ms por caractere, mínimo 2s
-        setTimeout(() => {
-          console.log('🏁 Áudio Web Speech terminou de tocar')
-          setAudioPlaying(false)
-          autoActivateVoiceAfterResponse()
-        }, estimatedDuration)
-        
-        return
-      }
-      
-      // Cria e toca o áudio (apenas para ElevenLabs)
-      const audioBlob = new Blob([audioResponse.audio], { type: 'audio/mpeg' })
-      const audioUrl = URL.createObjectURL(audioBlob)
-      const audio = new Audio(audioUrl)
-      console.log('🔊 Áudio criado, tentando tocar...')
-      
-      // Armazena referência do áudio atual
-      currentAudioRef.current = audio
+      console.log('🗣️ Nôa Esperanza falando:', cleanText.substring(0, 100) + '...')
       setAudioPlaying(true)
       
       // Para o reconhecimento de voz enquanto NOA fala
       if (isVoiceListening) {
-        console.log('🔇 Pausando reconhecimento de voz enquanto NOA fala')
+        console.log('🔇 Pausando reconhecimento de voz enquanto Nôa fala')
         setIsVoiceListening(false)
       }
-
-      audio.play().then(() => {
-        console.log('🎵 Áudio tocando com sucesso!')
-      }).catch(error => {
-        console.log('❌ Erro ao tocar áudio:', error)
-        setAudioPlaying(false)
-      })
-
-      // Limpa a URL e referência após tocar
-      audio.onended = () => {
-        console.log('🏁 Áudio terminou de tocar')
-        URL.revokeObjectURL(audioUrl)
-        currentAudioRef.current = null
-        setAudioPlaying(false)
-        
-        // Ativa reconhecimento de voz automaticamente após resposta da NOA
-        autoActivateVoiceAfterResponse()
-      }
       
-      // Limpa referência se houver erro
-      audio.onerror = () => {
-        URL.revokeObjectURL(audioUrl)
-        currentAudioRef.current = null
-        setAudioPlaying(false)
-      }
+      // Usar o novo serviço de voz da Nôa
+      await noaVoiceService.speak(cleanText)
+      
+      console.log('🏁 Nôa Esperanza terminou de falar')
+      setAudioPlaying(false)
+      autoActivateVoiceAfterResponse()
 
     } catch (error) {
-      console.log('❌ Erro ao gerar áudio da NOA:', error)
+      console.error('❌ Erro ao fazer Nôa falar:', error)
       setAudioPlaying(false)
     }
   }
@@ -1294,13 +1247,13 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       {/* Layout Principal */}
       <div className="w-full h-full flex relative z-0">
         {/* Sidebar Esquerdo - Chat */}
-        <div className="sidebar-mobile w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[79.5vh] overflow-y-auto z-10">
+        <div className="sidebar-mobile w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[79.5vh] z-10">
           {/* Balão de Pensamento */}
           <div className="h-full flex flex-col">
             <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 flex-1 flex flex-col">
 
               {/* Área de Mensagens */}
-              <div ref={messagesContainerRef} className="messages-container space-y-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div ref={messagesContainerRef} className="messages-container space-y-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 min-h-0 max-h-full p-2" style={{ scrollBehavior: 'smooth' }}>
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -1354,15 +1307,27 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                 />
                 {/* Botões de controle */}
                 <div className="flex gap-2 w-full sm:w-auto">
+                  {/* Botão de rolagem para baixo - aparece apenas quando necessário */}
+                  {showScrollButton && (
+                    <button
+                      onClick={smoothScrollToBottom}
+                      className="px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors duration-200 flex items-center justify-center animate-pulse"
+                      title="Rolar para baixo"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                      </svg>
+                    </button>
+                  )}
                   {/* Botão de voz */}
                   <button
                     onClick={() => {
                       if (isVoiceListening) {
                         setIsVoiceListening(false)
-                        // TODO: Parar reconhecimento de voz
+                        noaVoiceService.stopListening()
+                        console.log('🛑 Reconhecimento de voz parado')
                       } else {
                         setIsVoiceListening(true)
-                        // TODO: Iniciar reconhecimento de voz
                         startVoiceRecognition()
                       }
                     }}

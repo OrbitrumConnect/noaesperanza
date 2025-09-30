@@ -51,9 +51,9 @@ const ThoughtBubble: React.FC<ThoughtBubbleProps> = ({
         transform: 'translate(-50%, -50%)',
         zIndex: 9999, // Alto para ficar acima de tudo
         pointerEvents: 'auto',
-        backgroundColor: 'rgba(255, 0, 0, 0.3)', // DEBUG: Fundo vermelho para ver onde está
-        minWidth: '200px', // DEBUG: Área de clique maior
-        minHeight: '100px' // DEBUG: Área de clique maior
+        // backgroundColor: 'rgba(255, 0, 0, 0.3)', // DEBUG removido
+        // minWidth: '200px', // DEBUG removido
+        // minHeight: '100px' // DEBUG removido
       }}
       initial={{ opacity: 0, scale: 0.3 }}
       animate={{ opacity: 1, scale: 1, y: [0, -10, 0] }}

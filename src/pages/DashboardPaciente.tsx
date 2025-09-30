@@ -12,6 +12,7 @@ interface DashboardPacienteProps {
 const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacienteProps) => {
   const navigate = useNavigate()
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [activeCard, setActiveCard] = useState<string | null>(null)
   
   const specialtyData = {
     rim: {
@@ -47,8 +48,26 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
     addNotification(`Ação "${action}" executada`, 'success')
   }
 
+  const handleCardToggle = (cardId: string) => {
+    setActiveCard(activeCard === cardId ? null : cardId)
+  }
+
   // Itens da sidebar para pacientes
   const sidebarItems = [
+    {
+      id: 'compromissos',
+      label: 'Compromissos e Consultas',
+      icon: 'fa-calendar-check',
+      color: 'blue',
+      action: () => handleCardToggle('compromissos')
+    },
+    {
+      id: 'analytics',
+      label: 'Analytics - Biomarcadores',
+      icon: 'fa-chart-line',
+      color: 'green',
+      action: () => handleCardToggle('analytics')
+    },
     {
       id: 'agendar',
       label: 'Agendar',
@@ -168,15 +187,25 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
             <div className="grid grid-cols-2 gap-5 h-full items-start">
 
               {/* Compromissos e Consultas */}
-              <div className="premium-card p-2">
+              {activeCard === 'compromissos' && (
+                <div className="premium-card p-2">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-premium text-sm font-semibold">Compromissos e Consultas</h3>
-                  <button
-                    onClick={() => handleActionClick('Ver Todas')}
-                    className="text-yellow-400 hover:text-yellow-300 text-xs"
-                  >
-                    Ver todas <i className="fas fa-arrow-right ml-1"></i>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleActionClick('Ver Todas')}
+                      className="text-yellow-400 hover:text-yellow-300 text-xs"
+                    >
+                      Ver todas <i className="fas fa-arrow-right ml-1"></i>
+                    </button>
+                    <button
+                      onClick={() => handleCardToggle('compromissos')}
+                      className="text-gray-400 hover:text-white text-xs p-1 rounded-full hover:bg-gray-700 transition-colors"
+                      title="Fechar card"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
@@ -244,15 +273,26 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                     </div>
                   </div>
                 </div>
-              </div>
+                </div>
+              )}
 
               {/* Analytics - Biomarcadores Renais */}
-              <div className="premium-card p-1 w-[135%]">
+              {activeCard === 'analytics' && (
+                <div className="premium-card p-1 w-[135%]">
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="text-premium text-xs font-semibold">Analytics - Biomarcadores Renais</h3>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span className="text-xs text-green-400">Estável</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span className="text-xs text-green-400">Estável</span>
+                    </div>
+                    <button
+                      onClick={() => handleCardToggle('analytics')}
+                      className="text-gray-400 hover:text-white text-xs p-1 rounded-full hover:bg-gray-700 transition-colors"
+                      title="Fechar card"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
                   </div>
                 </div>
 
@@ -360,7 +400,19 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                     </div>
                   </div>
                 </div>
-              </div>
+                </div>
+              )}
+
+              {/* Mensagem quando nenhum card está ativo */}
+              {!activeCard && (
+                <div className="col-span-2 flex items-center justify-center h-64 ml-72">
+                  <div className="text-center">
+                    <i className="fas fa-mouse-pointer text-4xl text-gray-500 mb-4"></i>
+                    <h3 className="text-xl text-gray-400 mb-2">Selecione um item na sidebar</h3>
+                    <p className="text-gray-500">Clique em "Compromissos e Consultas" ou "Analytics - Biomarcadores" para visualizar os dados</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

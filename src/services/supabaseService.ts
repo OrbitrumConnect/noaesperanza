@@ -12,6 +12,9 @@ export interface AdminMetrics {
   totalPatients: number
   totalInteractions: number
   aiLearningCount: number
+  totalAvaliacoes: number
+  avaliacoesCompletas: number
+  avaliacoesEmAndamento: number
 }
 
 export const getAdminMetrics = async (): Promise<AdminMetrics> => {
@@ -41,6 +44,23 @@ export const getAdminMetrics = async (): Promise<AdminMetrics> => {
       .from('ai_keywords')
       .select('*', { count: 'exact', head: true })
 
+    // Buscar contagem de avaliações clínicas
+    const { count: totalAvaliacoes } = await supabase
+      .from('avaliacoes_iniciais')
+      .select('*', { count: 'exact', head: true })
+
+    // Buscar avaliações completas
+    const { count: avaliacoesCompletas } = await supabase
+      .from('avaliacoes_iniciais')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'completed')
+
+    // Buscar avaliações em andamento
+    const { count: avaliacoesEmAndamento } = await supabase
+      .from('avaliacoes_iniciais')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'in_progress')
+
     // Calcular receita mensal (simulado baseado em assinaturas)
     const activeSubscriptions = totalUsers || 0
     const monthlyRevenue = activeSubscriptions * 89.90 // Valor da assinatura
@@ -53,7 +73,10 @@ export const getAdminMetrics = async (): Promise<AdminMetrics> => {
       totalDoctors: totalDoctors || 0,
       totalPatients: totalPatients || 0,
       totalInteractions: totalInteractions || 0,
-      aiLearningCount: aiLearningCount || 0
+      aiLearningCount: aiLearningCount || 0,
+      totalAvaliacoes: totalAvaliacoes || 0,
+      avaliacoesCompletas: avaliacoesCompletas || 0,
+      avaliacoesEmAndamento: avaliacoesEmAndamento || 0
     }
   } catch (error) {
     console.error('Erro ao buscar métricas administrativas:', error)
@@ -66,7 +89,10 @@ export const getAdminMetrics = async (): Promise<AdminMetrics> => {
       totalDoctors: 0,
       totalPatients: 0,
       totalInteractions: 0,
-      aiLearningCount: 0
+      aiLearningCount: 0,
+      totalAvaliacoes: 0,
+      avaliacoesCompletas: 0,
+      avaliacoesEmAndamento: 0
     }
   }
 }

@@ -479,10 +479,10 @@ export const clinicalAgent = {
     if (matchAtivacao) {
       const nomeUsuario = matchAtivacao[1].trim()
       console.log('🎯 FRASE DE ATIVAÇÃO INSTITUCIONAL detectada:', nomeUsuario)
-      // Ativa todos os sistemas: Supabase, ElevenLabs, Dashboards, Blockchain
+      // Ativa todos os sistemas: Supabase, Voz Residente, Dashboards, Blockchain
       return {
         iniciar: true,
-        mensagem: `Olá! Eu sou a Nôa Esperanza. Identifiquei sua ativação institucional, ${nomeUsuario}. Todos os sistemas estão ativos: Supabase, ElevenLabs, Dashboards e Blockchain. Como posso ajudá-lo hoje?`
+        mensagem: `Olá! Eu sou a Nôa Esperanza. Identifiquei sua ativação institucional, ${nomeUsuario}. Todos os sistemas estão ativos: Supabase, Voz Residente, Dashboards e Blockchain. Como posso ajudá-lo hoje?`
       }
     }
 

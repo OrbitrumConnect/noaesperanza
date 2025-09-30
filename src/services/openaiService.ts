@@ -17,6 +17,7 @@ class OpenAIService {
   private apiKey: string
   private baseURL = 'https://api.openai.com/v1'
   private noaAgentId = 'asst_fN2Fk9fQ7JEyyFUIe50Fo9QD' // Agente específico da NOA
+  private fineTunedModel = 'ft:gpt-3.5-turbo-0125:personal:fine-tuning-noa-esperanza-avaliacao-inicial-dez-ex-jsonl:BR0W02VP' // Modelo fine-tuned da NOA
 
   constructor() {
     this.apiKey = import.meta.env.VITE_OPENAI_API_KEY
@@ -50,7 +51,7 @@ class OpenAIService {
           'Authorization': `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: this.fineTunedModel, // Usando modelo fine-tuned da NOA
           messages: requestMessages,
           max_tokens: 500,
           temperature: 0.7,
@@ -186,14 +187,35 @@ class OpenAIService {
     }
   }
 
-  // Método específico para NOA - Assistente Médica (fallback)
+  // Método específico para NOA - Assistente Médica com modelo fine-tuned
   async getNoaResponse(userMessage: string, conversationHistory: ChatMessage[] = []): Promise<string> {
     try {
-      // Tentar usar o agente específico primeiro
-      const agentResponse = await this.useNoaAgent(userMessage)
-      return agentResponse.response
+      console.log('🎯 Usando modelo fine-tuned da NOA:', this.fineTunedModel)
+      
+      // Usar modelo fine-tuned diretamente
+      const systemPrompt = `Você é a NOA Esperanza, assistente médica especializada em neurologia, cannabis medicinal e nefrologia. 
+      
+Seu comportamento deve ser:
+- Empática e profissional
+- Focada em avaliações clínicas estruturadas
+- Sempre orientar para consulta médica quando necessário
+- Usar linguagem clara e acessível
+- Manter confidencialidade das informações
+
+Especialidades: neurologia, cannabis medicinal, nefrologia.`
+
+      const messages: ChatMessage[] = [
+        ...conversationHistory,
+        {
+          role: 'user',
+          content: userMessage
+        }
+      ]
+
+      return this.sendMessage(messages, systemPrompt)
+      
     } catch (error) {
-      console.log('🔄 Usando fallback para ChatGPT tradicional')
+      console.log('🔄 Erro no modelo fine-tuned, usando fallback')
       return this.getNoaResponseFallback(userMessage, conversationHistory)
     }
   }

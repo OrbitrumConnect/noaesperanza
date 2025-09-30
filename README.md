@@ -23,8 +23,8 @@ Preencha as variáveis no arquivo `.env`:
 # OpenAI Configuration
 VITE_OPENAI_API_KEY=your_openai_api_key_here
 
-# ElevenLabs Configuration  
-VITE_ELEVEN_API_KEY=your_elevenlabs_api_key_here
+# ElevenLabs Configuration (OPCIONAL - Sistema usa voz residente por padrão)
+# VITE_ELEVEN_API_KEY=your_elevenlabs_api_key_here
 
 # Supabase Configuration
 VITE_SUPABASE_URL=https://your-project.supabase.co
@@ -54,7 +54,7 @@ npm run dev
 - **Frontend:** React 18 + TypeScript + Vite
 - **Styling:** Tailwind CSS + CSS Custom
 - **Backend:** Supabase (PostgreSQL + Auth)
-- **IA:** OpenAI GPT-4 + ElevenLabs
+- **IA:** OpenAI GPT-4 + Voz Residente (Web Speech API)
 - **Pagamentos:** Mercado Pago
 
 ## 🔧 Funcionalidades

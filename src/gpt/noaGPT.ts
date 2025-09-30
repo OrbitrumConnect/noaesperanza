@@ -15,7 +15,7 @@ export class NoaGPT {
   // 🧠 SISTEMA DE MEMÓRIA E CONTEXTO
   private getUserId(): string {
     // Tentar obter ID do usuário do Supabase
-    const supabaseUser = localStorage.getItem('sb-localhost-auth-token')
+    const supabaseUser = localStorage.getItem('sb-auth-token')
     if (supabaseUser) {
       try {
         const parsed = JSON.parse(supabaseUser)
@@ -903,7 +903,7 @@ Digite um comando específico para continuar.`
 🟢 **Serviços Online:**
 • Supabase: Conectado
 • OpenAI: Conectado  
-• ElevenLabs: Conectado
+• Voz Residente: Conectado
 • Sistema de Voz: Ativo
 • Base de Dados: Online
 

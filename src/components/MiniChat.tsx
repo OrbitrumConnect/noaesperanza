@@ -126,7 +126,7 @@ const MiniChat = ({ isOpen, onClose, userType, otherUser, addNotification }: Min
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-gray-600 bg-gray-800 rounded-t-lg">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center" data-testid="ai-avatar">
             <i className="fas fa-user text-white text-sm"></i>
           </div>
           <div>
@@ -148,6 +148,7 @@ const MiniChat = ({ isOpen, onClose, userType, otherUser, addNotification }: Min
           <div
             key={message.id}
             className={`flex ${message.sender === userType ? 'justify-end' : 'justify-start'}`}
+            data-testid={message.sender === userType ? 'user-message' : 'ai-message'}
           >
             <div
               className={`max-w-[80%] p-2 rounded-lg text-sm ${
@@ -170,7 +171,7 @@ const MiniChat = ({ isOpen, onClose, userType, otherUser, addNotification }: Min
         ))}
         
         {isTyping && (
-          <div className="flex justify-start">
+          <div className="flex justify-start" data-testid="typing-indicator">
             <div className="bg-gray-700 text-gray-100 p-2 rounded-lg text-sm">
               <div className="flex items-center gap-1">
                 <span>Digitando</span>
@@ -197,11 +198,13 @@ const MiniChat = ({ isOpen, onClose, userType, otherUser, addNotification }: Min
             onKeyPress={handleKeyPress}
             placeholder="Digite sua mensagem..."
             className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            data-testid="chat-input"
           />
           <button
             onClick={handleSendMessage}
             disabled={!newMessage.trim()}
             className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg text-sm transition-colors"
+            data-testid="send-button"
           >
             <i className="fas fa-paper-plane text-xs"></i>
           </button>

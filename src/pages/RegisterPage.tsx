@@ -61,7 +61,7 @@ const RegisterPage = () => {
       }
 
       await signUp(formData.email, formData.password, userData)
-      navigate('/')
+        navigate('/chat')
     } catch (error: any) {
       setError(error.message || 'Erro ao criar conta')
     } finally {

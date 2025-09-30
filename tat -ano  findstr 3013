@@ -1,0 +1,5 @@
+[33m7cd095c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m feat: simplificar header e otimizar footer - Remover rotas desnecessÃ¡rias do header (AvaliaÃ§Ã£o, Ensino, Pesquisa, MedCann) - Manter apenas tipos de usuÃ¡rio essenciais (Paciente, MÃ©dico, Estudante, Pagar, ADM/CONFIG) - Adicionar controle de acesso para ADM/CONFIG (apenas admins) - Atualizar branding para 'NOA Esperanza - By MedCanLab' - Reduzir footer em 30% e remover Links RÃ¡pidos - Melhorar legibilidade de componentes
+[33mbf6ffe6[m Resolve merge conflict in Home.tsx - keep mobile responsive sidebar
+[33m1b916ce[m docs: Adicionar documentação completa do sistema NOA Esperanza
+[33m0696446[m feat: Implementar controle por voz completo
+[33m6be334b[m feat: Implementar sistema híbrido de IA completo

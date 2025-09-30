@@ -1,31 +1,22 @@
-// Serviço para integração com ElevenLabs (Voz da NOA)
+// Serviço de voz da NOA usando Web Speech API (voz residente)
+import { webSpeechService } from './webSpeechService'
+
 export interface VoiceSettings {
-  stability: number
-  similarity_boost: number
-  style?: number
-  use_speaker_boost?: boolean
+  rate: number
+  pitch: number
+  volume: number
+  lang: string
 }
 
 export interface Voice {
-  voice_id: string
   name: string
-  samples?: any[]
-  category: string
-  fine_tuning?: any
-  labels: Record<string, string>
+  lang: string
+  gender: string
   description?: string
-  preview_url?: string
-  available_for_tiers: string[]
-  settings?: VoiceSettings
-  sharing?: any
-  high_quality_base_model_ids: string[]
-  safety_control?: any
-  permission_on_resource?: any
 }
 
 export interface TextToSpeechRequest {
   text: string
-  model_id?: string
   voice_settings?: VoiceSettings
 }
 
@@ -35,188 +26,114 @@ export interface TextToSpeechResponse {
 }
 
 class ElevenLabsService {
-  private apiKey: string
-  private baseURL = 'https://api.elevenlabs.io/v1'
-  private noaVoiceId = 'pNInz6obpgDQGcFmaJgB' // Voz feminina suave para NOA
-
-  constructor() {
-    this.apiKey = import.meta.env.VITE_ELEVEN_API_KEY
-    
-    console.log('🔧 ElevenLabs Service inicializado (TTS apenas):', { 
-      hasApiKey: !!this.apiKey,
-      voiceId: this.noaVoiceId,
-      mode: 'TTS_ONLY'
-    })
-    
-    if (!this.apiKey) {
-      console.error('❌ ElevenLabs API Key não encontrada')
-    }
+  private useWebSpeech: boolean = true // Sempre usar Web Speech API
+  private voiceSettings: VoiceSettings = {
+    rate: 0.85,      // Velocidade mais lenta (mais feminina)
+    pitch: 1.3,      // Tom mais alto (mais feminino)
+    volume: 0.8,     // Volume confortável
+    lang: 'pt-BR'    // Português brasileiro
   }
 
-  // Obter lista de vozes disponíveis
+  constructor() {
+    console.log('🔧 NOA Voice Service inicializado (Web Speech API):', { 
+      useWebSpeech: this.useWebSpeech,
+      voiceSettings: this.voiceSettings,
+      mode: 'TTS_ONLY'
+    })
+  }
+
+  // Obter lista de vozes disponíveis (Web Speech API)
   async getVoices(): Promise<Voice[]> {
     try {
-      const response = await fetch(`${this.baseURL}/voices`, {
-        method: 'GET',
-        headers: {
-          'xi-api-key': this.apiKey
+      const voiceInfo = webSpeechService.getVoiceInfo()
+      
+      // Converter vozes do Web Speech API para o formato esperado
+      const voices: Voice[] = voiceInfo.allVoices.map(voiceStr => {
+        const [name, lang] = voiceStr.split(' (')
+        return {
+          name: name,
+          lang: lang.replace(')', ''),
+          gender: name.toLowerCase().includes('female') || name.toLowerCase().includes('woman') ? 'female' : 'unknown',
+          description: `Voz nativa do navegador - ${name}`
         }
       })
 
-      if (!response.ok) {
-        throw new Error(`ElevenLabs API Error: ${response.statusText}`)
-      }
-
-      const data = await response.json()
-      return data.voices
+      console.log('🎤 Vozes disponíveis (Web Speech API):', voices.length)
+      return voices
 
     } catch (error) {
       console.error('Erro ao obter vozes:', error)
-      throw error
+      return []
     }
   }
 
-  // Converter texto em fala
+  // Converter texto em fala usando Web Speech API
   async textToSpeech(
     text: string,
-    voiceId: string = this.noaVoiceId,
+    voiceId?: string,
     voiceSettings?: VoiceSettings
   ): Promise<TextToSpeechResponse> {
     try {
-      console.log('🎤 ElevenLabs textToSpeech chamado:', { text: text.substring(0, 50) + '...', voiceId })
-      
-      const requestBody: TextToSpeechRequest = {
-        text,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: voiceSettings || this.getNoaVoiceSettings()
-      }
-
-      console.log('📤 Enviando requisição para ElevenLabs...')
-      const response = await fetch(`${this.baseURL}/text-to-speech/${voiceId}`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': this.apiKey
-        },
-        body: JSON.stringify(requestBody)
+      console.log('🎤 NOA Voice Service textToSpeech chamado:', { 
+        text: text.substring(0, 50) + '...', 
+        useWebSpeech: this.useWebSpeech 
       })
-
-      if (!response.ok) {
-        console.error('❌ ElevenLabs API Error:', response.status, response.statusText)
-        throw new Error(`ElevenLabs API Error: ${response.statusText}`)
-      }
-
-      console.log('✅ ElevenLabs respondeu com sucesso!')
-      const audioBuffer = await response.arrayBuffer()
-      const contentType = response.headers.get('content-type') || 'audio/mpeg'
       
-      console.log('🎵 Áudio recebido:', { size: audioBuffer.byteLength, contentType })
-
-      return {
-        audio: audioBuffer,
-        content_type: contentType
+      // Usar Web Speech API diretamente
+      await webSpeechService.textToSpeech(text)
+      
+      // Retornar resposta compatível com o formato esperado
+      return { 
+        audio: new ArrayBuffer(0), 
+        content_type: 'audio/web-speech' 
       }
 
     } catch (error) {
-      console.error('❌ Erro ao converter texto em fala:', error)
+      console.error('❌ Erro no NOA Voice Service:', error)
       throw error
     }
   }
 
-  // Reproduzir áudio da NOA
-  async speakAsNoa(text: string): Promise<void> {
+  // Parar fala atual
+  stopSpeech(): void {
     try {
-      const audioResponse = await this.textToSpeech(text)
-      
-      // Criar blob do áudio
-      const audioBlob = new Blob([audioResponse.audio], { 
-        type: audioResponse.content_type 
-      })
-      
-      // Criar URL do áudio
-      const audioUrl = URL.createObjectURL(audioBlob)
-      
-      // Criar elemento de áudio
-      const audio = new Audio(audioUrl)
-      
-      // Reproduzir áudio
-      await audio.play()
-      
-      // Limpar URL após reprodução
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl)
-      }
-
+      webSpeechService.stopSpeech()
+      console.log('🎤 Fala interrompida via Web Speech API')
     } catch (error) {
-      console.error('Erro ao reproduzir áudio da NOA:', error)
-      throw error
-    }
-  }
-
-  // Obter configurações de voz da NOA otimizadas para fluidez
-  getNoaVoiceSettings(): VoiceSettings {
-    return {
-      stability: 0.75, // Voz mais estável para melhor fluidez
-      similarity_boost: 0.85, // Manter características da voz
-      style: 0.1, // Menos expressiva para melhor fluidez
-      use_speaker_boost: true // Melhorar qualidade
+      console.error('❌ Erro ao parar fala:', error)
     }
   }
 
   // Verificar se o serviço está disponível
-  async isAvailable(): Promise<boolean> {
-    try {
-      await this.getVoices()
-      return true
-    } catch (error) {
-      return false
+  isAvailable(): boolean {
+    return webSpeechService.isAvailable()
+  }
+
+  // Obter informações do serviço
+  getServiceInfo() {
+    const voiceInfo = webSpeechService.getVoiceInfo()
+    return {
+      service: 'Web Speech API',
+      available: this.isAvailable(),
+      useWebSpeech: this.useWebSpeech,
+      voiceSettings: this.voiceSettings,
+      voiceInfo: voiceInfo,
+      mode: 'TTS_ONLY'
     }
   }
 
-  // Obter informações da conta
-  async getUserInfo() {
-    try {
-      const response = await fetch(`${this.baseURL}/user`, {
-        method: 'GET',
-        headers: {
-          'xi-api-key': this.apiKey
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`ElevenLabs API Error: ${response.statusText}`)
-      }
-
-      return await response.json()
-
-    } catch (error) {
-      console.error('Erro ao obter informações do usuário:', error)
-      throw error
-    }
+  // Configurar voz (aplicar configurações personalizadas)
+  configureVoice(settings: Partial<VoiceSettings>): void {
+    this.voiceSettings = { ...this.voiceSettings, ...settings }
+    console.log('🎤 Configurações de voz atualizadas:', this.voiceSettings)
   }
 
-  // Obter uso da API
-  async getUsage() {
-    try {
-      const response = await fetch(`${this.baseURL}/user/usage`, {
-        method: 'GET',
-        headers: {
-          'xi-api-key': this.apiKey
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`ElevenLabs API Error: ${response.statusText}`)
-      }
-
-      return await response.json()
-
-    } catch (error) {
-      console.error('Erro ao obter uso da API:', error)
-      throw error
-    }
+  // Forçar recarregamento de vozes
+  reloadVoices(): void {
+    webSpeechService.forceFemaleVoice()
+    console.log('🎤 Vozes recarregadas')
   }
 }
 
+// Instância única do serviço
 export const elevenLabsService = new ElevenLabsService()

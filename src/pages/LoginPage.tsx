@@ -14,7 +14,7 @@ const LoginPage = () => {
   // Redirecionar se já estiver logado
   useEffect(() => {
     if (user && !authLoading) {
-      navigate('/')
+        navigate('/chat')
     }
   }, [user, authLoading, navigate])
 
@@ -30,7 +30,7 @@ const LoginPage = () => {
       setError('')
       setLoading(true)
       await signIn(email, password)
-      navigate('/')
+        navigate('/chat')
     } catch (error: any) {
       setError(error.message || 'Erro ao fazer login')
     } finally {

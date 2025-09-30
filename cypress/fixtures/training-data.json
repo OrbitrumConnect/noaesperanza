@@ -1,0 +1,33 @@
+{
+  "trainingData": [
+    {
+      "input": "Olá, Nôa",
+      "expectedOutput": "Olá! Como posso ajudá-lo hoje?",
+      "context": "greeting",
+      "category": "general"
+    },
+    {
+      "input": "Como você está?",
+      "expectedOutput": "Estou bem, obrigada! Pronta para ajudá-lo.",
+      "context": "wellbeing",
+      "category": "general"
+    },
+    {
+      "input": "Avaliação clínica",
+      "expectedOutput": "Vamos iniciar sua avaliação inicial. Primeiro, me conte sobre você.",
+      "context": "clinical",
+      "category": "medical"
+    },
+    {
+      "input": "Ativar controle por voz",
+      "expectedOutput": "Controle por voz ativado. Você pode falar comigo agora.",
+      "context": "voice",
+      "category": "interface"
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "source": "manual_training"
+  }
+}

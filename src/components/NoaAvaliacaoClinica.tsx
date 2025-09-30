@@ -39,6 +39,8 @@ interface AvaliacaoData {
     alergias?: string;
     relatorio_narrativo?: string;
     concordancia_final?: boolean;
+    autorizacao_prontuario?: boolean;
+    data_autorizacao?: string;
   };
 }
 
@@ -79,6 +81,8 @@ const NoaAvaliacaoClinica: React.FC<NoaAvaliacaoClinicaProps> = ({ onComplete })
   const [isLoading, setIsLoading] = useState(false);
   const [showRelatorio, setShowRelatorio] = useState(false);
   const [relatorioGerado, setRelatorioGerado] = useState<string>('');
+  const [showAutorizacaoProntuario, setShowAutorizacaoProntuario] = useState(false);
+  const [autorizacaoProntuario, setAutorizacaoProntuario] = useState(false);
 
   const progresso = ((etapaAtual + 1) / ETAPAS_AVALIACAO.length) * 100;
 
@@ -228,14 +232,8 @@ const NoaAvaliacaoClinica: React.FC<NoaAvaliacaoClinicaProps> = ({ onComplete })
         }
       }
 
-      setShowRelatorio(true);
-      onComplete?.(dadosFinais);
-
-      toast({
-        title: "Avaliação Concluída!",
-        description: "Sua avaliação clínica inicial foi finalizada com sucesso.",
-        variant: "default"
-      });
+      // Mostrar modal de autorização para prontuário
+      setShowAutorizacaoProntuario(true);
 
     } catch (error) {
       console.error('Erro ao finalizar avaliação:', error);
@@ -283,12 +281,61 @@ ${dados.alergias || 'Não informado'}
 Avaliação realizada utilizando a metodologia Arte da Entrevista Clínica, focando na escuta ativa e humanizada do paciente.
 
 **Concordância do paciente:** ${dados.concordancia_final ? 'Sim' : 'Não'}
+**Autorização para prontuário:** ${dados.autorizacao_prontuario ? 'Sim' : 'Não'}
+${dados.data_autorizacao ? `**Data da autorização:** ${new Date(dados.data_autorizacao).toLocaleDateString('pt-BR')}` : ''}
 
 ---
 *Relatório gerado automaticamente pelo sistema NOA Esperanza*
     `.trim();
 
     return relatorio;
+  };
+
+  const handleAutorizacaoProntuario = async (autorizado: boolean) => {
+    setAutorizacaoProntuario(autorizado);
+    
+    // Atualizar dados da avaliação com a autorização
+    const dadosComAutorizacao = {
+      ...avaliacaoData,
+      dados: {
+        ...avaliacaoData.dados,
+        autorizacao_prontuario: autorizado,
+        data_autorizacao: autorizado ? new Date().toISOString() : null
+      }
+    };
+
+    // Salvar autorização no Supabase
+    if (user && autorizado) {
+      try {
+        const { error } = await supabase
+          .from('avaliacoes_clinicas')
+          .update({
+            dados: dadosComAutorizacao.dados,
+            autorizacao_prontuario: autorizado,
+            data_autorizacao: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', avaliacaoData.sessionId);
+
+        if (error) {
+          console.error('Erro ao salvar autorização:', error);
+        }
+      } catch (error) {
+        console.error('Erro ao processar autorização:', error);
+      }
+    }
+
+    setShowAutorizacaoProntuario(false);
+    setShowRelatorio(true);
+    onComplete?.(dadosComAutorizacao);
+
+    toast({
+      title: "Avaliação Concluída!",
+      description: autorizado 
+        ? "Sua avaliação foi finalizada e as informações foram liberadas para seu prontuário."
+        : "Sua avaliação foi finalizada. As informações não serão incluídas no prontuário.",
+      variant: "default"
+    });
   };
 
   const downloadRelatorio = () => {
@@ -360,6 +407,85 @@ Avaliação realizada utilizando a metodologia Arte da Entrevista Clínica, foca
           </Button>
         </CardContent>
       </Card>
+
+      {/* Modal de Autorização para Prontuário */}
+      <Dialog open={showAutorizacaoProntuario} onOpenChange={setShowAutorizacaoProntuario}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              Autorização para Prontuário
+            </DialogTitle>
+            <DialogDescription>
+              Sua avaliação clínica inicial foi concluída com sucesso!
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 mb-2">
+                📋 Liberação de Informações para Prontuário
+              </h4>
+              <p className="text-blue-800 text-sm">
+                Para que o Dr. Ricardo Valença possa acessar as informações da sua avaliação clínica 
+                e incluí-las em seu prontuário médico, precisamos da sua autorização.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                <div>
+                  <p className="font-medium">Informações que serão incluídas:</p>
+                  <ul className="text-sm text-muted-foreground mt-1 space-y-1">
+                    <li>• Dados da avaliação clínica inicial</li>
+                    <li>• Relatório narrativo da consulta</li>
+                    <li>• Histórico médico e familiar</li>
+                    <li>• Hábitos de vida e medicações</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+                <div>
+                  <p className="font-medium">Benefícios da autorização:</p>
+                  <ul className="text-sm text-muted-foreground mt-1 space-y-1">
+                    <li>• Continuidade do cuidado médico</li>
+                    <li>• Acesso completo ao seu histórico</li>
+                    <li>• Melhor planejamento terapêutico</li>
+                    <li>• Seguimento personalizado</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-yellow-800 text-sm">
+                <strong>Importante:</strong> Você pode negar a autorização e ainda assim manter 
+                sua avaliação salva no sistema. Apenas não será incluída no prontuário médico.
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button 
+                onClick={() => handleAutorizacaoProntuario(true)}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Autorizar para Prontuário
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => handleAutorizacaoProntuario(false)}
+                className="flex-1"
+              >
+                Manter Apenas no Sistema
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal do Relatório */}
       <Dialog open={showRelatorio} onOpenChange={setShowRelatorio}>
