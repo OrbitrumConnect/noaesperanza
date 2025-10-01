@@ -583,7 +583,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     
     // 🎯 NOVO SISTEMA DE MODOS DE CONVERSA (só se não for trigger de avaliação)
     const { data: { user } } = await supabase.auth.getUser()
-    const userId = user?.id || 'anonymous'
+    const userId = user?.id || crypto.randomUUID()
     
     // Processar mensagem com sistema de modos
     const modeResponse = await conversationModeService.processarMensagem(
@@ -946,7 +946,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
         
         // 🧠 INICIAR CONTEXTO INTELIGENTE DE AVALIAÇÃO
         const { data: { user } } = await supabase.auth.getUser()
-        await avaliacaoClinicaService.iniciarAvaliacao(user?.id || 'anonymous')
+        await avaliacaoClinicaService.iniciarAvaliacao(user?.id || crypto.randomUUID())
         
         // Avança para a primeira pergunta real
         setEtapaAtual(1)

@@ -21,14 +21,14 @@ export class NoaGPT {
     if (supabaseUser) {
       try {
         const parsed = JSON.parse(supabaseUser)
-        return parsed.currentSession?.user?.id || 'anonymous'
+        return parsed.currentSession?.user?.id || crypto.randomUUID()
       } catch (e) {
         console.warn('Erro ao parsear token do Supabase:', e)
       }
     }
     
-    // Fallback para userId genérico ou anonymous
-    return localStorage.getItem('userId') || 'anonymous'
+    // Fallback para userId genérico
+    return localStorage.getItem('userId') || crypto.randomUUID()
   }
 
   private saveUserContext(context: any): void {
@@ -1416,7 +1416,7 @@ REFINE a resposta imediata para ser mais precisa, médica e alinhada com a metod
       const { data: similarConversations, error } = await supabase
         .from('ai_learning')
         .select('user_message, ai_response, category, confidence_score')
-        .or(`user_message.ilike.%${message}%,keywords.ilike.%${message}%`)
+        .or(`user_message.ilike.%${message}%`)
         .order('confidence_score', { ascending: false })
         .limit(3)
 
@@ -1438,7 +1438,7 @@ REFINE a resposta imediata para ser mais precisa, médica e alinhada com a metod
       const { data: patterns, error: patternError } = await supabase
         .from('ai_conversation_patterns')
         .select('pattern_type, keywords, ai_response')
-        .or(`keywords.ilike.%${message}%,pattern_type.ilike.%${message}%`)
+        .or(`pattern_type.ilike.%${message}%`)
         .limit(2)
 
       if (!patternError && patterns && patterns.length > 0) {
