@@ -313,6 +313,29 @@ export class AvaliacaoClinicaService {
   getContexto(sessionId: string): AvaliacaoContext | undefined {
     return this.contextos.get(sessionId)
   }
+
+  // 📝 OBTER PRÓXIMA PERGUNTA
+  async getProximaPergunta(etapaAtual: number): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_imre_block', { block_number: etapaAtual + 1 })
+      
+      if (error) {
+        console.error('❌ Erro ao buscar próxima pergunta:', error)
+        return 'Desculpe, houve um erro ao carregar a próxima pergunta.'
+      }
+      
+      if (!data || data.length === 0) {
+        return '🎉 Avaliação clínica concluída! Obrigado por participar.'
+      }
+      
+      const bloco = data[0]
+      return bloco.block_prompt || 'Pergunta não encontrada.'
+    } catch (error) {
+      console.error('❌ Erro inesperado ao buscar próxima pergunta:', error)
+      return 'Desculpe, houve um erro inesperado.'
+    }
+  }
 }
 
 // Exportar instância singleton

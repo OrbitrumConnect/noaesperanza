@@ -12,10 +12,9 @@ const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
   
-  const { signIn, signUp, user } = useAuth()
+  const { signIn, signUp, user, loading } = useAuth()
   const navigate = useNavigate()
   
-
   useEffect(() => {
     setIsVisible(true)
     const interval = setInterval(() => {
@@ -30,6 +29,17 @@ const LandingPage = () => {
       navigate('/app/')
     }
   }, [user, navigate])
+
+  // Aguardar carregamento do AuthContext
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center" style={{
+        background: 'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)'
+      }}>
+        <div className="text-white text-xl">Carregando...</div>
+      </div>
+    )
+  }
 
   const handleAuth = async (email: string, password: string, userData?: any) => {
     try {

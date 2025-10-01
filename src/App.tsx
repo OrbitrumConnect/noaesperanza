@@ -25,7 +25,6 @@ import MeusExames from './pages/MeusExames'
 import Prescricoes from './pages/Prescricoes'
 import Prontuario from './pages/Prontuario'
 import PagamentosPaciente from './pages/PagamentosPaciente'
-import AvaliacaoClinica from './pages/AvaliacaoClinica'
 import Ensino from './pages/Ensino'
 import Pesquisa from './pages/Pesquisa'
 import MedCannLab from './pages/MedCannLab'
@@ -197,7 +196,6 @@ function App() {
                     <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
 
                     {/* Páginas de Ensino e Pesquisa */}
-                    <Route path="/avaliacao-clinica" element={<AvaliacaoClinica />} />
                     <Route path="/ensino" element={<Ensino />} />
                     <Route path="/pesquisa" element={<Pesquisa />} />
                     <Route path="/medcann-lab" element={<MedCannLab />} />

@@ -59,6 +59,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const result = await Promise.race([sessionPromise, timeoutPromise]) as any
         
         if (!result || result.error) {
+          // Se é erro de token inválido, limpar e continuar
+          if (result?.error?.message?.includes('Invalid Refresh Token')) {
+            console.log('🔄 Token inválido, limpando sessão...')
+            await supabase.auth.signOut()
+            setUser(null)
+            setUserProfile(null)
+            setLoading(false)
+            return
+          }
           throw result?.error || new Error('Sem resposta')
         }
         

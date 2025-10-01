@@ -232,7 +232,7 @@ export class NoaGPT {
       const inicioTempo = Date.now()
       
       // 1. BUSCA INTELIGENTE NO BANCO (559 aprendizados)
-      const aprendizados = await aiSmartLearningService.buscar(userMessage)
+      const aprendizados = await aiSmartLearningService.buscarAprendizadosSimilares(userMessage)
       
       if (aprendizados.length > 0 && aprendizados[0].similarity > 0.7) {
         const melhorAprendizado = aprendizados[0]

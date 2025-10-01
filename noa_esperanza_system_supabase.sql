@@ -98,6 +98,20 @@ CREATE TABLE IF NOT EXISTS ai_conversation_patterns (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 8. TABELA DE AVALIAÇÕES EM ANDAMENTO
+-- =====================================================
+CREATE TABLE IF NOT EXISTS avaliacoes_em_andamento (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    user_id UUID REFERENCES auth.users(id),
+    current_block INTEGER DEFAULT 1,
+    total_blocks INTEGER DEFAULT 28,
+    status TEXT DEFAULT 'iniciada' CHECK (status IN ('iniciada', 'em_andamento', 'concluida', 'pausada')),
+    responses JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- 8. TABELA NFT INCENTIVADOR MÍNIMO DO RELATO ESPONTÂNEO
 -- =====================================================
 CREATE TABLE IF NOT EXISTS noa_nft_reports (
@@ -353,6 +367,7 @@ ALTER TABLE noa_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_learning ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_keywords ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_conversation_patterns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE avaliacoes_em_andamento ENABLE ROW LEVEL SECURITY;
 ALTER TABLE noa_nft_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE noa_conversation_flow ENABLE ROW LEVEL SECURITY;
 ALTER TABLE noa_system_config ENABLE ROW LEVEL SECURITY;
@@ -422,6 +437,20 @@ CREATE POLICY "Anyone can insert conversation patterns" ON ai_conversation_patte
 
 CREATE POLICY "Anyone can update conversation patterns" ON ai_conversation_patterns
     FOR UPDATE USING (true);
+
+-- Políticas para avaliacoes_em_andamento
+DROP POLICY IF EXISTS "Users can view their own evaluations" ON avaliacoes_em_andamento;
+DROP POLICY IF EXISTS "Users can insert their own evaluations" ON avaliacoes_em_andamento;
+DROP POLICY IF EXISTS "Users can update their own evaluations" ON avaliacoes_em_andamento;
+
+CREATE POLICY "Users can view their own evaluations" ON avaliacoes_em_andamento
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own evaluations" ON avaliacoes_em_andamento
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own evaluations" ON avaliacoes_em_andamento
+    FOR UPDATE USING (auth.uid() = user_id);
 
 -- Políticas para noa_conversations
 DROP POLICY IF EXISTS "Users can view their own conversations" ON noa_conversations;

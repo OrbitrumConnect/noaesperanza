@@ -16,7 +16,9 @@ import { MedicalImageService, MedicalData } from '../services/medicalImageServic
 import { noaSystemService } from '../services/noaSystemService'
 import { adminCommandService } from '../services/adminCommandService'
 import { avaliacaoClinicaService } from '../services/avaliacaoClinicaService'
-import { chatFlowService } from '../services/chatFlowService'
+import { conversationModeService, ConversationMode } from '../services/conversationModeService'
+import { identityRecognitionService, UserProfile } from '../services/identityRecognitionService'
+import { directCommandProcessor } from '../services/directCommandProcessor'
 import UserIntentDetector from '../utils/userIntentDetection'
 import ThoughtBubble from '../components/ThoughtBubble'
 import MatrixBackground from '../components/MatrixBackground'
@@ -30,9 +32,9 @@ interface Message {
   timestamp: Date
   options?: string[] // Opções de resposta rápida
   isTyping?: boolean // Indicador de digitação
-  conversation_type?: 'presentation' | 'user_type_selection' | 'clinical_evaluation' | 'general'
+  conversation_type?: 'presentation' | 'user_type_selection' | 'clinical_evaluation' | 'general' | 'personalized_greeting' | 'direct_command'
   is_first_response?: boolean
-  user_type?: 'aluno' | 'profissional' | 'paciente'
+  user_type?: 'aluno' | 'profissional' | 'paciente' | 'admin' | 'clinico' | 'autor'
   session_id?: string
 }
 
@@ -248,6 +250,11 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
   // Estados para Avaliação Clínica Triaxial
   const [modoAvaliacao, setModoAvaliacao] = useState(false)
   const [etapaAtual, setEtapaAtual] = useState(0)
+  
+  // 🧠 Estados do sistema de reconhecimento de identidade
+  const [recognizedUser, setRecognizedUser] = useState<UserProfile | null>(null)
+  const [isPersonalizedMode, setIsPersonalizedMode] = useState(false)
+  const [availableCommands, setAvailableCommands] = useState<string[]>([])
   const [perguntandoMais, setPerguntandoMais] = useState(false)
   
   // Estado para efeito matrix eterno
@@ -271,6 +278,12 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
   const [userName, setUserName] = useState<string | null>(null) // Nome do usuário persistente
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false) // Modo admin ativado
   const [adminCardType, setAdminCardType] = useState<'stats' | 'editor' | 'users' | 'ia' | null>(null) // Tipo de card admin
+  
+  // 🎯 ESTADOS DOS MODOS DE CONVERSA
+  const [currentConversationMode, setCurrentConversationMode] = useState<ConversationMode>('explicativo')
+  const [modeTransitionHistory, setModeTransitionHistory] = useState<any[]>([])
+  const [conversationContext, setConversationContext] = useState<any>(null)
+  const [accuracyStats, setAccuracyStats] = useState<any>(null)
   
   // Controle de áudio
   const [audioPlaying, setAudioPlaying] = useState(false)
@@ -389,7 +402,183 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     console.log('🚀 INICIANDO getNoaResponse com:', userMessage)
     setIsTyping(true)
     
-    // 🧠 DETECÇÃO INTELIGENTE DE INTENÇÃO
+    // 🧠 SISTEMA DE RECONHECIMENTO DE IDENTIDADE
+    const identityResult = await identityRecognitionService.detectIdentity(userMessage)
+    
+    if (identityResult.recognized && identityResult.user) {
+      console.log('🎯 Usuário reconhecido:', identityResult.user.name)
+      
+      // Definir usuário atual
+      setRecognizedUser(identityResult.user)
+      setIsPersonalizedMode(true)
+      setAvailableCommands(identityResult.availableCommands)
+      
+      // Resposta personalizada
+      const personalizedMessage: Message = {
+        id: crypto.randomUUID(),
+        message: identityResult.greeting,
+        sender: 'noa',
+        timestamp: new Date(),
+        conversation_type: 'personalized_greeting',
+        user_type: identityResult.user.role,
+        session_id: sessionId
+      }
+      
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => !msg.isTyping)
+        return [...withoutTyping, personalizedMessage]
+      })
+      
+      // Tocar áudio da resposta personalizada
+      await playNoaAudioWithText(identityResult.greeting)
+      setIsTyping(false)
+      return
+    }
+    
+    // 🎮 DETECTAR COMANDOS DIRETOS (se usuário reconhecido)
+    if (recognizedUser && isPersonalizedMode) {
+      const directCommand = await identityRecognitionService.detectDirectCommand(userMessage, recognizedUser)
+      
+      if (directCommand.type !== 'unknown' && directCommand.confidence > 0.7) {
+        console.log('🎮 Comando direto detectado:', directCommand.type)
+        
+        // Executar comando direto
+        const commandResult = await directCommandProcessor.executeDirectCommand(directCommand, recognizedUser)
+        
+        if (commandResult.shouldShowInChat) {
+          const commandMessage: Message = {
+            id: crypto.randomUUID(),
+            message: commandResult.message,
+            sender: 'noa',
+            timestamp: new Date(),
+            conversation_type: 'direct_command',
+            user_type: recognizedUser.role,
+            session_id: sessionId
+          }
+          
+          setMessages(prev => {
+            const withoutTyping = prev.filter(msg => !msg.isTyping)
+            return [...withoutTyping, commandMessage]
+          })
+          
+          // Tocar áudio da resposta
+          await playNoaAudioWithText(commandResult.message)
+          setIsTyping(false)
+          return
+        }
+      }
+    }
+    
+    // 🩺 TRIGGER DE AVALIAÇÃO CLÍNICA (ANTES DO SISTEMA DE MODOS)
+    const mensagemLower = userMessage.toLowerCase()
+    const querAvaliacao = mensagemLower.includes('arte da entrevista') || 
+                         mensagemLower.includes('entrevista clínica') ||
+                         mensagemLower.includes('entrevista clinica') ||
+                         mensagemLower.includes('iniciar avaliação') ||
+                         mensagemLower.includes('iniciar avaliacao') ||
+                         mensagemLower.includes('avaliação clínica') ||
+                         mensagemLower.includes('avaliacao clinica') ||
+                         mensagemLower.includes('fazer avaliação') ||
+                         mensagemLower.includes('fazer avaliacao') ||
+                         mensagemLower.includes('quero fazer entrevista') ||
+                         mensagemLower.includes('começar avaliação') ||
+                         mensagemLower.includes('comecar avaliacao') ||
+                         mensagemLower.includes('avaliacao') ||
+                         mensagemLower.includes('avaliação') ||
+                         mensagemLower.includes('fazer avaliacao') ||
+                         mensagemLower.includes('começar avaliacao') ||
+                         mensagemLower.includes('comecar avaliação') ||
+                         mensagemLower.includes('iniciar avaliacao') ||
+                         mensagemLower.includes('começar') ||
+                         mensagemLower.includes('comecar')
+    
+    if (querAvaliacao && !modoAvaliacao) {
+      console.log('✅ Trigger de avaliação detectado - Abrindo card automaticamente!')
+      
+      // Ativa o modo de avaliação
+      setModoAvaliacao(true)
+      setEtapaAtual(0)
+      setConversationType('clinical_evaluation')
+      
+      // Expande o card da Avaliação Clínica automaticamente
+      expandCard({
+        id: 'avaliacao-clinica-inicial',
+        title: 'Avaliação Clínica Inicial',
+        description: 'Arte da Entrevista Clínica - Método IMRE (28 Blocos)',
+        content: 'Iniciando sua avaliação clínica completa com 28 perguntas estruturadas do método IMRE desenvolvido pelo Dr. Ricardo Valença.',
+        type: 'avaliacao'
+      })
+      
+      // Resposta imediata
+      const avaliacaoMessage: Message = {
+        id: crypto.randomUUID(),
+        message: '🩺 **Avaliação Clínica Inicial Iniciada**\n\nOlá! Vou conduzi-lo através de uma avaliação clínica completa seguindo o método IMRE do Dr. Ricardo Valença.\n\nEsta avaliação possui 28 blocos estruturados que nos ajudarão a compreender melhor sua condição de saúde.\n\nVamos começar?',
+        sender: 'noa',
+        timestamp: new Date(),
+        conversation_type: 'clinical_evaluation',
+        session_id: sessionId
+      }
+      
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => !msg.isTyping)
+        return [...withoutTyping, avaliacaoMessage]
+      })
+      
+      // Tocar áudio da resposta
+      await playNoaAudioWithText(avaliacaoMessage.message)
+      setIsTyping(false)
+      return
+    }
+    
+    // 🎯 NOVO SISTEMA DE MODOS DE CONVERSA (só se não for trigger de avaliação)
+    const { data: { user } } = await supabase.auth.getUser()
+    const userId = user?.id || 'anonymous'
+    
+    // Processar mensagem com sistema de modos
+    const modeResponse = await conversationModeService.processarMensagem(
+      userMessage,
+      sessionId,
+      userId
+    )
+    
+    console.log('🎯 Resposta do sistema de modos:', modeResponse)
+    
+    // Atualizar contexto e modo atual
+    setConversationContext(modeResponse.context)
+    if (modeResponse.shouldChangeMode && modeResponse.newMode) {
+      setCurrentConversationMode(modeResponse.newMode)
+      setModeTransitionHistory(prev => [...prev, {
+        from: currentConversationMode,
+        to: modeResponse.newMode,
+        timestamp: new Date(),
+        confidence: modeResponse.confidence
+      }])
+    }
+    
+    // 🎯 SE MUDOU DE MODO, USAR RESPOSTA DO SISTEMA DE MODOS
+    if (modeResponse.shouldChangeMode && modeResponse.response) {
+      const noaMessage: Message = {
+        id: crypto.randomUUID(),
+        message: modeResponse.response,
+        sender: 'noa',
+        timestamp: new Date(),
+        conversation_type: modeResponse.newMode === 'avaliacao_clinica' ? 'clinical_evaluation' : 'general',
+        user_type: userType || 'paciente',
+        session_id: sessionId
+      }
+      
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => !msg.isTyping)
+        return [...withoutTyping, noaMessage]
+      })
+      
+      // Toca áudio da resposta
+      await playNoaAudioWithText(modeResponse.response)
+      setIsTyping(false)
+      return
+    }
+    
+    // 🧠 DETECÇÃO INTELIGENTE DE INTENÇÃO (mantido para compatibilidade)
     const intent = UserIntentDetector.detectIntent(userMessage, messages)
     const context = UserIntentDetector.extractContext(messages)
     console.log('🧠 Intenção detectada:', intent)
@@ -405,9 +594,8 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       })
     }
     
-    // 👑 SISTEMA DE COMANDOS ADMIN
-    // Detecta ativação do modo admin
-    const mensagemLower = userMessage.toLowerCase()
+      // 👑 SISTEMA DE COMANDOS ADMIN
+      // Detecta ativação do modo admin
     
     if (!isAdminMode && (mensagemLower.includes('admin pedro') || mensagemLower.includes('admin ricardo') || 
         mensagemLower.includes('modo admin'))) {
@@ -695,120 +883,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       // Verifica se deve iniciar avaliação clínica usando o fluxo correto
       console.log('🔍 Verificando se deve iniciar avaliação clínica...')
       
-      // Detecta se o usuário quer iniciar avaliação (ARTE DA ENTREVISTA CLÍNICA)
-      const querAvaliacao = mensagemLower.includes('arte da entrevista') || 
-                           mensagemLower.includes('entrevista clínica') ||
-                           mensagemLower.includes('entrevista clinica') ||
-                           mensagemLower.includes('iniciar avaliação') ||
-                           mensagemLower.includes('iniciar avaliacao') ||
-                           mensagemLower.includes('avaliação clínica') ||
-                           mensagemLower.includes('avaliacao clinica') ||
-                           mensagemLower.includes('fazer avaliação') ||
-                           mensagemLower.includes('fazer avaliacao') ||
-                           mensagemLower.includes('quero fazer entrevista') ||
-                           mensagemLower.includes('iniciar entrevista') ||
-                           mensagemLower.includes('começar avaliação') ||
-                           mensagemLower.includes('começar avaliacao') ||
-                           mensagemLower.includes('avaliação inicial') ||
-                           mensagemLower.includes('avaliacao inicial')
       
-      if (querAvaliacao && !modoAvaliacao) {
-        console.log('✅ Iniciando avaliação clínica com fluxo direto!')
-        
-        // Se já se apresentou, não precisa repetir - vai direto para avaliação
-        if (jaSeApresentou) {
-          console.log('✅ Usuário já conhecido - Iniciando avaliação diretamente')
-          
-          // Expande o card da Avaliação Clínica ao lado da Nôa
-          expandCard({
-            id: 'avaliacao-clinica-inicial',
-            title: 'Avaliação Clínica Inicial',
-            description: 'Arte da Entrevista Clínica - Método IMRE (28 Blocos)',
-            content: 'Iniciando sua avaliação clínica completa com 28 perguntas estruturadas do método IMRE desenvolvido pelo Dr. Ricardo Valença.',
-            type: 'avaliacao'
-          })
-          
-          // Inicia avaliação direto (sem pedir tipo de usuário novamente)
-        setModoAvaliacao(true)
-          setEtapaAtual(0)
-          setConversationType('clinical_evaluation')
-          
-          // Registra início no sistema
-          await noaSystemService.registerConversationFlow(
-            sessionId,
-            'evaluation_started',
-            { trigger: 'chat_command', timestamp: new Date().toISOString() },
-            0
-          )
-          
-          // Busca primeiro bloco IMRE do banco
-          const primeiroBloco = await noaSystemService.getImreBlock(1)
-          
-          // Remove mensagem de "pensando"
-          setMessages(prev => {
-            const withoutTyping = prev.filter(msg => !msg.isTyping)
-            const inicioMessage: Message = {
-              id: crypto.randomUUID(),
-              message: '🩺 **AVALIAÇÃO CLÍNICA INICIADA**\n\nVamos começar a Arte da Entrevista Clínica. Todas as respostas serão salvas e ao final você receberá um relatório completo.\n\n' + (primeiroBloco?.block_prompt || ETAPAS_AVALIACAO[0].pergunta),
-              sender: 'noa',
-              timestamp: new Date(),
-              conversation_type: 'clinical_evaluation',
-              session_id: sessionId
-            }
-            return [...withoutTyping, inicioMessage]
-          })
-          
-          // Nôa fala
-          await playNoaAudioWithText(primeiroBloco?.block_prompt || ETAPAS_AVALIACAO[0].pergunta)
-          
-          setIsTyping(false)
-          return
-        }
-        
-        // Se não se apresentou ainda, mostra NFT e pede consentimento
-        console.log('✅ Primeira vez - Explicando NFT e pedindo consentimento')
-        
-        // Expande o card
-        expandCard({
-          id: 'avaliacao-clinica-inicial',
-          title: 'Avaliação Clínica Inicial',
-          description: 'Arte da Entrevista Clínica - Método IMRE (28 Blocos)',
-          content: 'Iniciando sua avaliação clínica completa com 28 perguntas estruturadas do método IMRE desenvolvido pelo Dr. Ricardo Valença.',
-          type: 'avaliacao'
-        })
-        
-        // Atualiza estados do sistema
-        setConversationType('clinical_evaluation')
-        
-        // Remove a mensagem de "pensando"
-        setMessages(prev => {
-          const withoutTyping = prev.filter(msg => !msg.isTyping)
-          const nftExplanation: Message = {
-            id: crypto.randomUUID(),
-            message: '🪙 **NFT INCENTIVADOR MÍNIMO DO RELATO ESPONTÂNEO**\n\nVocê está prestes a iniciar sua Avaliação Clínica Inicial. Ao final do processo, quando concordar com o entendimento feito por mim (Nôa Esperanza), será gerado um relatório único que será ligado a um NFT (Token Não Fungível) como incentivo e certificação do seu relato espontâneo.\n\nEste NFT será seu certificado digital da avaliação e ficará disponível em seu dashboard.\n\n**Você concorda em prosseguir com a avaliação?**\n\nResponda: SIM para continuar ou NÃO para cancelar.',
-            sender: 'noa',
-            timestamp: new Date(),
-            conversation_type: 'clinical_evaluation',
-            user_type: userType || 'paciente',
-            session_id: sessionId
-          }
-          return [...withoutTyping, nftExplanation]
-        })
-        
-        // Registra no sistema
-        await noaSystemService.registerNoaConversation(
-          userMessage,
-          '🪙 **NFT INCENTIVADOR MÍNIMO DO RELATO ESPONTÂNEO**\n\nVocê está prestes a iniciar sua Avaliação Clínica Inicial. Ao final do processo, quando concordar com o entendimento feito por mim (Nôa Esperanza), será gerado um relatório único que será ligado a um NFT (Token Não Fungível) como incentivo e certificação do seu relato espontâneo.\n\nEste NFT será seu certificado digital da avaliação e ficará disponível em seu dashboard.\n\n**Você concorda em prosseguir com a avaliação?**\n\nResponda: SIM para continuar ou NÃO para cancelar.',
-          'clinical_evaluation',
-          userType || 'paciente'
-        )
-        
-        // Toca áudio da explicação do NFT
-        await playNoaAudioWithText('Você está prestes a iniciar sua Avaliação Clínica Inicial. Ao final, será gerado um relatório único ligado a um NFT como incentivo do seu relato espontâneo. Você concorda em prosseguir? Responda SIM para continuar ou NÃO para cancelar.')
-        
-        setIsTyping(false)
-        return
-      }
       
       // Verifica se o usuário confirmou a avaliação
       if (mensagemLower.includes('sim') && !modoAvaliacao) {
@@ -981,12 +1056,19 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
         
         try {
           // Buscar bloco IMRE atual do banco
-          const blocoAtual = await noaSystemService.getImreBlock(etapaAtual + 1)
+          let blocoAtual = await noaSystemService.getImreBlock(etapaAtual + 1)
           if (!blocoAtual) {
             console.error('❌ Bloco IMRE não encontrado para etapa:', etapaAtual)
-            setModoAvaliacao(false)
-            setIsTyping(false)
-            return
+            // Manter modo de avaliação ativo e usar bloco padrão
+            blocoAtual = {
+              id: etapaAtual + 1,
+              block_order: etapaAtual + 1,
+              block_name: 'Pergunta Personalizada',
+              block_description: 'Por favor, me conte mais sobre sua situação de saúde atual.',
+              block_prompt: 'resposta_personalizada',
+              block_type: 'pergunta',
+              is_active: true
+            }
           }
 
           // 🧠 PROCESSAR RESPOSTA COM SERVIÇO INTELIGENTE
@@ -2123,6 +2205,12 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                   <button
                     onClick={() => {
                       console.log('🩺 Iniciando Avaliação Clínica Inicial - Arte da Entrevista')
+                      
+                      // Ativa o modo de avaliação
+                      setModoAvaliacao(true)
+                      setEtapaAtual(0)
+                      setConversationType('clinical_evaluation')
+                      
                       // Expande o card da Avaliação Clínica
                       expandCard({
                         id: 'avaliacao-clinica-inicial',
@@ -2289,7 +2377,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                 }}
                 onError={(e) => console.log('⚠️ Vídeo estático não disponível')}
               >
-                <source src="/estatica piscando.mp4" type="video/mp4" />
+                <source src="/estatica%20piscando.mp4" type="video/mp4" />
               </video>
               
               {/* Vídeo falando (quando áudio está tocando) */}
