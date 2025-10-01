@@ -7,6 +7,8 @@ import { supabase } from '../integrations/supabase/client'
 import { clinicalAgent } from './clinicalAgent'
 import { symbolicAgent } from './symbolicAgent'
 import { voiceControlAgent } from './voiceControlAgent'
+import { aiSmartLearningService } from '../services/aiSmartLearningService'
+import { logService } from '../services/logService'
 
 export class NoaGPT {
   private userContext: any = {}
@@ -223,13 +225,53 @@ export class NoaGPT {
     }
   }
 
-  // 🔍 BUSCAR RESPOSTAS SIMILARES
+  // 🔍 BUSCAR RESPOSTAS SIMILARES (VERSÃO MELHORADA)
   private async findSimilarResponse(userMessage: string): Promise<any> {
     try {
       const userId = this.getUserId()
+      const inicioTempo = Date.now()
+      
+      // 1. BUSCA INTELIGENTE NO BANCO (559 aprendizados)
+      const aprendizados = await aiSmartLearningService.buscar(userMessage)
+      
+      if (aprendizados.length > 0 && aprendizados[0].similarity > 0.7) {
+        const melhorAprendizado = aprendizados[0]
+        const tempoDecorrido = Date.now() - inicioTempo
+        
+        // Log da decisão da IA
+        await logService.logDecisaoIA({
+          pergunta: userMessage,
+          fonte: 'banco',
+          confianca: melhorAprendizado.similarity * 100,
+          tempo: tempoDecorrido,
+          userId
+        })
+        
+        console.log('✅ Usando aprendizado do banco:', {
+          similaridade: `${(melhorAprendizado.similarity * 100).toFixed(1)}%`,
+          tempo: `${tempoDecorrido}ms`
+        })
+        
+        // Incrementar uso
+        await supabase
+          .from('ai_learning')
+          .update({ 
+            usage_count: (melhorAprendizado.usage_count || 0) + 1,
+            last_used_at: new Date().toISOString()
+          })
+          .eq('id', melhorAprendizado.id)
+        
+        return {
+          response: melhorAprendizado.ai_response,
+          confidence: melhorAprendizado.similarity,
+          source: 'database',
+          learningId: melhorAprendizado.id
+        }
+      }
+      
+      // 2. FALLBACK: Busca antiga (keywords)
       const keywords = this.extractKeywords(userMessage)
       
-      // Buscar respostas similares baseadas em palavras-chave
       const { data: similarResponses } = await supabase
         .from('ai_learning')
         .select('*')
@@ -238,8 +280,37 @@ export class NoaGPT {
         .limit(1)
 
       if (similarResponses && similarResponses.length > 0) {
-        return similarResponses[0]
+        const tempoDecorrido = Date.now() - inicioTempo
+        
+        await logService.logDecisaoIA({
+          pergunta: userMessage,
+          fonte: 'banco',
+          confianca: (similarResponses[0].confidence_score || 0.5) * 100,
+          tempo: tempoDecorrido,
+          userId
+        })
+        
+        return {
+          response: similarResponses[0].ai_response,
+          confidence: similarResponses[0].confidence_score || 0.5,
+          source: 'database_keywords'
+        }
       }
+
+      // 3. SEM RESULTADO: Retorna null para usar OpenAI
+      const tempoDecorrido = Date.now() - inicioTempo
+      
+      await logService.logDecisaoIA({
+        pergunta: userMessage,
+        fonte: 'openai',
+        confianca: 0,
+        tempo: tempoDecorrido,
+        userId
+      })
+      
+      console.log('🔄 Nenhum aprendizado encontrado, usando OpenAI...')
+      
+      return null
 
       // Buscar por similaridade de texto
       const { data: textSimilar } = await supabase
