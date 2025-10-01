@@ -16,6 +16,7 @@ import { MedicalImageService, MedicalData } from '../services/medicalImageServic
 import { noaSystemService } from '../services/noaSystemService'
 import { adminCommandService } from '../services/adminCommandService'
 import { avaliacaoClinicaService } from '../services/avaliacaoClinicaService'
+import { chatFlowService } from '../services/chatFlowService'
 import UserIntentDetector from '../utils/userIntentDetection'
 import ThoughtBubble from '../components/ThoughtBubble'
 import MatrixBackground from '../components/MatrixBackground'
@@ -957,7 +958,26 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       if (modoAvaliacao) {
         console.log('🩺 MODO AVALIAÇÃO ATIVO - Fluxo protegido e isolado')
         console.log('📝 Resposta do usuário:', userMessage)
-        console.log('📊 Etapa:', etapaAtual, '/', ETAPAS_AVALIACAO.length - 1)
+        console.log('📊 Etapa:', etapaAtual + 1, '/ 28 blocos IMRE')
+        
+        // 🔍 VERIFICAR SE É COMANDO DE SAÍDA
+        const comandosSaida = ['cancelar', 'sair', 'parar', 'desistir', 'abortar', 'fechar avaliação']
+        if (comandosSaida.some(cmd => mensagemLower.includes(cmd))) {
+          console.log('🛑 Usuário cancelou a avaliação')
+          setModoAvaliacao(false)
+          setEtapaAtual(0)
+          
+          const msgCancelamento: Message = {
+            id: crypto.randomUUID(),
+            message: '❌ Avaliação cancelada. Você pode retomar quando quiser dizendo "iniciar avaliação clínica inicial".',
+            sender: 'noa',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, msgCancelamento])
+          await playNoaAudioWithText('Avaliação cancelada. Pode retomar quando quiser.')
+          setIsTyping(false)
+          return
+        }
         
         try {
           // Buscar bloco IMRE atual do banco
@@ -978,8 +998,9 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
           
           console.log('✅ Contexto atualizado:', contextoAtualizado.variaveisCapturadas)
           
-          // Verifica se é a última etapa
-          if (etapaAtual >= ETAPAS_AVALIACAO.length - 1) {
+          // Verifica se é a última etapa (28 blocos IMRE do banco, não ETAPAS_AVALIACAO)
+          const totalBlocosImre = 28
+          if (etapaAtual >= totalBlocosImre - 1) {
             console.log('🎉 Avaliação concluída! Gerando relatório...')
             
             // 📊 GERAR RELATÓRIO FINAL
@@ -2381,7 +2402,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                             📊 Progresso da Avaliação
                           </p>
                           <p className="text-green-400 text-xs font-bold">
-                            {etapaAtual + 1} / {ETAPAS_AVALIACAO.length}
+                            {etapaAtual + 1} / 28
                           </p>
                         </div>
                         
@@ -2389,7 +2410,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                         <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
                           <div 
                             className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${((etapaAtual + 1) / ETAPAS_AVALIACAO.length) * 100}%` }}
+                            style={{ width: `${((etapaAtual + 1) / 28) * 100}%` }}
                           />
                         </div>
                         
