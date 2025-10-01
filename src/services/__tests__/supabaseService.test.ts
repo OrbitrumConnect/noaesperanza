@@ -31,7 +31,7 @@ describe('supabaseService', () => {
         userId: 'user123',
       };
 
-      const result = await supabaseService.saveMessage(message);
+      const result = await supabaseService.salvarArquivoViaTexto(message);
 
       expect(mockSupabase.from).toHaveBeenCalledWith('messages');
       expect(mockInsert).toHaveBeenCalledWith([message]);

@@ -62,7 +62,8 @@ export const APP_CONFIG = {
     },
     voice: {
       autoActivate: true,
-      preventEcho: true
+      preventEcho: true,
+      typingDelay: 1000
     }
   },
 

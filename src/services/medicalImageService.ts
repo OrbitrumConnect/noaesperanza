@@ -1,4 +1,4 @@
-import Tesseract from 'tesseract.js';
+import { createWorker } from 'tesseract.js';
 
 // Interface para dados médicos estruturados
 export interface MedicalData {
@@ -54,17 +54,11 @@ export class MedicalImageService {
     try {
       console.log('🔍 Iniciando OCR...');
       
-      const { data: { text, confidence } } = await Tesseract.recognize(
-        imageFile,
-        'por+eng', // Português e Inglês
-        {
-          logger: (m) => {
-            if (m.status === 'recognizing text') {
-              console.log(`📊 Progresso OCR: ${Math.round(m.progress * 100)}%`);
-            }
-          }
-        }
-      );
+      const worker = await createWorker('por+eng'); // Português e Inglês
+      
+      const { data: { text, confidence } } = await worker.recognize(imageFile);
+      
+      await worker.terminate();
 
       console.log('✅ OCR concluído!');
       console.log('📝 Texto extraído:', text.substring(0, 200) + '...');

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
-import { Alert, AlertDescription } from './ui/alert';
+// import { Alert, AlertDescription } from './ui/alert';
 import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 
 interface QualityMetrics {

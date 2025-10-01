@@ -7,6 +7,7 @@ import { elevenLabsService } from '../services/elevenLabsService'
 import { noaVoiceService } from '../services/noaVoiceService'
 import { APP_CONFIG } from '../config/appConfig'
 import { dataService } from '../services/supabaseService'
+import { supabase } from '../integrations/supabase/client'
 import { aiLearningService } from '../services/aiLearningService'
 import { cleanTextForAudio } from '../utils/textUtils'
 import { NoaGPT } from '../gpt/noaGPT'
@@ -14,6 +15,7 @@ import { clinicalAgent } from '../gpt/clinicalAgent'
 import { MedicalImageService, MedicalData } from '../services/medicalImageService'
 import { noaSystemService } from '../services/noaSystemService'
 import { adminCommandService } from '../services/adminCommandService'
+import { avaliacaoClinicaService } from '../services/avaliacaoClinicaService'
 import UserIntentDetector from '../utils/userIntentDetection'
 import ThoughtBubble from '../components/ThoughtBubble'
 import MatrixBackground from '../components/MatrixBackground'
@@ -510,18 +512,39 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       )
       
       if (isFirstUserResponse && !jaSeApresentou) {
-        console.log('🎯 Primeira resposta do usuário - Apresentação da Nôa Esperanza')
+        console.log('🎯 Primeira resposta do usuário - Usando NoaGPT inteligente para apresentação')
         
         // Atualiza estados do sistema
         setIsFirstResponse(true)
         setConversationType('presentation')
+        
+        // 🧠 USAR NoaGPT inteligente para apresentação personalizada
+        let currentNoaGPT = noaGPT
+        if (!currentNoaGPT) {
+          currentNoaGPT = new NoaGPT()
+          setNoaGPT(currentNoaGPT)
+        }
+        
+        // Buscar resposta inteligente do NoaGPT (usa banco + contexto)
+        const promptApresentacao = userName 
+          ? `Usuário ${userName} acabou de responder: "${userMessage}". Se apresente de forma natural e personalizada, mencione suas especialidades (neurologia, cannabis, nefrologia) e conduza para escolher perfil.`
+          : `Usuário respondeu: "${userMessage}". Se apresente de forma natural, mencione suas especialidades e conduza para escolher perfil.`
+        
+        let noaResponse = await currentNoaGPT.processCommand(promptApresentacao)
+        
+        // Se NoaGPT não respondeu bem, usa fallback inteligente
+        if (!noaResponse || noaResponse.includes('OPENAI_FALLBACK')) {
+          noaResponse = `Olá${userName ? `, ${userName}` : ''}! Eu sou Nôa Esperanza, assistente médica especializada em neurologia, cannabis medicinal e nefrologia. Como posso ajudar você hoje? Me diga onde posso resolver isso?!`
+        }
+        
+        const apresentacaoInteligente = noaResponse
         
         // Remove a mensagem de "pensando"
         setMessages(prev => {
           const withoutTyping = prev.filter(msg => !msg.isTyping)
           const noaPresentation: Message = {
             id: crypto.randomUUID(),
-            message: 'Olá! Eu sou Nôa Esperanza, assistente médica especializada em neurologia, cannabis medicinal e nefrologia. Como posso ajudar você hoje? Me diga onde posso resolver isso?!',
+            message: apresentacaoInteligente,
             sender: 'noa',
             timestamp: new Date(),
             conversation_type: 'presentation',
@@ -531,22 +554,34 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
           return [...withoutTyping, noaPresentation]
         })
         
-        // Registra no sistema
+        // Registra no sistema para aprendizado
         await noaSystemService.registerNoaConversation(
           userMessage,
-          'Olá! Eu sou Nôa Esperanza, assistente médica especializada em neurologia, cannabis medicinal e nefrologia. Como posso ajudar você hoje? Me diga onde posso resolver isso?!',
+          apresentacaoInteligente,
           'presentation',
           'unknown'
         )
         
-        // Toca áudio da apresentação
-        await playNoaAudioWithText('Olá! Eu sou Nôa Esperanza, assistente médica especializada em neurologia, cannabis medicinal e nefrologia. Como posso ajudar você hoje? Me diga onde posso resolver isso?!')
+        // Salva aprendizado
+        await noaSystemService.saveAILearning(
+          userMessage,
+          apresentacaoInteligente,
+          'presentation',
+          0.9,
+          ['saudacao', 'primeira_interacao', userName || 'anonimo']
+        )
         
-        // Apresenta menu de tipos de usuário após a apresentação
+        // Toca áudio da apresentação
+        await playNoaAudioWithText(apresentacaoInteligente)
+        
+        // Apresenta menu de tipos de usuário após a apresentação (mais natural)
         setTimeout(async () => {
+          // Menu padrão (sempre igual para consistência)
+          const menuMessage = 'Para melhor atendê-lo, preciso saber qual é o seu perfil:\n\n🎓 **ALUNO** - Acesso ao ensino da Arte da Entrevista Clínica\n👨‍⚕️ **PROFISSIONAL** - Acesso à pesquisa e ferramentas clínicas\n🏥 **PACIENTE** - Acesso à avaliação clínica inicial\n\nPor favor, responda com: ALUNO, PROFISSIONAL ou PACIENTE'
+          
           const userTypeMenu: Message = {
             id: crypto.randomUUID(),
-            message: 'Para melhor atendê-lo, preciso saber qual é o seu perfil:\n\n🎓 **ALUNO** - Acesso ao ensino da Arte da Entrevista Clínica\n👨‍⚕️ **PROFISSIONAL** - Acesso à pesquisa e ferramentas clínicas\n🏥 **PACIENTE** - Acesso à avaliação clínica inicial\n\nPor favor, responda com: ALUNO, PROFISSIONAL ou PACIENTE',
+            message: menuMessage,
             sender: 'noa',
             timestamp: new Date(),
             conversation_type: 'user_type_selection',
@@ -776,7 +811,12 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       
       // Verifica se o usuário confirmou a avaliação
       if (mensagemLower.includes('sim') && !modoAvaliacao) {
-        console.log('✅ Usuário confirmou avaliação - Iniciando processo NFT')
+        console.log('✅ Usuário confirmou avaliação - Iniciando com contexto inteligente')
+        
+        // 🧠 INICIAR CONTEXTO INTELIGENTE DE AVALIAÇÃO
+        const { data: { user } } = await supabase.auth.getUser()
+        await avaliacaoClinicaService.iniciarAvaliacao(user?.id || 'anonymous')
+        
         setModoAvaliacao(true)
         
         // Registra o início da avaliação no sistema
@@ -912,26 +952,53 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
         return
       }
 
-      // Se está em modo avaliação, processa a resposta usando o fluxo correto
+      // 🛡️ PROTEÇÃO: Se está em modo avaliação, BLOQUEIA qualquer outra lógica
+      // Avaliação Clínica Inicial roda SEM INTERRUPÇÃO até o fim
       if (modoAvaliacao) {
+        console.log('🩺 MODO AVALIAÇÃO ATIVO - Fluxo protegido e isolado')
+        console.log('📝 Resposta do usuário:', userMessage)
+        console.log('📊 Etapa:', etapaAtual, '/', ETAPAS_AVALIACAO.length - 1)
+        
         try {
-          console.log('🩺 Modo avaliação ativo, processando com fluxo correto...')
-          console.log('📝 Mensagem do usuário:', userMessage)
-          console.log('📊 Etapa atual:', etapaAtual, 'de', ETAPAS_AVALIACAO.length - 1)
-          
-          // Salva a resposta da etapa atual
-          const etapa = ETAPAS_AVALIACAO[etapaAtual]
-          if (etapa) {
-            // Aqui você pode salvar a resposta no estado ou banco de dados
-            console.log(`💾 Salvando resposta da etapa ${etapa.id}:`, userMessage)
+          // Buscar bloco IMRE atual do banco
+          const blocoAtual = await noaSystemService.getImreBlock(etapaAtual + 1)
+          if (!blocoAtual) {
+            console.error('❌ Bloco IMRE não encontrado para etapa:', etapaAtual)
+            setModoAvaliacao(false)
+            setIsTyping(false)
+            return
           }
+
+          // 🧠 PROCESSAR RESPOSTA COM SERVIÇO INTELIGENTE
+          const contextoAtualizado = await avaliacaoClinicaService.processarResposta(
+            sessionId,
+            userMessage,
+            blocoAtual
+          )
+          
+          console.log('✅ Contexto atualizado:', contextoAtualizado.variaveisCapturadas)
           
           // Verifica se é a última etapa
           if (etapaAtual >= ETAPAS_AVALIACAO.length - 1) {
-            console.log('🎉 Avaliação concluída!')
+            console.log('🎉 Avaliação concluída! Gerando relatório...')
+            
+            // 📊 GERAR RELATÓRIO FINAL
+            const relatorio = await avaliacaoClinicaService.gerarRelatorio(sessionId)
+            
+            // 🧠 SALVAR PARA APRENDIZADO CONTÍNUO
+            await avaliacaoClinicaService.salvarParaAprendizado(sessionId)
+            
+            // 🪙 GERAR NFT HASH
+            const { data: nftData } = await supabase.rpc('gerar_nft_hash', {
+              session_id_param: sessionId
+            })
+            
+            console.log('✅ Relatório gerado:', relatorio)
+            console.log('🪙 NFT Hash:', nftData)
+            
             setModoAvaliacao(false)
             
-            const mensagemConclusao = `**🎉 AVALIAÇÃO CLÍNICA CONCLUÍDA!**\n\n✅ Seu relatório foi gerado e está disponível no seu dashboard.\n\n**RECOMENDAÇÃO FINAL:**\n\nEssa é uma avaliação inicial de acordo com o método desenvolvido pelo Dr. Ricardo Valença com o objetivo de aperfeiçoar o seu atendimento. Ao final, recomendo a marcação de uma consulta com o Dr. Ricardo Valença pelo site.\n\n💡 **Próximos passos:**\n- Agende sua consulta\n- Leve este relatório\n- Prepare suas dúvidas\n\n*Método Triaxial - Dr. Ricardo Valença*`
+            const mensagemConclusao = `**🎉 AVALIAÇÃO CLÍNICA CONCLUÍDA!**\n\n✅ Relatório gerado com sucesso!\n🪙 NFT: ${nftData?.substring(0, 16)}...\n📊 Completude: ${relatorio.completude}%\n⏱️ Duração: ${relatorio.duracaoMinutos} minutos\n\n**Seu relatório está disponível no dashboard!**\n\nRecomendo marcar consulta com Dr. Ricardo Valença para aprofundar a avaliação.\n\n*Método IMRE - Arte da Entrevista Clínica*`
             
             const noaMessage: Message = {
               id: crypto.randomUUID(),
@@ -943,8 +1010,8 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
             }
             setMessages(prev => [...prev, noaMessage])
             
-            // 🎤 ATIVA ÁUDIO E VÍDEO para conclusão
-            await playNoaAudioWithText('Avaliação clínica concluída! Seu relatório foi gerado e está disponível no seu dashboard. Recomendo a marcação de uma consulta com o Dr. Ricardo Valença.')
+            // 🎤 ÁUDIO E VÍDEO para conclusão
+            await playNoaAudioWithText(`Avaliação concluída, ${contextoAtualizado.variaveisCapturadas.nome || 'paciente'}! Seu relatório foi gerado e está disponível no dashboard. Recomendo consulta com Dr. Ricardo Valença.`)
             
             setIsTyping(false)
             return
@@ -975,12 +1042,13 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
           await playNoaAudioWithText(perguntaTexto)
           
           // 💾 SALVA PARA APRENDIZADO CONTÍNUO
+          const etapaData = ETAPAS_AVALIACAO[proximaEtapa]
           await noaSystemService.saveAILearning(
             userMessage,
             perguntaTexto,
             'clinical_evaluation',
             0.9,
-            [etapa?.id || 'unknown', 'imre', 'avaliacao_clinica']
+            [etapaData?.id || 'imre_step', 'imre', 'avaliacao_clinica']
           )
           
           // 📊 Registra interação no fluxo

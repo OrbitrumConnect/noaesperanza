@@ -61,7 +61,6 @@ export class NoaVoiceService {
       this.recognition.continuous = false
       this.recognition.interimResults = true
       this.recognition.lang = 'pt-BR'
-      this.recognition.maxAlternatives = 1
 
       this.recognition.onstart = () => {
         console.log('🎤 Speech Recognition iniciado')
@@ -72,7 +71,7 @@ export class NoaVoiceService {
         let finalTranscript = ''
         let interimTranscript = ''
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        for (let i = 0; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript
           if (event.results[i].isFinal) {
             finalTranscript += transcript
@@ -83,7 +82,7 @@ export class NoaVoiceService {
 
         const result: SpeechRecognitionResult = {
           transcript: finalTranscript || interimTranscript,
-          confidence: event.results[event.resultIndex]?.[0]?.confidence || 0,
+          confidence: event.results[0]?.[0]?.confidence || 0,
           isFinal: !!finalTranscript
         }
 
@@ -138,38 +137,69 @@ export class NoaVoiceService {
         // Parar qualquer fala em andamento
         this.synthesis.cancel()
 
-        // Criar utterance
-        const utterance = new SpeechSynthesisUtterance(text)
-        
-        // Configurar voz da Nôa
-        if (this.noaVoice) {
-          utterance.voice = this.noaVoice
-        }
+        // Aguardar um pouco para garantir que a fala anterior foi cancelada
+        setTimeout(() => {
+          try {
+            // Criar utterance
+            const utterance = new SpeechSynthesisUtterance(text)
+            
+            // Configurar voz da Nôa
+            if (this.noaVoice) {
+              utterance.voice = this.noaVoice
+            }
 
-        // Aplicar configurações (padrão + customizações)
-        const finalConfig = { ...this.NOA_VOICE_CONFIG, ...config }
-        utterance.rate = finalConfig.rate
-        utterance.pitch = finalConfig.pitch
-        utterance.volume = finalConfig.volume
-        utterance.lang = finalConfig.lang
+            // Aplicar configurações (padrão + customizações)
+            const finalConfig = { ...this.NOA_VOICE_CONFIG, ...config }
+            utterance.rate = finalConfig.rate
+            utterance.pitch = finalConfig.pitch
+            utterance.volume = finalConfig.volume
+            utterance.lang = finalConfig.lang
 
-        // Eventos
-        utterance.onstart = () => {
-          console.log('🗣️ Nôa Esperanza falando:', text.substring(0, 50) + '...')
-        }
+            // Timeout de segurança para evitar travamento
+            const timeoutId = setTimeout(() => {
+              console.log('⏰ Timeout na fala da Nôa, finalizando...')
+              this.synthesis.cancel()
+              resolve()
+            }, 30000) // 30 segundos de timeout
 
-        utterance.onend = () => {
-          console.log('🗣️ Nôa Esperanza terminou de falar')
-          resolve()
-        }
+            // Eventos
+            utterance.onstart = () => {
+              console.log('🗣️ Nôa Esperanza falando:', text.substring(0, 50) + '...')
+              console.log('🎤 Configuração da voz:', {
+                voice: utterance.voice?.name,
+                rate: utterance.rate,
+                pitch: utterance.pitch,
+                volume: utterance.volume,
+                lang: utterance.lang
+              })
+            }
 
-        utterance.onerror = (event) => {
-          console.error('❌ Erro na fala da Nôa:', event.error)
-          reject(new Error(`Speech Error: ${event.error}`))
-        }
+            utterance.onend = () => {
+              console.log('🗣️ Nôa Esperanza terminou de falar')
+              console.log('✅ Fala concluída com sucesso')
+              clearTimeout(timeoutId)
+              resolve()
+            }
 
-        // Iniciar fala
-        this.synthesis.speak(utterance)
+            utterance.onerror = (event) => {
+              console.error('❌ Erro na fala da Nôa:', event.error)
+              console.error('❌ Detalhes do erro:', {
+                error: event.error,
+                type: event.type,
+                charIndex: event.charIndex,
+                utterance: utterance.text.substring(0, 100)
+              })
+              clearTimeout(timeoutId)
+              reject(new Error(`Speech Error: ${event.error}`))
+            }
+
+            // Iniciar fala
+            this.synthesis.speak(utterance)
+          } catch (innerError) {
+            console.error('❌ Erro ao configurar fala da Nôa:', innerError)
+            reject(innerError)
+          }
+        }, 100)
 
       } catch (error) {
         console.error('❌ Erro ao configurar fala da Nôa:', error)
