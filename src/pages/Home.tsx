@@ -86,7 +86,7 @@ const ETAPAS_AVALIACAO = [
   { 
     id: 'abertura', 
     title: 'Abertura Exponencial', 
-    pergunta: 'Olá! Eu sou Nôa Esperanza. Por favor, apresente-se também e vamos iniciar a sua avaliação inicial para consultas com Dr. Ricardo Valença.',
+    pergunta: 'Olá! Eu sou Nôa Esperanza, assistente médica do MedCanLab. Por favor, apresente-se também e vamos iniciar a sua avaliação inicial para consultas com Dr. Ricardo Valença.',
     opcoes: ['Olá, sou [seu nome], tenho [idade] anos', 'Meu nome é [nome], sou [profissão]', 'Sou [nome], venho de [cidade]']
   },
   { 
@@ -268,7 +268,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     desenvolvimento_indiciario: {}
   })
 
-  // Estados para Sistema Nôa Esperanza Integrado
+  // Estados para Sistema MedCanLab Integrado
   const [userType, setUserType] = useState<'aluno' | 'profissional' | 'paciente' | null>(null)
   const [permissionLevel, setPermissionLevel] = useState<number>(0)
   const [sessionId, setSessionId] = useState<string>(() => `avaliacao_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
@@ -350,7 +350,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
     setUserInteracted(true) // Libera áudio imediatamente
   }, [])
 
-  // Sistema Nôa Esperanza - Fluxo correto implementado
+  // Sistema MedCanLab - Fluxo correto implementado
   // Mensagem inicial obrigatória: "O que trouxe você aqui?"
 
   // Auth context
@@ -395,7 +395,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
 
   // Efeito matrix eterno - sempre ativo
 
-  // Resposta real da NOA usando OpenAI - Sistema Nôa Esperanza
+  // Resposta real da NOA usando OpenAI - Sistema MedCanLab
   const getNoaResponse = async (userMessage: string) => {
     console.log('🚀 INICIANDO getNoaResponse com:', userMessage)
     setIsTyping(true)
@@ -752,7 +752,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       // Verifica se já se apresentou antes
       const jaSeApresentou = messages.some(msg => 
         msg.sender === 'noa' && 
-        msg.message.includes('Nôa Esperanza, assistente médica especializada')
+        msg.message.includes('Nôa Esperanza, assistente médica do MedCanLab')
       )
       
       if (isFirstUserResponse && !jaSeApresentou) {
@@ -778,7 +778,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
         
         // Se NoaGPT não respondeu bem, usa fallback inteligente
         if (!noaResponse || noaResponse.includes('OPENAI_FALLBACK')) {
-          noaResponse = `Olá${userName ? `, ${userName}` : ''}! Eu sou Nôa Esperanza, assistente médica especializada em neurologia, cannabis medicinal e nefrologia. Como posso ajudar você hoje? Me diga onde posso resolver isso?!`
+          noaResponse = `Olá${userName ? `, ${userName}` : ''}! Eu sou Nôa Esperanza, assistente médica do MedCanLab, especializada em neurologia, cannabis medicinal e nefrologia. Como posso ajudar você hoje? Me diga onde posso resolver isso?!`
         }
         
         const apresentacaoInteligente = noaResponse
@@ -1303,7 +1303,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
         // Salvar interação no sistema de aprendizado
         aiLearningService.saveInteraction(userMessage, noaResponse, 'general')
         
-        // Salvar no sistema integrado Nôa Esperanza
+        // Salvar no sistema integrado MedCanLab
         await noaSystemService.saveAILearning(
           userMessage,
           noaResponse,
@@ -1335,7 +1335,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       const learningContext = await aiLearningService.getLearningContext(userMessage)
       
       // Converte histórico para formato OpenAI com contexto do usuário
-      const systemContext = `Você é Nôa Esperanza, assistente médica inteligente do Dr. Ricardo Valença.
+      const systemContext = `Você é Nôa Esperanza, assistente médica inteligente do MedCanLab, desenvolvida pelo Dr. Ricardo Valença.
 
 ${learningContext} 
 
@@ -1403,7 +1403,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         }
         return [...withoutTyping, noaMessage]
       })
-      // Removido: addNotification('Resposta da NOA Esperanza recebida', 'success')
+      // Removido: addNotification('Resposta da Nôa Esperanza do MedCanLab recebida', 'success')
       
       // 🧠 APRENDIZADO AUTOMÁTICO - IA aprende com a conversa
       aiLearningService.saveInteraction(userMessage, openAIResponse, 'general')
@@ -2126,7 +2126,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
   // Função para tocar áudio da NOA com texto sincronizado
   const playNoaAudioWithText = async (text: string) => {
     try {
-      console.log('🎵 Nôa Esperanza falando:', { 
+      console.log('🎵 Nôa Esperanza do MedCanLab falando:', { 
         userInteracted, 
         audioPlaying, 
         text: text.substring(0, 50) + '...',
@@ -2142,7 +2142,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         return
       }
 
-      console.log('🗣️ Nôa Esperanza falando:', cleanText.substring(0, 100) + '...')
+      console.log('🗣️ Nôa Esperanza do MedCanLab falando:', cleanText.substring(0, 100) + '...')
       console.log('🔊 Estado antes da fala:', { audioPlaying, noaSpeaking, isVoiceListening })
       
       // 🛑 CRÍTICO: Para o reconhecimento de voz ANTES de Nôa falar (evita auto-escuta!)
@@ -2178,7 +2178,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         
         // Força a fala mesmo se houver problemas
         await noaVoiceService.speak(cleanText)
-        console.log('🏁 Nôa Esperanza terminou de falar')
+        console.log('🏁 Nôa Esperanza do MedCanLab terminou de falar')
         
         // Verifica se realmente terminou de falar
         setTimeout(() => {
@@ -2520,17 +2520,21 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
           <AnimatePresence>
             {isCardExpanded && expandedCard && (
               <motion.div
-                initial={{ x: -100, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -100, opacity: 0 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="fixed left-64 z-50 w-96 max-h-[80vh] overflow-y-auto"
-                style={{ 
-                  top: 'calc(33.33% - 8%)',
-                  transform: 'translateY(-50%)',
-                  pointerEvents: 'auto' 
-                }}
-              >
+                  initial={{ x: -100, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -100, opacity: 0 }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  className={`fixed left-64 z-50 w-96 max-h-[70vh] overflow-y-auto ${
+                    expandedCard.type === 'avaliacao' && modoAvaliacao 
+                      ? 'ring-2 ring-green-400/50 shadow-2xl shadow-green-400/20' 
+                      : ''
+                  }`}
+                  style={{ 
+                    top: 'calc(20% - 4%)',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'auto' 
+                  }}
+                >
                 <div className="premium-card w-full">
                   {/* Header do Card */}
                   <div className="flex justify-between items-center p-4 border-b border-white/20">
@@ -2552,30 +2556,134 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                       <p className="text-white text-sm leading-relaxed">{expandedCard.content}</p>
                     </div>
                     
-                    {/* Barra de Progresso - Só aparece para avaliação clínica */}
+                    {/* 🩺 CARD DE AVALIAÇÃO CLÍNICA MELHORADO */}
                     {expandedCard.type === 'avaliacao' && modoAvaliacao && (
-                      <div className="bg-white/10 rounded-lg p-3 mb-3">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="text-white text-xs font-semibold">
-                            📊 Progresso da Avaliação
-                          </p>
-                          <p className="text-green-400 text-xs font-bold">
-                            {etapaAtual + 1} / 28
-                          </p>
+                      <div className="space-y-4">
+                        {/* Header da Avaliação */}
+                        <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-lg p-4 border border-green-400/30">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-white font-bold text-lg">🩺 Avaliação Clínica IMRE</h3>
+                            <div className="text-right">
+                              <p className="text-green-400 font-bold text-sm">
+                                {etapaAtual + 1} / 28
+                              </p>
+                              <p className="text-gray-300 text-xs">
+                                {Math.round(((etapaAtual + 1) / 28) * 100)}% concluído
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Barra de progresso melhorada */}
+                          <div className="w-full bg-gray-700 rounded-full h-3 mb-3">
+                            <div 
+                              className="bg-gradient-to-r from-green-400 via-blue-400 to-purple-500 h-3 rounded-full transition-all duration-700 ease-out"
+                              style={{ width: `${((etapaAtual + 1) / 28) * 100}%` }}
+                            />
+                          </div>
+                          
+                          {/* Etapa atual destacada */}
+                          <div className="bg-white/10 rounded-lg p-3">
+                            <p className="text-gray-300 text-xs mb-1">🎯 Etapa atual:</p>
+                            <p className="text-white font-semibold text-sm">
+                              {ETAPAS_AVALIACAO[etapaAtual]?.title || 'Aguardando início'}
+                            </p>
+                          </div>
                         </div>
-                        
-                        {/* Barra de progresso visual */}
-                        <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
-                          <div 
-                            className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${((etapaAtual + 1) / 28) * 100}%` }}
-                          />
+
+                        {/* Pergunta Atual - DESTACADA */}
+                        {etapaAtual > 0 && (
+                          <div className="bg-blue-500/20 rounded-lg p-4 border border-blue-400/30">
+                            <div className="flex items-start space-x-3">
+                              <div className="bg-blue-500 rounded-full p-2 flex-shrink-0">
+                                <span className="text-white text-sm font-bold">{etapaAtual}</span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-blue-300 text-xs font-semibold mb-2">
+                                  Pergunta {etapaAtual} de 28
+                                </p>
+                                <p className="text-white text-sm leading-relaxed">
+                                  {(() => {
+                                    const pergunta = ETAPAS_AVALIACAO[etapaAtual]?.pergunta || 'Carregando pergunta...'
+                                    // Substitui [queixa] pela queixa principal capturada
+                                    return pergunta.replace(/\[queixa\]/g, dadosAvaliacao.queixa_principal || 'sua queixa')
+                                  })()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Área de Resposta */}
+                        {etapaAtual > 0 && (
+                          <div className="bg-white/5 rounded-lg p-4 border border-gray-600/30">
+                            <label className="block text-gray-300 text-xs font-semibold mb-2">
+                              💬 Sua resposta:
+                            </label>
+                            <textarea
+                              className="w-full bg-gray-800/50 border border-gray-600 rounded-lg p-3 text-white text-sm placeholder-gray-400 focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-colors resize-none"
+                              rows={3}
+                              placeholder="Digite sua resposta aqui..."
+                              value={inputMessage}
+                              onChange={(e) => setInputMessage(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault()
+                                  handleSendMessage(inputMessage)
+                                }
+                              }}
+                            />
+                            <div className="flex justify-between items-center mt-2">
+                              <p className="text-gray-400 text-xs">
+                                Pressione Enter para enviar
+                              </p>
+                              <button
+                                onClick={() => handleSendMessage(inputMessage)}
+                                className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors"
+                                disabled={!inputMessage.trim()}
+                              >
+                                Enviar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Botões de Navegação */}
+                        <div className="flex justify-between items-center gap-2">
+                          <button
+                            onClick={() => {
+                              if (etapaAtual > 1) {
+                                setEtapaAtual(etapaAtual - 1)
+                              }
+                            }}
+                            className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={etapaAtual <= 1}
+                          >
+                            ← Anterior
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              setModoAvaliacao(false)
+                              setEtapaAtual(0)
+                              setExpandedCard(null)
+                            }}
+                            className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs transition-colors"
+                          >
+                            ❌ Cancelar
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              if (etapaAtual < 27) {
+                                setEtapaAtual(etapaAtual + 1)
+                              }
+                            }}
+                            className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={etapaAtual >= 27}
+                          >
+                            Próximo →
+                          </button>
                         </div>
-                        
-                        {/* Etapa atual */}
-                        <p className="text-gray-300 text-xs">
-                          🎯 Etapa atual: <span className="text-white font-semibold">{ETAPAS_AVALIACAO[etapaAtual]?.title || 'Aguardando início'}</span>
-                        </p>
                       </div>
                     )}
                     

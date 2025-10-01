@@ -57,8 +57,8 @@ const LandingPage = () => {
 
   const features = [
     {
-      title: "Chat Inteligente com NOA",
-      description: "Converse com nossa IA especializada em medicina",
+      title: "Chat Inteligente com Nôa",
+      description: "Converse com Nôa Esperanza, IA especializada em medicina do MedCanLab",
       icon: "🤖",
       color: "from-blue-500 to-cyan-500"
     },
@@ -144,14 +144,15 @@ const LandingPage = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-full animate-pulse"></div>
                 <img 
                   src="/logo-noa-triangulo.gif" 
-                  alt="NOA Esperanza" 
+                  alt="MedCanLab" 
                   className="relative w-full h-full object-cover rounded-full border-4 border-white/20"
                 />
               </div>
               <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-blue-400 via-green-400 to-yellow-400 bg-clip-text text-transparent mb-4">
-                NOA ESPERANZA
+                MEDCANLAB
               </h1>
               <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
+                MedCanLab @ Power By Nôa Esperanza<br />
                 A revolução da medicina digital com inteligência artificial especializada
               </p>
             </div>

@@ -12,24 +12,24 @@ const Footer = () => {
               <div className="w-5 h-5 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
                 <img 
                   src="/logo-noa-triangulo.gif" 
-                  alt="NOA Esperanza" 
+                  alt="MedCanLab" 
                   className="w-full h-full object-cover"
                 />
               </div>
               <div>
-                <div className="text-xs font-bold text-white">NOA ESPERANZA</div>
-                <div className="text-xs text-yellow-100">Medicina Digital Inteligente</div>
+                <div className="text-xs font-bold text-white">MEDCANLAB</div>
+                <div className="text-xs text-yellow-100">@ Power By Nôa Esperanza</div>
               </div>
             </div>
             <p className="text-gray-300 mb-0.5 max-w-md text-xs">
-              Revolucionando a medicina com inteligência artificial especializada em Nefrologia, 
+              MedCanLab revoluciona a medicina com Nôa Esperanza, IA especializada em Nefrologia, 
               Neurologia e Cannabis Medicinal.
             </p>
             
             {/* Redes Sociais */}
             <div className="flex gap-0.5">
               <a 
-                href="https://instagram.com/noaesperanza" 
+                href="https://instagram.com/medcanlab" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-4 h-4 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-300"
@@ -37,7 +37,7 @@ const Footer = () => {
                 <i className="fab fa-instagram text-xs"></i>
               </a>
               <a 
-                href="https://linkedin.com/company/noaesperanza" 
+                href="https://linkedin.com/company/medcanlab" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-4 h-4 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-300"
@@ -45,7 +45,7 @@ const Footer = () => {
                 <i className="fab fa-linkedin text-xs"></i>
               </a>
               <a 
-                href="https://twitter.com/noaesperanza" 
+                href="https://twitter.com/medcanlab" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-4 h-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-300"
@@ -62,7 +62,7 @@ const Footer = () => {
             <div className="space-y-0">
               <div className="flex items-center gap-2 text-gray-300 text-sm">
                 <i className="fas fa-envelope text-blue-400"></i>
-                <span>contato@noaesperanza.com</span>
+                <span>contato@medcanlab.com</span>
               </div>
               <div className="flex items-center gap-2 text-gray-300 text-sm">
                 <i className="fas fa-phone text-green-400"></i>
@@ -84,7 +84,7 @@ const Footer = () => {
         <div className="border-t border-white/20 mt-1 pt-0.5">
           <div className="flex flex-col md:flex-row justify-between items-center gap-0.5">
             <div className="text-gray-400 text-xs">
-              © 2024 NOA Esperanza. Todos os direitos reservados.
+              © 2024 MedCanLab @ Power By Nôa Esperanza. Todos os direitos reservados.
             </div>
             <div className="flex gap-1 text-xs">
               <Link to="/privacy" className="text-gray-400 hover:text-white transition-colors">

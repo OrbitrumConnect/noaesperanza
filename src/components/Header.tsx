@@ -17,7 +17,7 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
   
   // Agora temos um laboratório unificado
   const labInfo = {
-    name: 'NOA Esperanza - By MedCanLab',
+    name: 'MedCanLab @ Power By Nôa Esperanza',
     fullName: 'Neurologia • Cannabis • Rim',
     icon: 'fa-flask',
     description: 'Assistente IA Médica Inteligente'
@@ -35,19 +35,19 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
   return (
     <header className="fixed top-0 left-0 right-0 z-[200] h-16 bg-gradient-to-r from-gray-900/95 via-purple-900/95 to-amber-600/95 backdrop-blur-md shadow-lg border-b border-white/20">
       <div className="flex items-center justify-between h-full px-6 max-w-7xl mx-auto">
-        {/* Logo NOA Esperanza */}
+        {/* Logo MedCanLab */}
         {location.pathname === '/landing' ? (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
               <img 
                 src="/logo-noa-triangulo.gif" 
-                alt="NOA Esperanza" 
+                alt="MedCanLab" 
                 className="w-full h-full object-cover"
               />
             </div>
             <div>
               <div className="text-lg font-bold text-white drop-shadow-md">
-                NOA Esperanza <span className="text-sm font-normal text-yellow-200">By MedCanLab</span>
+                MedCanLab <span className="text-sm font-normal text-yellow-200">@ Power By Nôa Esperanza</span>
               </div>
               <div className="text-xs text-yellow-100 drop-shadow-sm">{labInfo.fullName}</div>
             </div>
@@ -57,13 +57,13 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
               <img 
                 src="/logo-noa-triangulo.gif" 
-                alt="NOA Esperanza" 
+                alt="MedCanLab" 
                 className="w-full h-full object-cover"
               />
             </div>
             <div>
               <div className="text-lg font-bold text-white drop-shadow-md">
-                NOA Esperanza <span className="text-sm font-normal text-yellow-200">By MedCanLab</span>
+                MedCanLab <span className="text-sm font-normal text-yellow-200">@ Power By Nôa Esperanza</span>
               </div>
               <div className="text-xs text-yellow-100 drop-shadow-sm">{labInfo.fullName}</div>
             </div>

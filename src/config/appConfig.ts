@@ -1,10 +1,10 @@
-// Configurações da aplicação Nôa Esperanza
+// Configurações da aplicação MedCanLab
 // Sem dependências de dados externos ou caminhos do sistema
 
 export const APP_CONFIG = {
   // Informações da aplicação
   app: {
-    name: 'Nôa Esperanza',
+    name: 'MedCanLab @ Power By Nôa Esperanza',
     version: '3.0.0',
     description: 'Assistente Médica Inteligente',
     doctor: 'Dr. Ricardo Valença',

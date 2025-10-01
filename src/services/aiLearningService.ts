@@ -117,6 +117,8 @@ class AILearningService {
           keyword: keyword.toLowerCase(),
           category,
           importance_score: importance
+        }, {
+          onConflict: 'keyword'
         })
         .select()
         .single()
