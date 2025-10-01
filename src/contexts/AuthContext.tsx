@@ -50,9 +50,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Obter sessão inicial (não bloqueante)
     const getInitialSession = async () => {
       try {
-        // Timeout mais curto para não travar
+        // Timeout adequado para conexão
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout geral')), 1500)
+          setTimeout(() => reject(new Error('Timeout geral')), 10000)
         )
         
         const sessionPromise = supabase.auth.getSession()
@@ -121,7 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // 1. Buscar de noa_users primeiro (nova estrutura) com timeout
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout profile')), 2000)
+        setTimeout(() => reject(new Error('Timeout profile')), 8000)
       )
       
       const noaUserPromise = supabase

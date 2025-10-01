@@ -39,11 +39,11 @@ export class AvaliacaoClinicaService {
   private contextos: Map<string, AvaliacaoContext> = new Map()
 
   // 🎯 INICIAR NOVA AVALIAÇÃO
-  async iniciarAvaliacao(userId: string): Promise<AvaliacaoContext> {
-    const sessionId = crypto.randomUUID()
+  async iniciarAvaliacao(userId: string, sessionId?: string): Promise<AvaliacaoContext> {
+    const avaliacaoSessionId = sessionId || crypto.randomUUID()
     
     const contexto: AvaliacaoContext = {
-      sessionId,
+      sessionId: avaliacaoSessionId,
       userId,
       etapaAtual: 0,
       variaveisCapturadas: {},
@@ -52,17 +52,18 @@ export class AvaliacaoClinicaService {
       atualizadoEm: new Date()
     }
     
-    this.contextos.set(sessionId, contexto)
+    this.contextos.set(avaliacaoSessionId, contexto)
     
     // Salvar no Supabase
     await supabase.from('avaliacoes_em_andamento').insert({
-      session_id: sessionId,
+      session_id: avaliacaoSessionId,
       user_id: userId,
-      etapa_atual: 0,
-      context: contexto
+      current_block: 0,
+      status: 'iniciada',
+      responses: contexto
     })
     
-    console.log('✅ Avaliação iniciada:', sessionId)
+    console.log('✅ Avaliação iniciada:', avaliacaoSessionId)
     return contexto
   }
 
@@ -75,13 +76,16 @@ export class AvaliacaoClinicaService {
     const contexto = this.contextos.get(sessionId)
     if (!contexto) throw new Error('Contexto não encontrado')
 
+    // Se blocoAtual é o contexto, usar etapaAtual
+    const etapaAtual = blocoAtual?.etapaAtual || contexto.etapaAtual
+
     // Extrair variáveis da resposta
-    this.extrairVariaveis(contexto, blocoAtual.etapa, resposta)
+    this.extrairVariaveis(contexto, etapaAtual, resposta)
 
     // Salvar resposta completa
     contexto.respostasCompletas.push({
-      etapa: blocoAtual.etapa,
-      pergunta: blocoAtual.texto,
+      etapa: etapaAtual,
+      pergunta: blocoAtual?.texto || `Pergunta ${etapaAtual}`,
       resposta,
       timestamp: new Date()
     })

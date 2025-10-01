@@ -44,7 +44,7 @@ export class ConversationModeService {
     }
     
     this.contexts.set(sessionId, ctx)
-    this.logModeTransition(ctx, 'explicativo', 'explicativo', 'inicializacao', 1.0)
+    this.logModeTransition('explicativo', 'explicativo', 'inicializacao', 1.0)
     
     return ctx
   }
@@ -309,8 +309,8 @@ export class ConversationModeService {
     // Inicializar contexto se não existir
     if (!ctx.contextData || !ctx.contextData.avaliacaoIniciada) {
       console.log('🩺 Inicializando contexto de avaliação...')
-      await avaliacaoClinicaService.iniciarAvaliacao(ctx.userId)
-      ctx.contextData = { avaliacaoIniciada: true, etapaAtual: 0 }
+      const avaliacaoContext = await avaliacaoClinicaService.iniciarAvaliacao(ctx.userId, ctx.sessionId)
+      ctx.contextData = avaliacaoContext
     }
     
     // Se está em avaliação, delega para o serviço específico
@@ -391,9 +391,9 @@ export class ConversationModeService {
     
     this.modeTransitions.push(transition)
     
-    // Salvar no Supabase
+    // Salvar no Supabase (com session_id temporário)
     supabase.from('mode_transitions_log').insert({
-      session_id: ctx.sessionId,
+      session_id: 'temp-session-' + Date.now(),
       from_mode: from,
       to_mode: to,
       trigger_text: trigger,

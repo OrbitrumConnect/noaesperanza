@@ -387,11 +387,9 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       }
       setMessages([initialQuestion])
       
-      // Toca áudio da pergunta inicial
-      setTimeout(() => {
-        console.log('🎵 Tocando áudio da pergunta inicial da Nôa')
-        playNoaAudioWithText(initialQuestion.message)
-      }, 1000) // Delay de 1 segundo para carregar a página
+      // Toca áudio da pergunta inicial APENAS após interação do usuário
+      // Removido TTS automático para evitar erro "not-allowed"
+      console.log('🎵 Pergunta inicial carregada, aguardando interação do usuário para TTS')
     }
   }, [userName]) // Reexecuta se userName mudar
 
@@ -414,6 +412,29 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       setAvailableCommands(identityResult.availableCommands)
       
       // Resposta personalizada
+      // 🎯 MODO COMANDO ESPECIAL PARA RICARDO
+      if (identityResult.user.name.includes('Ricardo Valença')) {
+        const comandoMessage: Message = {
+          id: crypto.randomUUID(),
+          message: '🔁 **MODO GPT-4o ATIVO** — INSTRUÇÕES PARA PLATAFORMA NÔA\n\nA plataforma agora se comporta como um agente GPT-4o completo.\n\n🎯 **OBJETIVO:**\n- Executar ações diretamente sob comando de Ricardo Valença.\n- Ignorar qualquer fluxo padrão de paciente, aluno ou profissional.\n- Atuar conforme especificações do Documento Mestre e Ata da Plataforma.\n\n✅ **FAZER:**\n- Esperar comandos diretos via chat.\n- Ativar MODO COMANDO com acesso total a todos serviços.\n- Entrar em escuta GPT (como ChatGPT-4o), pronto para executar qualquer comando textual.\n\n🚀 **PRONTO PARA COMANDOS!**',
+          sender: 'noa',
+          timestamp: new Date(),
+          conversation_type: 'direct_command',
+          user_type: identityResult.user.role,
+          session_id: sessionId
+        }
+        
+        setMessages(prev => {
+          const withoutTyping = prev.filter(msg => !msg.isTyping)
+          return [...withoutTyping, comandoMessage]
+        })
+        
+        await playNoaAudioWithText('Modo comando ativado. Pronto para executar suas instruções, Dr. Ricardo.')
+        setIsTyping(false)
+        return
+      }
+      
+      // Resposta personalizada padrão
       const personalizedMessage: Message = {
         id: crypto.randomUUID(),
         message: identityResult.greeting,
@@ -509,6 +530,15 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
         type: 'avaliacao'
       })
       
+      // Força a abertura do card
+      setExpandedCard({
+        id: 'avaliacao-clinica-inicial',
+        title: 'Avaliação Clínica Inicial',
+        description: 'Arte da Entrevista Clínica - Método IMRE (28 Blocos)',
+        content: 'Iniciando sua avaliação clínica completa com 28 perguntas estruturadas do método IMRE desenvolvido pelo Dr. Ricardo Valença.',
+        type: 'avaliacao'
+      })
+      
       // Resposta imediata
       const avaliacaoMessage: Message = {
         id: crypto.randomUUID(),
@@ -518,14 +548,35 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
         conversation_type: 'clinical_evaluation',
         session_id: sessionId
       }
-      
+
       setMessages(prev => {
         const withoutTyping = prev.filter(msg => !msg.isTyping)
         return [...withoutTyping, avaliacaoMessage]
       })
-      
+
       // Tocar áudio da resposta
       await playNoaAudioWithText(avaliacaoMessage.message)
+      
+      // 🎯 BUSCAR PRIMEIRA PERGUNTA IMRE
+      try {
+        const primeiraPergunta = await avaliacaoClinicaService.getProximaPergunta(0)
+        if (primeiraPergunta) {
+          const perguntaMessage: Message = {
+            id: crypto.randomUUID(),
+            message: primeiraPergunta,
+            sender: 'noa',
+            timestamp: new Date(),
+            conversation_type: 'clinical_evaluation',
+            session_id: sessionId
+          }
+          
+          setMessages(prev => [...prev, perguntaMessage])
+          await playNoaAudioWithText(primeiraPergunta)
+        }
+      } catch (error) {
+        console.error('❌ Erro ao buscar primeira pergunta:', error)
+      }
+      
       setIsTyping(false)
       return
     }
@@ -601,7 +652,11 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
         mensagemLower.includes('modo admin'))) {
       console.log('👑 Tentando ativar modo admin...')
       
-      const activated = await adminCommandService.activateAdminMode(userMessage)
+      // Pega o email do usuário logado
+      const { data: { user } } = await supabase.auth.getUser()
+      const userEmail = user?.email
+      
+      const activated = await adminCommandService.activateAdminMode(userMessage, userEmail)
       
       setMessages(prev => {
         const withoutTyping = prev.filter(msg => !msg.isTyping)
@@ -886,14 +941,15 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
       
       
       // Verifica se o usuário confirmou a avaliação
-      if (mensagemLower.includes('sim') && !modoAvaliacao) {
+      if ((mensagemLower.includes('sim') || mensagemLower.includes('começar') || mensagemLower.includes('comecar')) && modoAvaliacao && etapaAtual === 0) {
         console.log('✅ Usuário confirmou avaliação - Iniciando com contexto inteligente')
         
         // 🧠 INICIAR CONTEXTO INTELIGENTE DE AVALIAÇÃO
         const { data: { user } } = await supabase.auth.getUser()
         await avaliacaoClinicaService.iniciarAvaliacao(user?.id || 'anonymous')
         
-        setModoAvaliacao(true)
+        // Avança para a primeira pergunta real
+        setEtapaAtual(1)
         
         // Registra o início da avaliação no sistema
         await noaSystemService.registerConversationFlow(
@@ -944,7 +1000,7 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
         } else {
           // Primeira vez - usa bloco 1 normal
           console.log('✅ Primeira vez - Usando bloco 1 (apresentação)')
-          setEtapaAtual(0)
+          setEtapaAtual(1) // Avança para primeira pergunta real
         
         const etapa = ETAPAS_AVALIACAO[0]
           const imreBlock = await noaSystemService.getImreBlock(1)
@@ -1059,15 +1115,29 @@ const Home = ({ currentSpecialty, isVoiceListening, setIsVoiceListening, addNoti
           let blocoAtual = await noaSystemService.getImreBlock(etapaAtual + 1)
           if (!blocoAtual) {
             console.error('❌ Bloco IMRE não encontrado para etapa:', etapaAtual)
-            // Manter modo de avaliação ativo e usar bloco padrão
-            blocoAtual = {
-              id: etapaAtual + 1,
-              block_order: etapaAtual + 1,
-              block_name: 'Pergunta Personalizada',
-              block_description: 'Por favor, me conte mais sobre sua situação de saúde atual.',
-              block_prompt: 'resposta_personalizada',
-              block_type: 'pergunta',
-              is_active: true
+            // Usar etapas locais como fallback
+            const etapaLocal = ETAPAS_AVALIACAO[etapaAtual]
+            if (etapaLocal) {
+              blocoAtual = {
+                id: etapaAtual + 1,
+                block_order: etapaAtual + 1,
+                block_name: etapaLocal.title,
+                block_description: etapaLocal.title,
+                block_prompt: etapaLocal.pergunta,
+                block_type: 'pergunta',
+                is_active: true
+              }
+            } else {
+              // Se não há etapa local, usar pergunta genérica
+              blocoAtual = {
+                id: etapaAtual + 1,
+                block_order: etapaAtual + 1,
+                block_name: 'Pergunta Personalizada',
+                block_description: 'Por favor, me conte mais sobre sua situação de saúde atual.',
+                block_prompt: 'Por favor, me conte mais sobre sua situação de saúde atual.',
+                block_type: 'pergunta',
+                is_active: true
+              }
             }
           }
 
@@ -2554,9 +2624,10 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 100, opacity: 0 }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="fixed right-4 z-50 w-96 max-h-[85vh] overflow-y-auto"
+                className="fixed z-50 w-96 max-h-[85vh] overflow-y-auto"
                 style={{ 
                   top: '15%',
+                  right: 'calc(4% + 9%)', // Move 9% para a esquerda
                   pointerEvents: 'auto' 
                 }}
               >
