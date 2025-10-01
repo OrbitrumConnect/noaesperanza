@@ -47,37 +47,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return
     }
 
-    // Obter sessão inicial
+    // Obter sessão inicial (não bloqueante)
     const getInitialSession = async () => {
       try {
-        // Timeout geral para evitar travamento
+        // Timeout mais curto para não travar
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout geral')), 2000)
+          setTimeout(() => reject(new Error('Timeout geral')), 1500)
         )
         
         const sessionPromise = supabase.auth.getSession()
-        const { data, error } = await Promise.race([sessionPromise, timeoutPromise]) as any
+        const result = await Promise.race([sessionPromise, timeoutPromise]) as any
         
-        if (error) throw error
+        if (!result || result.error) {
+          throw result?.error || new Error('Sem resposta')
+        }
         
         // Se não há sessão, garantir que usuário é null
-        if (!data.session) {
+        if (!result.data?.session) {
           setUser(null)
           setUserProfile(null)
           setLoading(false)
           return
         }
         
-        setUser(data.session.user)
+        setUser(result.data.session.user)
         
-        if (data.session.user) {
-          await loadUserProfile(data.session.user.id)
+        if (result.data.session.user) {
+          // Carregar perfil sem bloquear (em background)
+          loadUserProfile(result.data.session.user.id).catch(err => {
+            console.warn('⚠️ Perfil será carregado localmente:', err)
+          })
         }
       } catch (error) {
-        console.error('Erro ao obter sessão inicial:', error)
+        console.warn('⚠️ Sessão não encontrada (modo local):', error)
         setUser(null)
         setUserProfile(null)
       } finally {
+        // Sempre liberar loading rapidamente
         setLoading(false)
       }
     }
@@ -104,16 +110,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      // Timeout para evitar travamento
+      // 1. Buscar de noa_users primeiro (nova estrutura) com timeout
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
+        setTimeout(() => reject(new Error('Timeout profile')), 2000)
       )
       
+      const noaUserPromise = supabase
+        .from('noa_users')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+      
+      const { data: noaUser, error: noaError } = await Promise.race([
+        noaUserPromise,
+        timeoutPromise
+      ]) as any
+      
+      if (noaUser && !noaError) {
+        console.log('✅ Perfil carregado de noa_users:', noaUser)
+        setUserProfile({
+          id: userId,
+          email: noaUser.profile_data?.email || '',
+          name: noaUser.name || '',
+          role: noaUser.user_type === 'profissional' ? 'doctor' : 'patient',
+          user_type: noaUser.user_type,
+          created_at: noaUser.created_at,
+          updated_at: noaUser.updated_at
+        } as any)
+        return
+      }
+      
+      // 2. Fallback para tabela users (legada)
       const profilePromise = authService.getUserProfile(userId)
-      const profile: User = await Promise.race([profilePromise, timeoutPromise]) as User
-      setUserProfile(profile)
+      const profile: User = await Promise.race([
+        profilePromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout legacy')), 2000))
+      ]) as User
+      
+      if (profile) {
+        setUserProfile(profile)
+        return
+      }
+      
+      throw new Error('Nenhum perfil encontrado')
     } catch (error) {
-      console.warn('⚠️ Erro ao carregar perfil do usuário (modo local):', error)
+      console.warn('⚠️ Perfil não encontrado, usando modo local:', error)
       // Cria perfil local se não conseguir carregar do Supabase
       const localProfile: User = {
         id: userId,
@@ -132,8 +173,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true)
       const data = await authService.signUp(email, password, userData)
       
-      // Criar perfil do usuário
+      // Criar perfil do usuário na tabela noa_users
       if (data.user) {
+        // Determinar user_type baseado em userData
+        const userType = (userData as any).user_type || 'paciente'
+        
+        const { error: noaUserError } = await supabase
+          .from('noa_users')
+          .insert({
+            user_id: data.user.id,
+            user_type: userType,
+            name: userData.name || '',
+            profile_data: {
+              email: data.user.email,
+              created_at: new Date().toISOString()
+            }
+          })
+        
+        if (noaUserError) {
+          console.error('❌ Erro ao criar noa_users:', noaUserError)
+        } else {
+          console.log('✅ Usuário criado em noa_users:', userType)
+        }
+        
+        // Também criar na tabela users (compatibilidade)
         const { error: profileError } = await supabase
           .from('users')
           .insert({
@@ -144,7 +207,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             specialty: userData.specialty
           })
         
-        if (profileError) throw profileError
+        if (profileError) {
+          console.warn('⚠️ Erro ao criar users (tabela legada):', profileError)
+        }
       }
     } catch (error) {
       console.error('Erro no cadastro:', error)

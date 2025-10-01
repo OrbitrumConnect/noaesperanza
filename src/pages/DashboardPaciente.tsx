@@ -55,6 +55,13 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
   // Itens da sidebar para pacientes
   const sidebarItems = [
     {
+      id: 'perfil',
+      label: 'Meu Perfil',
+      icon: 'fa-user-circle',
+      color: 'yellow',
+      action: () => handleCardToggle('perfil')
+    },
+    {
       id: 'compromissos',
       label: 'Compromissos e Consultas',
       icon: 'fa-calendar-check',
@@ -73,42 +80,42 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
       label: 'Agendar',
       icon: 'fa-calendar-plus',
       color: 'blue',
-      action: () => handleActionClick('Nova Consulta')
+      action: () => handleCardToggle('agendar')
     },
     {
       id: 'historico',
       label: 'Histórico',
       icon: 'fa-history',
       color: 'purple',
-      action: () => handleActionClick('Histórico')
+      action: () => handleCardToggle('historico')
     },
     {
       id: 'exames',
       label: 'Meus Exames',
       icon: 'fa-vials',
       color: 'blue',
-      route: '/exames'
+      action: () => handleCardToggle('exames')
     },
     {
       id: 'prescricoes',
       label: 'Prescrições',
       icon: 'fa-prescription',
       color: 'green',
-      route: '/prescricoes'
+      action: () => handleCardToggle('prescricoes')
     },
     {
       id: 'prontuario',
       label: 'Prontuário',
       icon: 'fa-file-medical',
       color: 'purple',
-      route: '/prontuario'
+      action: () => handleCardToggle('prontuario')
     },
     {
       id: 'pagamentos',
       label: 'Pagamentos',
       icon: 'fa-credit-card',
       color: 'yellow',
-      route: '/pagamentos-paciente'
+      action: () => handleCardToggle('pagamentos')
     },
     {
       id: 'chat',
@@ -403,13 +410,286 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                 </div>
               )}
 
+              {/* Meu Perfil - Conteúdo Real */}
+              {activeCard === 'perfil' && (
+                <div className="premium-card p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-premium text-lg font-semibold">👤 Editar Meu Perfil</h3>
+                    <button onClick={() => handleCardToggle('perfil')} className="text-gray-400 hover:text-white">
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  
+                  <div className="text-center mb-4">
+                    <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <i className="fas fa-user-circle text-4xl text-yellow-400"></i>
+                    </div>
+                    <button className="text-xs text-yellow-400 hover:text-yellow-300">
+                      <i className="fas fa-camera"></i> Alterar foto
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-gray-400 text-sm block mb-1">Nome Completo</label>
+                      <input 
+                        type="text" 
+                        className="w-full bg-gray-800/50 text-white px-3 py-2 rounded-lg text-sm border border-gray-700 focus:border-yellow-400 focus:outline-none transition-colors" 
+                        placeholder="Seu nome completo"
+                        defaultValue=""
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-gray-400 text-sm block mb-1">CPF</label>
+                        <input type="text" className="w-full bg-gray-800/50 text-white px-3 py-2 rounded-lg text-sm border border-gray-700" placeholder="000.000.000-00" />
+                      </div>
+                      <div>
+                        <label className="text-gray-400 text-sm block mb-1">Data Nascimento</label>
+                        <input type="date" className="w-full bg-gray-800/50 text-white px-3 py-2 rounded-lg text-sm border border-gray-700" />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-gray-400 text-sm block mb-1">Email</label>
+                      <input type="email" className="w-full bg-gray-800/50 text-white px-3 py-2 rounded-lg text-sm border border-gray-700" placeholder="seu@email.com" />
+                    </div>
+                    
+                    <div>
+                      <label className="text-gray-400 text-sm block mb-1">Telefone</label>
+                      <input type="tel" className="w-full bg-gray-800/50 text-white px-3 py-2 rounded-lg text-sm border border-gray-700" placeholder="(00) 00000-0000" />
+                    </div>
+                    
+                    <div>
+                      <label className="text-gray-400 text-sm block mb-1">Endereço</label>
+                      <textarea className="w-full bg-gray-800/50 text-white px-3 py-2 rounded-lg text-sm border border-gray-700" rows={2} placeholder="Seu endereço completo"></textarea>
+                    </div>
+                    
+                    <button 
+                      onClick={() => {
+                        addNotification('Perfil atualizado com sucesso!', 'success')
+                      }}
+                      className="w-full px-4 py-3 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg text-sm font-semibold transition-colors mt-4"
+                    >
+                      💾 Salvar Alterações
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Cards placeholder para outros itens */}
+              {activeCard === 'agendar' && (
+                <div className="premium-card p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-premium text-sm font-semibold">📅 Agendar Consulta</h3>
+                    <button onClick={() => handleCardToggle('agendar')} className="text-gray-400 hover:text-white text-xs">
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div className="text-sm text-gray-300">Funcionalidade em desenvolvimento</div>
+                </div>
+              )}
+
+              {activeCard === 'historico' && (
+                <div className="premium-card p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-premium text-sm font-semibold">📜 Histórico Médico</h3>
+                    <button onClick={() => handleCardToggle('historico')} className="text-gray-400 hover:text-white text-xs">
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div className="text-sm text-gray-300">Funcionalidade em desenvolvimento</div>
+                </div>
+              )}
+
+              {activeCard === 'exames' && (
+                <div className="premium-card p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-premium text-sm font-semibold">🧪 Meus Exames</h3>
+                    <button onClick={() => handleCardToggle('exames')} className="text-gray-400 hover:text-white text-xs">
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { name: 'Hemograma Completo', date: '15/01/2025', status: 'completed', doctor: 'Dr. Carlos Silva' },
+                      { name: 'Tomografia do Crânio', date: '20/01/2025', status: 'scheduled', doctor: 'Dra. Ana Costa' },
+                      { name: 'Eletroencefalograma', date: '10/01/2025', status: 'pending', doctor: 'Dr. Roberto Lima' }
+                    ].map((exam, i) => (
+                      <div key={i} className="p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+                        <div className="flex justify-between items-start mb-1">
+                          <div>
+                            <div className="text-white text-sm font-medium">{exam.name}</div>
+                            <div className="text-gray-400 text-xs">{exam.doctor}</div>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            exam.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                            exam.status === 'scheduled' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-yellow-500/20 text-yellow-400'
+                          }`}>
+                            {exam.status === 'completed' ? 'Concluído' : exam.status === 'scheduled' ? 'Agendado' : 'Pendente'}
+                          </span>
+                        </div>
+                        <div className="text-gray-500 text-xs">{exam.date}</div>
+                      </div>
+                    ))}
+                    <button className="w-full mt-3 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-semibold">
+                      <i className="fas fa-upload"></i> Enviar Novo Exame
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeCard === 'prescricoes' && (
+                <div className="premium-card p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-premium text-sm font-semibold">💊 Prescrições Médicas</h3>
+                    <button onClick={() => handleCardToggle('prescricoes')} className="text-gray-400 hover:text-white text-xs">
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { medication: 'Canabidiol 200mg', doctor: 'Dr. Ricardo Valença', dosage: '10 gotas', frequency: '3x ao dia', status: 'active' },
+                      { medication: 'Pregabalina 75mg', doctor: 'Dra. Ana Costa', dosage: '1 cápsula', frequency: '2x ao dia', status: 'active' },
+                      { medication: 'Dipirona 500mg', doctor: 'Dr. Carlos Silva', dosage: '1 comprimido', frequency: 'Se necessário', status: 'completed' }
+                    ].map((presc, i) => (
+                      <div key={i} className="p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+                        <div className="flex justify-between items-start mb-1">
+                          <div className="flex-1">
+                            <div className="text-white text-sm font-medium">{presc.medication}</div>
+                            <div className="text-gray-400 text-xs">{presc.doctor}</div>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            presc.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                          }`}>
+                            {presc.status === 'active' ? 'Ativa' : 'Concluída'}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          <span className="font-medium text-gray-400">{presc.dosage}</span> • {presc.frequency}
+                        </div>
+                      </div>
+                    ))}
+                    <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                      <div className="text-xs text-blue-400">
+                        <i className="fas fa-info-circle"></i> Prescrições vêm dos seus médicos credenciados
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeCard === 'prontuario' && (
+                <div className="premium-card p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-premium text-sm font-semibold">📋 Meu Prontuário</h3>
+                    <button onClick={() => handleCardToggle('prontuario')} className="text-gray-400 hover:text-white text-xs">
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {/* Resumo do Prontuário */}
+                    <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                      <h4 className="text-yellow-400 text-sm font-semibold mb-2">📊 Resumo Clínico</h4>
+                      <div className="space-y-1 text-xs">
+                        <div className="text-gray-300"><span className="text-gray-400">Idade:</span> 35 anos</div>
+                        <div className="text-gray-300"><span className="text-gray-400">Tipo Sanguíneo:</span> O+</div>
+                        <div className="text-gray-300"><span className="text-gray-400">Alergias:</span> Nenhuma conhecida</div>
+                      </div>
+                    </div>
+
+                    {/* Histórico de Consultas */}
+                    <div>
+                      <h4 className="text-white text-xs font-semibold mb-2">🏥 Histórico de Consultas</h4>
+                      {[
+                        { date: '25/01/2025', doctor: 'Dr. Ricardo Valença', type: 'Consulta Neurológica', summary: 'Avaliação inicial de dor crônica' },
+                        { date: '10/01/2025', doctor: 'Dra. Ana Costa', type: 'Retorno', summary: 'Ajuste de medicação' }
+                      ].map((visit, i) => (
+                        <div key={i} className="p-2 bg-gray-800/50 rounded-lg border border-gray-700 mb-2">
+                          <div className="text-white text-xs font-medium">{visit.type}</div>
+                          <div className="text-gray-400 text-xs">{visit.doctor} • {visit.date}</div>
+                          <div className="text-gray-500 text-xs mt-1">{visit.summary}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Condições Ativas */}
+                    <div>
+                      <h4 className="text-white text-xs font-semibold mb-2">🩺 Condições em Acompanhamento</h4>
+                      <div className="space-y-1">
+                        {['Dor Crônica', 'Enxaqueca'].map((cond, i) => (
+                          <div key={i} className="px-2 py-1 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400">
+                            {cond}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeCard === 'pagamentos' && (
+                <div className="premium-card p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-premium text-sm font-semibold">💳 Pagamentos e Plano</h3>
+                    <button onClick={() => handleCardToggle('pagamentos')} className="text-gray-400 hover:text-white text-xs">
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {/* Plano Atual */}
+                    <div className="p-3 bg-gradient-to-br from-yellow-500/20 to-green-500/20 border border-yellow-500/30 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-yellow-400 text-sm font-semibold">✨ Plano Básico</h4>
+                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded">Ativo</span>
+                      </div>
+                      <div className="text-2xl font-bold text-white mb-1">R$ 49,90<span className="text-sm text-gray-400">/mês</span></div>
+                      <div className="text-xs text-gray-300">Próxima cobrança: 05/02/2025</div>
+                      <button className="w-full mt-3 px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg text-xs font-semibold">
+                        Fazer Upgrade do Plano
+                      </button>
+                    </div>
+
+                    {/* Histórico de Pagamentos */}
+                    <div>
+                      <h4 className="text-white text-xs font-semibold mb-2">📜 Histórico de Pagamentos</h4>
+                      {[
+                        { date: '05/01/2025', amount: 'R$ 49,90', method: 'Cartão •••• 1234', status: 'paid' },
+                        { date: '05/12/2024', amount: 'R$ 49,90', method: 'Cartão •••• 1234', status: 'paid' },
+                        { date: '05/11/2024', amount: 'R$ 49,90', method: 'Cartão •••• 1234', status: 'paid' }
+                      ].map((payment, i) => (
+                        <div key={i} className="p-2 bg-gray-800/50 rounded-lg border border-gray-700 mb-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="text-white text-sm font-medium">{payment.amount}</div>
+                              <div className="text-gray-400 text-xs">{payment.method}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-gray-500">{payment.date}</div>
+                              <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded">Pago</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Métodos de Pagamento */}
+                    <button className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-semibold">
+                      <i className="fas fa-credit-card"></i> Gerenciar Métodos de Pagamento
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Mensagem quando nenhum card está ativo */}
               {!activeCard && (
                 <div className="col-span-2 flex items-center justify-center h-64 ml-72">
                   <div className="text-center">
                     <i className="fas fa-mouse-pointer text-4xl text-gray-500 mb-4"></i>
                     <h3 className="text-xl text-gray-400 mb-2">Selecione um item na sidebar</h3>
-                    <p className="text-gray-500">Clique em "Compromissos e Consultas" ou "Analytics - Biomarcadores" para visualizar os dados</p>
+                    <p className="text-gray-500">Clique em qualquer item para visualizar</p>
                   </div>
                 </div>
               )}

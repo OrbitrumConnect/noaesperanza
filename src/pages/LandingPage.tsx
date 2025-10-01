@@ -315,6 +315,7 @@ const AuthForm: React.FC<{
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [userType, setUserType] = useState<'paciente' | 'profissional'>('paciente')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -322,7 +323,10 @@ const AuthForm: React.FC<{
     setLoading(true)
     
     try {
-      const userData = mode === 'register' ? { name } : undefined
+      const userData = mode === 'register' ? { 
+        name,
+        user_type: userType 
+      } : undefined
       await onSubmit(email, password, userData)
     } finally {
       setLoading(false)
@@ -332,20 +336,55 @@ const AuthForm: React.FC<{
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {mode === 'register' && (
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-white mb-1">
-            Nome
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400"
-            placeholder="Seu nome completo"
-            required
-          />
-        </div>
+        <>
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-white mb-1">
+              Nome Completo
+            </label>
+            <input
+              type="text"
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400"
+              placeholder="Seu nome completo"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              Tipo de Cadastro
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setUserType('paciente')}
+                className={`px-4 py-3 rounded-lg border-2 transition-all duration-300 ${
+                  userType === 'paciente'
+                    ? 'border-green-500 bg-green-500/20 text-white'
+                    : 'border-white/20 bg-white/5 text-gray-400 hover:border-white/40'
+                }`}
+              >
+                <div className="text-2xl mb-1">🏥</div>
+                <div className="text-sm font-semibold">Sou Paciente</div>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setUserType('profissional')}
+                className={`px-4 py-3 rounded-lg border-2 transition-all duration-300 ${
+                  userType === 'profissional'
+                    ? 'border-blue-500 bg-blue-500/20 text-white'
+                    : 'border-white/20 bg-white/5 text-gray-400 hover:border-white/40'
+                }`}
+              >
+                <div className="text-2xl mb-1">👨‍⚕️</div>
+                <div className="text-sm font-semibold">Sou Médico</div>
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       <div>
