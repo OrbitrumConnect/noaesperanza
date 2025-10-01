@@ -1,0 +1,20 @@
+[33mcb48534[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m feat: Sistema profissional completo - Busca inteligente de 559 aprendizados, variáveis dinâmicas, relatórios com NFT, proteção de fluxo e serviços especializados
+[33m942c50b[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m feat: Sistema inteligente completo - Variáveis dinâmicas, relatórios automáticos, busca de aprendizados e NoaGPT contextualizado
+[33mfc82234[m feat: Dashboard paciente completo, cadastro melhorado, sistema admin integrado e correções Supabase
+[33mb1110e8[m feat: Corrigir roteamento, vÃ­deos da NOA e posicionamento da landing page
+[33m3e9a1bc[m fix: Remover dependências de dados externos e caminhos do sistema
+[33m4204bae[m  Fix: Corrigir problemas críticos do app
+[33m7cd095c[m feat: simplificar header e otimizar footer - Remover rotas desnecessÃ¡rias do header (AvaliaÃ§Ã£o, Ensino, Pesquisa, MedCann) - Manter apenas tipos de usuÃ¡rio essenciais (Paciente, MÃ©dico, Estudante, Pagar, ADM/CONFIG) - Adicionar controle de acesso para ADM/CONFIG (apenas admins) - Atualizar branding para 'NOA Esperanza - By MedCanLab' - Reduzir footer em 30% e remover Links RÃ¡pidos - Melhorar legibilidade de componentes
+[33mbf6ffe6[m Resolve merge conflict in Home.tsx - keep mobile responsive sidebar
+[33m1b916ce[m docs: Adicionar documentação completa do sistema NOA Esperanza
+[33m0696446[m feat: Implementar controle por voz completo
+[33m6be334b[m feat: Implementar sistema híbrido de IA completo
+[33md7f6249[m feat: Sistema de expansão de cards com ações específicas
+[33m98d5f77[m feat: Atualizações na landing page e vídeo da NOA
+[33m6bf0e1c[m Fix mobile sidebar scaling without affecting web dashboards
+[33m9e1a444[m feat: implementar chat mobile entre NOA e rodapé sem afetar desktop
+[33maeab3f4[m Adjust mobile scale to 800px base width
+[33m0631ff1[m[33m ([m[1;31morigin/test-scale-mobile[m[33m)[m Test mobile scale technique
+[33m08ef16e[m Fix Matrix background effect and improve dashboard layout
+[33mc0ff946[m Fix: Landing page isolation and NOA cards functionality
+[33m2b0e69d[m feat: adiciona componentes ThoughtBubble e MatrixBackground, atualiza Home.tsx e dependências

@@ -167,27 +167,48 @@ export class AvaliacaoClinicaService {
     }
   }
 
-  // 🔄 SUBSTITUIR VARIÁVEIS NA PERGUNTA
+  // 🔄 SUBSTITUIR VARIÁVEIS NA PERGUNTA (VERSÃO ROBUSTA)
   substituirVariaveis(texto: string, contexto: AvaliacaoContext): string {
     let textoFinal = texto
 
-    // Substituir [queixa]
-    if (contexto.variaveisCapturadas.queixaPrincipal) {
-      textoFinal = textoFinal.replace(/\[queixa\]/g, contexto.variaveisCapturadas.queixaPrincipal)
-    }
+    // 1. SUBSTITUIR [queixa] - Prioridade máxima
+    const queixa = contexto.variaveisCapturadas.queixaPrincipal || 
+                   contexto.variaveisCapturadas.queixasLista?.[0] || 
+                   'isso';
+    textoFinal = textoFinal.replace(/\[queixa\]/gi, queixa);
 
-    // Substituir [nome]
+    // 2. SUBSTITUIR [nome]
     if (contexto.variaveisCapturadas.nome) {
-      textoFinal = textoFinal.replace(/\[nome\]/g, contexto.variaveisCapturadas.nome)
+      textoFinal = textoFinal.replace(/\[nome\]/gi, contexto.variaveisCapturadas.nome);
     }
 
-    // Substituir [sintomas]
+    // 3. SUBSTITUIR [sintomas]
     if (contexto.variaveisCapturadas.sintomasAssociados?.length) {
-      const sintomas = contexto.variaveisCapturadas.sintomasAssociados.join(', ')
-      textoFinal = textoFinal.replace(/\[sintomas\]/g, sintomas)
+      const sintomas = contexto.variaveisCapturadas.sintomasAssociados.join(', ');
+      textoFinal = textoFinal.replace(/\[sintomas\]/gi, sintomas);
     }
 
-    return textoFinal
+    // 4. SUBSTITUIR [localizacao]
+    if (contexto.variaveisCapturadas.localizacao) {
+      textoFinal = textoFinal.replace(/\[localizacao\]/gi, contexto.variaveisCapturadas.localizacao);
+    }
+
+    // 5. FALLBACK: Se ainda tem variável não substituída, usar "isso"
+    textoFinal = textoFinal.replace(/\[(\w+)\]/g, (match, varName) => {
+      console.warn(`⚠️ Variável não encontrada: ${varName}`);
+      return 'isso';
+    });
+
+    // 6. LOG para debug (caso haja problemas)
+    if (texto !== textoFinal) {
+      console.log('🔧 Substituição de variáveis:', {
+        original: texto,
+        resultado: textoFinal,
+        variaveis: contexto.variaveisCapturadas
+      });
+    }
+
+    return textoFinal;
   }
 
   // 📊 GERAR RELATÓRIO FINAL

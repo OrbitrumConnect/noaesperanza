@@ -1,0 +1,138 @@
+{
+  "users": {
+    "patient": {
+      "name": "João Silva",
+      "age": 35,
+      "type": "paciente",
+      "responses": {
+        "presentation": "Olá, sou paciente e quero fazer uma avaliação",
+        "cannabis": "não, nunca utilizei",
+        "symptoms": "dor de cabeça, cansaço e falta de ar",
+        "mainComplaint": "a dor de cabeça",
+        "location": "na parte frontal da cabeça",
+        "onset": "há cerca de 3 meses",
+        "quality": "é uma dor latejante",
+        "associatedSymptoms": "náusea e sensibilidade à luz",
+        "relievingFactors": "repouso e analgésicos",
+        "aggravatingFactors": "estresse e barulho",
+        "medicalHistory": "hipertensão e diabetes",
+        "familyHistoryMother": "diabetes e problemas cardíacos",
+        "familyHistoryFather": "hipertensão",
+        "lifestyle": "fumo ocasionalmente e faço exercícios",
+        "allergies": "alergia a poeira",
+        "continuousMedications": "losartana e metformina",
+        "occasionalMedications": "dipirona para dor de cabeça",
+        "consent": "sim, concordo"
+      }
+    },
+    "professional": {
+      "name": "Dr. Maria Santos",
+      "type": "profissional",
+      "responses": {
+        "presentation": "Olá, sou profissional da saúde",
+        "menuSelection": "acesso à pesquisa e ferramentas clínicas"
+      }
+    },
+    "student": {
+      "name": "Ana Costa",
+      "type": "aluno",
+      "responses": {
+        "presentation": "Olá, sou aluno de medicina",
+        "menuSelection": "acesso ao ensino da Arte da Entrevista Clínica"
+      }
+    }
+  },
+  "clinicalEvaluation": {
+    "quickResponses": [
+      "nenhuma",
+      "não",
+      "sim",
+      "não tenho",
+      "não sei",
+      "prefiro não responder"
+    ],
+    "detailedResponses": {
+      "presentation": "Meu nome é Carlos Eduardo Santos, 42 anos, advogado, casado, pai de dois filhos",
+      "cannabis": "sim, já utilizei cannabis medicinal para dor crônica, com prescrição médica",
+      "symptoms": "dor lombar crônica, insônia, ansiedade e dores de cabeça frequentes",
+      "mainComplaint": "a dor lombar é a que mais me incomoda, pois limita minhas atividades",
+      "location": "na região lombar baixa, irradiando para a perna direita",
+      "onset": "há aproximadamente 2 anos, após um acidente de carro",
+      "quality": "é uma dor constante, com picos de intensidade, tipo queimação",
+      "associatedSymptoms": "formigamento na perna direita, rigidez matinal e dificuldade para caminhar",
+      "relievingFactors": "fisioterapia, alongamentos e calor local",
+      "aggravatingFactors": "ficar muito tempo sentado, frio e estresse",
+      "medicalHistory": "hérnia de disco L4-L5, artrose na coluna e síndrome do piriforme",
+      "familyHistoryMother": "mãe tem diabetes tipo 2 e osteoporose",
+      "familyHistoryFather": "pai tem hipertensão e problemas cardíacos",
+      "lifestyle": "fumo ocasionalmente, bebo socialmente, faço exercícios 3x por semana",
+      "allergies": "alergia a penicilina e pólen",
+      "continuousMedications": "tramadol, gabapentina e omeprazol",
+      "occasionalMedications": "dipirona para dores de cabeça e lorazepam para ansiedade",
+      "consent": "gostaria de adicionar que tenho dificuldade para dormir"
+    }
+  },
+  "nft": {
+    "expectedHashPattern": /^[a-f0-9]{64}$/,
+    "metadata": {
+      "type": "clinical_evaluation",
+      "method": "IMRE",
+      "blocks_completed": 28
+    }
+  },
+  "voice": {
+    "testPhrases": [
+      "Olá, sou paciente",
+      "Meu nome é João Silva",
+      "Tenho dor de cabeça",
+      "Não tenho alergias",
+      "Sim, concordo com a avaliação"
+    ],
+    "errorScenarios": [
+      "no-speech",
+      "audio-capture",
+      "not-allowed",
+      "service-not-allowed"
+    ]
+  },
+  "supabase": {
+    "tables": [
+      "noa_conversations",
+      "noa_conversation_flow",
+      "noa_users",
+      "noa_nft_reports",
+      "blocos_imre",
+      "prompts",
+      "ai_learning",
+      "ai_keywords",
+      "ai_conversation_patterns"
+    ],
+    "functions": [
+      "get_noa_config",
+      "get_imre_block",
+      "get_prompt",
+      "get_prompts_by_category",
+      "save_ai_learning",
+      "set_user_type",
+      "get_user_type",
+      "register_noa_conversation",
+      "register_conversation_flow",
+      "create_nft_report",
+      "update_nft_status"
+    ],
+    "views": [
+      "noa_conversation_stats",
+      "noa_session_flow",
+      "noa_user_profiles",
+      "noa_nft_summary",
+      "noa_imre_blocks_active",
+      "noa_prompts_by_specialty",
+      "noa_ai_learning_summary"
+    ]
+  },
+  "performance": {
+    "maxResponseTime": 5000,
+    "maxLoadTime": 10000,
+    "maxVoiceRecognitionTime": 3000
+  }
+}
