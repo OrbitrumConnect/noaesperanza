@@ -4,6 +4,7 @@ import { getAdminMetrics, getRecentUsers, getSystemStats, AdminMetrics } from '.
 import AILearningDashboard from '../components/AILearningDashboard'
 import DocumentUploadModal from '../components/DocumentUploadModal'
 import ManualTrainingModal from '../components/ManualTrainingModal'
+import GPTPBuilder from '../components/GPTPBuilder'
 import Sidebar from '../components/Sidebar'
 
 interface AdminDashboardProps {
@@ -30,6 +31,7 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
   const [showAILearningDashboard, setShowAILearningDashboard] = useState(false)
   const [showDocumentUpload, setShowDocumentUpload] = useState(false)
   const [showManualTraining, setShowManualTraining] = useState(false)
+  const [showGPTPBuilder, setShowGPTPBuilder] = useState(false)
   const [showMobileSidebar, setShowMobileSidebar] = useState(false)
 
   // Itens do sidebar administrativo
@@ -56,10 +58,17 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
       action: () => addNotification('Funcionalidade em desenvolvimento', 'info')
     },
     {
+      id: 'gpt-builder',
+      label: 'GPT Builder - Base de Conhecimento',
+      icon: 'fa-robot',
+      color: 'purple',
+      action: () => setShowGPTPBuilder(true)
+    },
+    {
       id: 'ai-learning',
       label: 'IA Learning Dashboard',
       icon: 'fa-brain',
-      color: 'purple',
+      color: 'blue',
       action: () => setShowAILearningDashboard(true)
     },
     {
@@ -319,6 +328,10 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
       )}
 
       {/* Modais de IA */}
+      {showGPTPBuilder && (
+        <GPTPBuilder onClose={() => setShowGPTPBuilder(false)} />
+      )}
+
       {showAILearningDashboard && (
         <AILearningDashboard onClose={() => setShowAILearningDashboard(false)} />
       )}

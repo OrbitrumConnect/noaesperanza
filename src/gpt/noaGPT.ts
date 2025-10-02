@@ -234,7 +234,7 @@ export class NoaGPT {
       // 1. BUSCA INTELIGENTE NO BANCO (559 aprendizados)
       const aprendizados = await aiSmartLearningService.buscarAprendizadosSimilares(userMessage)
       
-      if (aprendizados.length > 0 && aprendizados[0].similarity > 0.7) {
+      if (aprendizados.length > 0 && aprendizados[0].similaridade > 0.7) {
         const melhorAprendizado = aprendizados[0]
         const tempoDecorrido = Date.now() - inicioTempo
         
@@ -242,30 +242,30 @@ export class NoaGPT {
         await logService.logDecisaoIA({
           pergunta: userMessage,
           fonte: 'banco',
-          confianca: melhorAprendizado.similarity * 100,
+          confianca: melhorAprendizado.similaridade * 100,
           tempo: tempoDecorrido,
           userId
         })
         
         console.log('✅ Usando aprendizado do banco:', {
-          similaridade: `${(melhorAprendizado.similarity * 100).toFixed(1)}%`,
+          similaridade: `${(melhorAprendizado.similaridade * 100).toFixed(1)}%`,
           tempo: `${tempoDecorrido}ms`
         })
         
-        // Incrementar uso
+        // Incrementar uso usando keyword como identificador
         await supabase
           .from('ai_learning')
           .update({ 
             usage_count: (melhorAprendizado.usage_count || 0) + 1,
             last_used_at: new Date().toISOString()
           })
-          .eq('id', melhorAprendizado.id)
+          .eq('keyword', melhorAprendizado.keyword)
         
         return {
           response: melhorAprendizado.ai_response,
-          confidence: melhorAprendizado.similarity,
+          confidence: melhorAprendizado.similaridade,
           source: 'database',
-          learningId: melhorAprendizado.id
+          learningId: melhorAprendizado.keyword
         }
       }
       
@@ -311,16 +311,6 @@ export class NoaGPT {
       console.log('🔄 Nenhum aprendizado encontrado, usando OpenAI...')
       
       return null
-
-      // Buscar por similaridade de texto
-      const { data: textSimilar } = await supabase
-        .from('ai_learning')
-        .select('*')
-        .ilike('user_message', `%${userMessage.substring(0, 15)}%`)
-        .order('confidence_score', { ascending: false })
-        .limit(1)
-
-      return textSimilar && textSimilar.length > 0 ? textSimilar[0] : null
 
     } catch (error) {
       console.warn('⚠️ Erro ao buscar respostas similares:', error)
