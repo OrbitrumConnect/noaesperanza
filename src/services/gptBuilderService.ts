@@ -322,7 +322,10 @@ export class GPTBuilderService {
       console.log('🔍 Buscando documentos com query:', query)
       
       // Sanitizar query para evitar problemas com caracteres especiais
-      const sanitizedQuery = query.replace(/[%_\\]/g, '\\$&')
+      const sanitizedQuery = query
+        .replace(/[%_\\]/g, '\\$&')
+        .replace(/[#🌟📋📊🏗️🧠🎯🖥️🧩🗄️🔧🎊]/g, '') // Remove emojis e caracteres especiais
+        .substring(0, 100) // Limita o tamanho da query
       
       const { data, error } = await supabase
         .from('documentos_mestres')

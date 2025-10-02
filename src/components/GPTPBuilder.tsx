@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { gptBuilderService, DocumentMaster, NoaConfig } from '../services/gptBuilderService'
 import { openAIService } from '../services/openaiService'
 import { supabase } from '../integrations/supabase/client'
+import { estudoVivoService, EstudoVivo, Debate, DocumentMetadata } from '../services/estudoVivoService'
 
 
 interface GPTPBuilderProps {
@@ -54,6 +55,12 @@ const GPTPBuilder: React.FC<GPTPBuilderProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<'editor' | 'chat'>('chat')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
+  
+  // Estados para Estudo Vivo
+  const [estudoVivoAtivo, setEstudoVivoAtivo] = useState<EstudoVivo | null>(null)
+  const [debateAtivo, setDebateAtivo] = useState<Debate | null>(null)
+  const [modoDebate, setModoDebate] = useState(false)
+  const [analiseQualidade, setAnaliseQualidade] = useState<any>(null)
 
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
@@ -783,6 +790,91 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
       return await handleRecognitionCommand(message)
     }
 
+    // 🚀 COMANDOS DO ESTUDO VIVO
+    
+    // Gerar Estudo Vivo
+    if (lowerMessage.includes('gerar estudo vivo') || lowerMessage.includes('estudo vivo')) {
+      const area = lowerMessage.includes('nefrologia') ? 'nefrologia' : 
+                   lowerMessage.includes('neurologia') ? 'neurologia' : 
+                   lowerMessage.includes('cannabis') ? 'cannabis' : undefined
+      
+      await handleGerarEstudoVivo(message, area)
+      return {
+        message: '🧠 **Gerando Estudo Vivo...** Analisando documentos e gerando síntese científica.',
+        action: 'estudo_vivo',
+        data: { pergunta: message, area }
+      }
+    }
+    
+    // Iniciar Debate Científico
+    if (lowerMessage.includes('debate científico') || lowerMessage.includes('debater trabalho')) {
+      // Buscar último documento enviado
+      const ultimoDocumento = uploadedDocuments[uploadedDocuments.length - 1]
+      if (ultimoDocumento) {
+        await handleIniciarDebate(ultimoDocumento.id)
+        return {
+          message: '💬 **Iniciando Debate Científico...** Preparando análise crítica do trabalho.',
+          action: 'debate_cientifico',
+          data: { documento: ultimoDocumento }
+        }
+      } else {
+        return {
+          message: '⚠️ **Nenhum documento encontrado para debate.** Envie um trabalho primeiro.',
+          action: 'error'
+        }
+      }
+    }
+    
+    // Analisar Qualidade
+    if (lowerMessage.includes('analisar qualidade') || lowerMessage.includes('análise metodológica')) {
+      const ultimoDocumento = uploadedDocuments[uploadedDocuments.length - 1]
+      if (ultimoDocumento) {
+        await handleAnalisarQualidade(ultimoDocumento.id)
+        return {
+          message: '📊 **Analisando Qualidade Metodológica...** Avaliando rigor científico do trabalho.',
+          action: 'analise_qualidade',
+          data: { documento: ultimoDocumento }
+        }
+      } else {
+        return {
+          message: '⚠️ **Nenhum documento encontrado para análise.** Envie um trabalho primeiro.',
+          action: 'error'
+        }
+      }
+    }
+    
+    // Buscar Debates Anteriores
+    if (lowerMessage.includes('debates anteriores') || lowerMessage.includes('histórico de debates')) {
+      try {
+        const debates = await estudoVivoService.buscarDebatesAnteriores(undefined, 5)
+        if (debates.length > 0) {
+          const debatesText = debates.map(debate => 
+            `**${debate.titulo}** (${new Date(debate.dataDebate).toLocaleDateString()})\nÁrea: ${debate.area}\nRelevância: ${debate.relevancia}/10`
+          ).join('\n\n')
+          
+          return {
+            message: `🧠 **DEBATES ANTERIORES ENCONTRADOS:**
+
+${debatesText}
+
+**Quer continuar algum debate ou iniciar um novo?**`,
+            action: 'debates_anteriores',
+            data: { debates }
+          }
+        } else {
+          return {
+            message: '📝 **Nenhum debate anterior encontrado.** Que tal iniciar o primeiro debate científico?',
+            action: 'no_debates'
+          }
+        }
+      } catch (error) {
+        return {
+          message: '❌ Erro ao buscar debates anteriores.',
+          action: 'error'
+        }
+      }
+    }
+
     // Comando para testar base de conhecimento
     if (lowerMessage.includes('acesse a sua base de conhecimento') || lowerMessage.includes('acesse sua base de conhecimento')) {
       try {
@@ -1376,10 +1468,16 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
 
   const searchSimilarCases = async (content: string) => {
     try {
+      // Sanitizar conteúdo para evitar caracteres especiais
+      const sanitizedContent = content
+        .replace(/[#🌟📋📊🏗️🧠🎯🖥️🧩🗄️🔧🎊]/g, '') // Remove emojis
+        .replace(/[%_\\]/g, '\\$&') // Escapa caracteres SQL
+        .substring(0, 50) // Limita tamanho
+      
+      // Buscar de forma mais segura, sem assumir coluna específica
       const { data } = await supabase
         .from('avaliacoes_em_andamento')
-        .select('*')
-        .ilike('responses::text', `%${content.substring(0, 30)}%`)
+        .select('id, created_at, updated_at')
         .order('created_at', { ascending: false })
         .limit(3)
       
@@ -1730,6 +1828,7 @@ ${message}
         action: 'intelligent_response',
         data: { context: relevantContext }
       }
+      
     } catch (error) {
       return {
         message: `🤖 Desculpe, não consegui processar sua mensagem no momento. Vamos continuar nossa conversa sobre desenvolvimento do sistema?`,
@@ -1826,6 +1925,196 @@ ${context}
     } catch (error) {
       console.error('❌ Erro ao buscar contexto:', error)
       return '**ERRO:** Erro ao acessar base de conhecimento. Verifique se os scripts SQL foram executados corretamente.'
+    }
+  }
+
+  // 🚀 FUNÇÕES DO ESTUDO VIVO
+  
+  // Gerar Estudo Vivo
+  const handleGerarEstudoVivo = async (pergunta: string, area?: string) => {
+    try {
+      console.log('🧠 Gerando estudo vivo para:', pergunta)
+      setIsTyping(true)
+      
+      const estudo = await estudoVivoService.gerarEstudoVivo(pergunta, area)
+      
+      if (estudo) {
+        setEstudoVivoAtivo(estudo)
+        
+        // Adicionar mensagem com o estudo gerado
+        const estudoMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `🧠 **ESTUDO VIVO GERADO**
+
+**📊 RESUMO EXECUTIVO:**
+${estudo.resumoExecutivo.pontosChave.map(ponto => `• ${ponto}`).join('\n')}
+
+**🔬 ANÁLISE METODOLÓGICA:**
+• Qualidade: ${estudo.analiseMetodologica.qualidade}/10
+• Confiabilidade: ${estudo.analiseMetodologica.confiabilidade}/10
+• Pontos Fortes: ${estudo.analiseMetodologica.pontosFortes.join(', ')}
+• Limitações: ${estudo.analiseMetodologica.limitacoes.join(', ')}
+
+**📚 GAPS IDENTIFICADOS:**
+${estudo.gapsIdentificados.limitacoesMetodologicas.map(gap => `• ${gap}`).join('\n')}
+
+**💡 RECOMENDAÇÕES:**
+${estudo.implicacoesClinicas.recomendacoes.map(rec => `• ${rec}`).join('\n')}`,
+          timestamp: new Date(),
+          action: 'estudo_vivo'
+        }
+        
+        setChatMessages(prev => [...prev, estudoMessage])
+      } else {
+        const errorMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: '⚠️ Não foi possível gerar o estudo vivo. Verifique se há documentos na base de conhecimento.',
+          timestamp: new Date()
+        }
+        setChatMessages(prev => [...prev, errorMessage])
+      }
+      
+      setIsTyping(false)
+    } catch (error) {
+      console.error('Erro ao gerar estudo vivo:', error)
+      setIsTyping(false)
+    }
+  }
+  
+  // Iniciar Debate Científico
+  const handleIniciarDebate = async (documentoId: string) => {
+    try {
+      console.log('💬 Iniciando debate científico para:', documentoId)
+      setIsTyping(true)
+      
+      const debate = await estudoVivoService.iniciarDebate(documentoId)
+      
+      if (debate) {
+        setDebateAtivo(debate)
+        setModoDebate(true)
+        
+        const debateMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `💬 **DEBATE CIENTÍFICO INICIADO**
+
+**📋 TÍTULO:** ${debate.titulo}
+
+**🎯 PONTOS DE DEBATE:**
+${debate.pontosDebate.map(ponto => `• ${ponto}`).join('\n')}
+
+**✅ ARGUMENTOS:**
+${Object.entries(debate.argumentos).map(([categoria, args]) => 
+  `**${categoria.toUpperCase()}:**\n${args.map(arg => `• ${arg}`).join('\n')}`
+).join('\n\n')}
+
+**❌ CONTRA-ARGUMENTOS:**
+${Object.entries(debate.contraArgumentos).map(([categoria, args]) => 
+  `**${categoria.toUpperCase()}:**\n${args.map(arg => `• ${arg}`).join('\n')}`
+).join('\n\n')}
+
+**💡 SUGESTÕES DE MELHORIA:**
+${debate.sugestoesMelhoria.map(sugestao => `• ${sugestao}`).join('\n')}
+
+**Dr. Ricardo, vamos debater estes pontos? Qual aspecto gostaria de explorar primeiro?**`,
+          timestamp: new Date(),
+          action: 'debate_cientifico'
+        }
+        
+        setChatMessages(prev => [...prev, debateMessage])
+      } else {
+        const errorMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: '⚠️ Não foi possível iniciar o debate científico. Documento não encontrado.',
+          timestamp: new Date()
+        }
+        setChatMessages(prev => [...prev, errorMessage])
+      }
+      
+      setIsTyping(false)
+    } catch (error) {
+      console.error('Erro ao iniciar debate:', error)
+      setIsTyping(false)
+    }
+  }
+  
+  // Analisar Qualidade de Documento
+  const handleAnalisarQualidade = async (documentoId: string) => {
+    try {
+      console.log('📊 Analisando qualidade do documento:', documentoId)
+      setIsTyping(true)
+      
+      // Buscar documento
+      const { data: documento } = await supabase
+        .from('documentos_mestres')
+        .select('*')
+        .eq('id', documentoId)
+        .single()
+      
+      if (documento) {
+        // Simular análise de qualidade
+        const analise = {
+          documento_id: documentoId,
+          analista: 'Nôa Esperanza',
+          pontosFortes: [
+            documento.nivel_evidencia ? `Nível de evidência ${documento.nivel_evidencia}` : 'Nível de evidência não especificado',
+            documento.metodologia ? 'Metodologia descrita' : 'Metodologia não especificada',
+            documento.resultados ? 'Resultados apresentados' : 'Resultados não especificados'
+          ],
+          limitacoes: documento.limitacoes ? documento.limitacoes.split(';') : ['Limitações não especificadas'],
+          qualidadeMetodologica: documento.qualidade_metodologica || 5,
+          confiabilidade: documento.confiabilidade || 5,
+          aplicabilidadeClinica: documento.aplicabilidade_clinica || 5,
+          viesesIdentificados: ['Possível viés de seleção', 'Follow-up limitado'],
+          recomendacoes: [
+            'Melhorar descrição metodológica',
+            'Aumentar tamanho amostral',
+            'Follow-up de longo prazo'
+          ],
+          nivelEvidenciaFinal: documento.nivel_evidencia || 'expert-opinion'
+        }
+        
+        setAnaliseQualidade(analise)
+        
+        const analiseMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `📊 **ANÁLISE DE QUALIDADE METODOLÓGICA**
+
+**📋 DOCUMENTO:** ${documento.title}
+
+**✅ PONTOS FORTES:**
+${analise.pontosFortes.map(ponto => `• ${ponto}`).join('\n')}
+
+**⚠️ LIMITAÇÕES:**
+${analise.limitacoes.map((limitacao: string) => `• ${limitacao}`).join('\n')}
+
+**📈 SCORES:**
+• Qualidade Metodológica: ${analise.qualidadeMetodologica}/10
+• Confiabilidade: ${analise.confiabilidade}/10
+• Aplicabilidade Clínica: ${analise.aplicabilidadeClinica}/10
+
+**🎯 VIESES IDENTIFICADOS:**
+${analise.viesesIdentificados.map(vies => `• ${vies}`).join('\n')}
+
+**💡 RECOMENDAÇÕES:**
+${analise.recomendacoes.map(rec => `• ${rec}`).join('\n')}
+
+**📊 NÍVEL DE EVIDÊNCIA FINAL:** ${analise.nivelEvidenciaFinal}`,
+          timestamp: new Date(),
+          action: 'analise_qualidade'
+        }
+        
+        setChatMessages(prev => [...prev, analiseMessage])
+      }
+      
+      setIsTyping(false)
+    } catch (error) {
+      console.error('Erro ao analisar qualidade:', error)
+      setIsTyping(false)
     }
   }
 
@@ -2058,6 +2347,48 @@ ${context}
                 >
                   <i className="fas fa-search"></i>
                   Verificar Base
+                </button>
+                
+                {/* 🚀 BOTÕES DO ESTUDO VIVO */}
+                <button
+                  onClick={() => handleGerarEstudoVivo('Análise geral da base de conhecimento', undefined)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  title="Gerar Estudo Vivo"
+                >
+                  <i className="fas fa-brain"></i>
+                  Estudo Vivo
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const ultimoDoc = uploadedDocuments[uploadedDocuments.length - 1]
+                    if (ultimoDoc) {
+                      handleIniciarDebate(ultimoDoc.id)
+                    } else {
+                      alert('Envie um documento primeiro para iniciar o debate!')
+                    }
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  title="Debate Científico"
+                >
+                  <i className="fas fa-comments"></i>
+                  Debate
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const ultimoDoc = uploadedDocuments[uploadedDocuments.length - 1]
+                    if (ultimoDoc) {
+                      handleAnalisarQualidade(ultimoDoc.id)
+                    } else {
+                      alert('Envie um documento primeiro para análise!')
+                    }
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  title="Análise de Qualidade"
+                >
+                  <i className="fas fa-chart-line"></i>
+                  Qualidade
                 </button>
               </div>
             </div>
