@@ -3786,7 +3786,7 @@ ${conversation.summary}
                             allConversations.forEach(conv => {
                               if (conv.content) {
                                 const words = conv.content.toLowerCase().split(/\s+/)
-                                words.forEach(word => {
+                                words.forEach((word: string) => {
                                   if (word.length > 4) {
                                     topics[word] = (topics[word] || 0) + 1
                                   }
@@ -3798,7 +3798,7 @@ ${conversation.summary}
                             developmentMilestones.forEach(milestone => {
                               if (milestone.content) {
                                 const words = milestone.content.toLowerCase().split(/\s+/)
-                                words.forEach(word => {
+                                words.forEach((word: string) => {
                                   if (word.length > 4) {
                                     topics[word] = (topics[word] || 0) + 1
                                   }

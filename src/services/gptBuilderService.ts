@@ -7,7 +7,7 @@ export interface DocumentMaster {
   id: string
   title: string
   content: string
-  type: 'personality' | 'knowledge' | 'instructions' | 'examples'
+  type: 'personality' | 'knowledge' | 'instructions' | 'examples' | 'development-milestone'
   category: string
   is_active: boolean
   created_at: string
