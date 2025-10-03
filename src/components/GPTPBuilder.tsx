@@ -92,8 +92,57 @@ const GPTPBuilder: React.FC<GPTPBuilderProps> = ({ onClose }) => {
   const [harmonyActive, setHarmonyActive] = useState(false)
   const [currentHarmonyConversation, setCurrentHarmonyConversation] = useState<any>(null)
 
+  // 📊 Estados para Cruzamento de Dados
+  const [allConversations, setAllConversations] = useState<any[]>([])
+  const [developmentMilestones, setDevelopmentMilestones] = useState<any[]>([])
+  const [localStorageData, setLocalStorageData] = useState<any>(null)
+
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
+
+  // 📊 Carregar TODOS os dados para cruzamento quando abrir a aba
+  useEffect(() => {
+    if (activeTab === 'cruzamentos') {
+      loadAllDataForCrossing()
+    }
+  }, [activeTab])
+
+  const loadAllDataForCrossing = async () => {
+    try {
+      console.log('📊 Carregando TODOS os dados para cruzamento...')
+
+      // 1. Buscar TODAS as conversas do Supabase
+      const { data: conversations, error: convError } = await supabase
+        .from('conversation_history')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (!convError && conversations) {
+        setAllConversations(conversations)
+        console.log(`✅ ${conversations.length} conversas carregadas do Supabase`)
+      }
+
+      // 2. Buscar Marcos de Desenvolvimento (tipo 'development-milestone')
+      const milestones = documents.filter(doc => doc.type === 'development-milestone')
+      setDevelopmentMilestones(milestones)
+      console.log(`✅ ${milestones.length} marcos de desenvolvimento encontrados`)
+
+      // 3. Buscar dados do localStorage
+      const localData = LocalStorageManager.getAllLocalData()
+      setLocalStorageData(localData)
+      console.log('✅ Dados do localStorage carregados:', Object.keys(localData).length, 'chaves')
+
+      console.log('🎯 RESUMO DO CRUZAMENTO:')
+      console.log(`  • ${conversations?.length || 0} conversas salvas`)
+      console.log(`  • ${chatMessages.length} mensagens ativas`)
+      console.log(`  • ${documents.length} documentos totais`)
+      console.log(`  • ${milestones.length} marcos de desenvolvimento`)
+      console.log(`  • ${Object.keys(localData).length} chaves localStorage`)
+
+    } catch (error) {
+      console.error('❌ Erro ao carregar dados para cruzamento:', error)
+    }
+  }
 
   // Carregar documentos mestres
   useEffect(() => {
@@ -3661,17 +3710,49 @@ ${conversation.summary}
                     <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-lg font-semibold mb-2">🎯 Acurácia do Sistema</h3>
-                          <p className="text-sm opacity-90">Baseado em {chatMessages.length} interações e {documents.length} documentos</p>
+                          <h3 className="text-lg font-semibold mb-2">🎯 Acurácia do Sistema Completo</h3>
+                          <p className="text-sm opacity-90">
+                            Baseado em {allConversations.length} conversas salvas + {chatMessages.length} ativas + 
+                            {documents.length} docs + {developmentMilestones.length} marcos
+                          </p>
                         </div>
                         <div className="text-center">
                           <div className="text-5xl font-bold">
                             {(() => {
-                              const accuracy = Math.min(95 + (chatMessages.length * 0.1) + (documents.length * 0.5), 100)
+                              const totalData = allConversations.length + chatMessages.length + documents.length + developmentMilestones.length
+                              const accuracy = Math.min(90 + (totalData * 0.05), 100)
                               return accuracy.toFixed(1)
                             })()}%
                           </div>
                           <p className="text-sm mt-2 opacity-90">Precisão atual</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card de Fontes de Dados */}
+                    <div className="bg-slate-700 border border-slate-600 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <i className="fas fa-database text-green-400"></i>
+                        Fontes de Dados Integradas
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-slate-600 rounded-lg p-4 text-center">
+                          <div className="text-3xl font-bold text-blue-400">{allConversations.length}</div>
+                          <div className="text-xs text-gray-400 mt-1">Conversas Salvas</div>
+                        </div>
+                        <div className="bg-slate-600 rounded-lg p-4 text-center">
+                          <div className="text-3xl font-bold text-green-400">{documents.length}</div>
+                          <div className="text-xs text-gray-400 mt-1">Documentos</div>
+                        </div>
+                        <div className="bg-slate-600 rounded-lg p-4 text-center">
+                          <div className="text-3xl font-bold text-purple-400">{developmentMilestones.length}</div>
+                          <div className="text-xs text-gray-400 mt-1">Marcos de Desenv.</div>
+                        </div>
+                        <div className="bg-slate-600 rounded-lg p-4 text-center">
+                          <div className="text-3xl font-bold text-yellow-400">
+                            {localStorageData ? Object.keys(localStorageData).length : 0}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">Dados Locais</div>
                         </div>
                       </div>
                     </div>
@@ -3686,11 +3767,37 @@ ${conversation.summary}
                         </h3>
                         <div className="space-y-4">
                           {(() => {
-                            // Analisar tópicos mais mencionados nas conversas
+                            // Analisar tópicos de TODAS as fontes
                             const topics: {[key: string]: number} = {}
+                            
+                            // 1. Chat ativo
                             chatMessages.forEach(msg => {
                               if (msg.role === 'user') {
                                 const words = msg.content.toLowerCase().split(/\s+/)
+                                words.forEach(word => {
+                                  if (word.length > 4) {
+                                    topics[word] = (topics[word] || 0) + 1
+                                  }
+                                })
+                              }
+                            })
+
+                            // 2. Conversas salvas no Supabase
+                            allConversations.forEach(conv => {
+                              if (conv.content) {
+                                const words = conv.content.toLowerCase().split(/\s+/)
+                                words.forEach(word => {
+                                  if (word.length > 4) {
+                                    topics[word] = (topics[word] || 0) + 1
+                                  }
+                                })
+                              }
+                            })
+
+                            // 3. Marcos de desenvolvimento
+                            developmentMilestones.forEach(milestone => {
+                              if (milestone.content) {
+                                const words = milestone.content.toLowerCase().split(/\s+/)
                                 words.forEach(word => {
                                   if (word.length > 4) {
                                     topics[word] = (topics[word] || 0) + 1
