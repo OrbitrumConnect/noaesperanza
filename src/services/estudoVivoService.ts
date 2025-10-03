@@ -1,7 +1,7 @@
 // 🚀 ESTUDO VIVO SERVICE - Dr. Ricardo Valença
 // Sistema de análise científica e debate de trabalhos
 
-import { supabase } from '../lib/supabase'
+import { supabase } from '../integrations/supabase/client'
 
 export interface DocumentMetadata {
   id: string

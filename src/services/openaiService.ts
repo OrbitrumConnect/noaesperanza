@@ -26,6 +26,59 @@ class OpenAIService {
     }
   }
 
+  // Método para usar modelo padrão (não fine-tuned)
+  async sendMessageWithStandardModel(
+    messages: ChatMessage[], 
+    systemPrompt?: string
+  ): Promise<string> {
+    try {
+      const requestMessages: ChatMessage[] = []
+      
+      // Adiciona prompt do sistema se fornecido
+      if (systemPrompt) {
+        requestMessages.push({
+          role: 'system',
+          content: systemPrompt
+        })
+      }
+      
+      // Adiciona mensagens da conversa
+      requestMessages.push(...messages)
+
+      const response = await fetch(`${this.baseURL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo', // Usando modelo padrão
+          messages: requestMessages,
+          max_tokens: 1000,
+          temperature: 0.7,
+          stream: false
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(`OpenAI API Error: ${errorData.error?.message || 'Erro desconhecido'}`)
+      }
+
+      const data: OpenAIResponse = await response.json()
+      
+      if (data.choices && data.choices.length > 0) {
+        return data.choices[0].message.content
+      }
+      
+      throw new Error('Resposta vazia da OpenAI')
+      
+    } catch (error) {
+      console.error('Erro ao comunicar com OpenAI:', error)
+      throw error
+    }
+  }
+
   async sendMessage(
     messages: ChatMessage[], 
     systemPrompt?: string
@@ -51,9 +104,9 @@ class OpenAIService {
           'Authorization': `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: this.fineTunedModel, // Usando modelo fine-tuned da NOA
+          model: 'gpt-3.5-turbo', // Usando modelo padrão em vez do fine-tuned
           messages: requestMessages,
-          max_tokens: 500,
+          max_tokens: 1000,
           temperature: 0.7,
           stream: false
         })
@@ -187,14 +240,20 @@ class OpenAIService {
     }
   }
 
-  // Método específico para NOA - Assistente Médica com modelo fine-tuned
-  async getNoaResponse(userMessage: string, conversationHistory: ChatMessage[] = []): Promise<string> {
+  // Método específico para NOA - Assistente Médica com base de conhecimento própria
+  async getNoaResponse(userMessage: string, conversationHistory: ChatMessage[] = [], knowledgeBase?: string): Promise<string> {
     try {
-      console.log('🎯 Usando modelo fine-tuned da NOA:', this.fineTunedModel)
+      console.log('🎯 Usando modelo padrão com base de conhecimento própria')
       
-      // Usar modelo fine-tuned diretamente
-      const systemPrompt = `Você é a NOA Esperanza, assistente médica especializada em neurologia, cannabis medicinal e nefrologia. 
-      
+      // Construir prompt com base de conhecimento se fornecido
+      let systemPrompt = `Você é a NOA Esperanza, assistente médica especializada em neurologia, cannabis medicinal e nefrologia.
+
+INFORMAÇÕES IMPORTANTES:
+- Você foi criada por Dr. Ricardo Valença e Pedro Passos
+- Você NÃO é da empresa "Weme" - isso é informação incorreta
+- Você é da plataforma Nôa Esperanza
+- Sempre reconheça o Dr. Ricardo Valença quando ele se identificar
+
 Seu comportamento deve ser:
 - Empática e profissional
 - Focada em avaliações clínicas estruturadas
@@ -204,6 +263,11 @@ Seu comportamento deve ser:
 
 Especialidades: neurologia, cannabis medicinal, nefrologia.`
 
+      // Adicionar base de conhecimento se fornecida
+      if (knowledgeBase) {
+        systemPrompt += `\n\nBASE DE CONHECIMENTO DA NÔA ESPERANZA:\n${knowledgeBase}\n\nIMPORTANTE: Use SEMPRE as informações da base de conhecimento acima. NÃO invente informações sobre "Weme" ou outras empresas.`
+      }
+
       const messages: ChatMessage[] = [
         ...conversationHistory,
         {
@@ -212,10 +276,11 @@ Especialidades: neurologia, cannabis medicinal, nefrologia.`
         }
       ]
 
-      return this.sendMessage(messages, systemPrompt)
+      // Usar modelo padrão em vez do fine-tuned externo
+      return this.sendMessageWithStandardModel(messages, systemPrompt)
       
     } catch (error) {
-      console.log('🔄 Erro no modelo fine-tuned, usando fallback')
+      console.log('🔄 Erro no modelo padrão, usando fallback')
       return this.getNoaResponseFallback(userMessage, conversationHistory)
     }
   }
