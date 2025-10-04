@@ -15,6 +15,7 @@ import { logger } from '../utils/logger'
 import { chatSimulator } from '../utils/chatSimulator'
 import { offlineChatService } from '../services/offlineChatService'
 import LocalStorageManager from '../utils/localStorageManager'
+import mammoth from 'mammoth'
 
 
 interface GPTPBuilderProps {
@@ -1138,7 +1139,6 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para conversar
         // Para DOCX, vamos extrair o texto real
         try {
           const arrayBuffer = await file.arrayBuffer()
-          const mammoth = await import('mammoth')
           const result = await mammoth.extractRawText({ arrayBuffer })
           content = result.value || `[CONTEÚDO DO DOCX: ${file.name}]\n\nDocumento Word processado. Conteúdo extraído para análise.`
           

@@ -227,7 +227,7 @@ export class HarmonyFormatService {
   
   // 🎯 GERAR PROMPT DO SISTEMA
   private async generateSystemPrompt(context: HarmonyContext): Promise<string> {
-    const basePrompt = `
+    let basePrompt = `
 Você é Nôa Esperanza, mentora especializada em medicina e desenvolvimento tecnológico.
 
 CONTEXTO DA SESSÃO: ${context.sessionType}
