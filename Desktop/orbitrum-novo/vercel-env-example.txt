@@ -1,0 +1,49 @@
+# ========================================
+# CONFIGURAÇÃO VERCEL - ORBITRUM CONNECT
+# ========================================
+
+# 🌐 AMBIENTE
+NODE_ENV=production
+PORT=3000
+
+# 🔐 SUPABASE (OBRIGATÓRIO)
+# Use as mesmas credenciais do Replit para manter dados
+VITE_SUPABASE_URL=https://sua-url.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anonima
+DATABASE_URL=postgresql://postgres:[password]@[host]:5432/postgres
+
+# 🔑 AUTENTICAÇÃO
+SESSION_SECRET=sua-chave-secreta-muito-segura
+
+# 💳 MERCADO PAGO (OPCIONAL)
+MERCADO_PAGO_ACCESS_TOKEN=seu-token-mercado-pago
+MERCADO_PAGO_PUBLIC_KEY=sua-chave-publica-mercado-pago
+MERCADO_PAGO_RECEBIMENTO_ACCESS_TOKEN=seu-token-recebimento
+MERCADO_PAGO_RECEBIMENTO_PUBLIC_KEY=sua-chave-recebimento
+MERCADO_PAGO_PAGAMENTO_ACCESS_TOKEN=seu-token-pagamento
+MERCADO_PAGO_PAGAMENTO_PUBLIC_KEY=sua-chave-pagamento
+
+# 🏢 EMPRESA
+COMPANY_PIX_KEY=03669282106
+
+# 🔗 WEBHOOKS
+WEBHOOK_URL=https://seu-dominio.vercel.app
+
+# 🤖 TELEGRAM (OPCIONAL)
+TELEGRAM_BOT_TOKEN=seu-token-bot-telegram
+TELEGRAM_CHAT_ID=seu-chat-id
+
+# 🔍 GOOGLE OAUTH (OPCIONAL)
+GOOGLE_CLIENT_ID=seu-google-client-id
+GOOGLE_CLIENT_SECRET=seu-google-client-secret
+
+# 📱 FRONTEND
+FRONTEND_URL=https://seu-dominio.vercel.app
+
+# ========================================
+# INSTRUÇÕES:
+# 1. Copie este arquivo para .env.vercel
+# 2. Preencha com suas credenciais reais
+# 3. No Vercel Dashboard, adicione estas variáveis
+# 4. Use as mesmas credenciais do Replit para manter dados
+# ======================================== 
