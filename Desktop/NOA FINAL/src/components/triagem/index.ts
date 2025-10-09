@@ -1,0 +1,6 @@
+export * from './types'
+export { MessageBubble } from './MessageBubble'
+export { TypingIndicator } from './TypingIndicator'
+export { ProgressBar } from './ProgressBar'
+export { EtapaQueixa } from './EtapaQueixa'
+export { EtapaIndiciaria } from './EtapaIndiciaria'

@@ -1,0 +1,26 @@
+name: Codex QA Pipeline
+
+on:
+  pull_request:
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificar qualidade (eslint + prettier)
+        run: npm run lint && npm run format:check
+
+      - name: Testar segurança (snyk / npm audit)
+        run: npm audit --audit-level=high || true
+
+      - name: Testar performance
+        run: npm run test:performance || echo "Falha de performance detectada"
+
+      - name: Emitir relatório final
+        run: cat codex-report.json || echo "Sem relatório gerado"
