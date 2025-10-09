@@ -50,9 +50,9 @@ const APP_MAP = {
   medico: {
     route: '/app/medico',
     name: 'Dashboard Médico',
-    description: 'Área do médico com gestão de pacientes e prescrições',
+    description: 'Área do médico com gestão de pacientes',
     sidebar: [
-      { id: 'prescricoes', label: 'Prescrições', icon: 'fa-prescription' },
+      { id: 'prescricoes', label: 'Prescrições (registro apenas)', icon: 'fa-prescription' },
       { id: 'exames', label: 'Exames', icon: 'fa-vials' },
       { id: 'prontuarios', label: 'Prontuários', icon: 'fa-file-medical' },
       { id: 'relatorios', label: 'Relatórios', icon: 'fa-chart-bar' },

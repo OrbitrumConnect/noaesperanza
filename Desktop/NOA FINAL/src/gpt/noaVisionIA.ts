@@ -25,9 +25,9 @@ import { symbolicAgent } from './symbolicAgent'
 import { voiceControlAgent } from './voiceControlAgent'
 import { codeEditorAgent } from './codeEditorAgent'
 
-// Importar novos agentes (serão criados)
+// Importar novos agentes
 import { dashboardAgent } from './dashboardAgent'
-import { prescriptionAgent } from './prescriptionAgent'
+import { adminAgent } from './adminAgent'
 
 // ========================================
 // TIPOS E INTERFACES
@@ -85,7 +85,7 @@ export class NoaVisionIA {
       voice: voiceControlAgent,
       code: codeEditorAgent,
       dashboard: dashboardAgent,
-      prescription: prescriptionAgent
+      admin: adminAgent
     }
     
     // Inicializar embeddings em background
@@ -205,7 +205,16 @@ export class NoaVisionIA {
       // 4️⃣ VETORIZAR MENSAGEM
       const embedding = await this.getEmbedding(normalized)
       
-      // 5️⃣ BUSCA SEMÂNTICA NO BANCO
+      // 4.5️⃣ BUSCAR CONTEXTO EM DOCUMENTOS E CONHECIMENTO
+      let enrichedContext = ''
+      if (embedding) {
+        enrichedContext = await this.enrichContextWithDocs(embedding, context)
+        if (enrichedContext) {
+          console.log('📚 [NoaVision IA] Contexto enriquecido com documentos')
+        }
+      }
+      
+      // 5️⃣ BUSCA SEMÂNTICA NO BANCO (conversas anteriores)
       if (embedding) {
         const similarResponse = await this.semanticSearch(embedding, context)
         
@@ -216,8 +225,14 @@ export class NoaVisionIA {
           // Incrementar uso
           await this.incrementUsage(similarResponse.id)
           
+          // Adicionar contexto enriquecido à resposta
+          let finalResponse = similarResponse.ai_response
+          if (enrichedContext) {
+            finalResponse += '\n\n' + enrichedContext
+          }
+          
           return {
-            response: similarResponse.ai_response,
+            response: finalResponse,
             source: 'local',
             confidence: similarResponse.similarity,
             processingTime
@@ -225,9 +240,16 @@ export class NoaVisionIA {
         }
       }
       
-      // 6️⃣ FALLBACK OPENAI
+      // 6️⃣ FALLBACK OPENAI (com contexto enriquecido)
       console.log('🔄 [NoaVision IA] Usando OpenAI (fallback)')
-      const openaiResponse = await this.openAIFallback(message, context)
+      
+      // Adicionar contexto de documentos ao prompt
+      let contextualMessage = message
+      if (enrichedContext) {
+        contextualMessage = `${message}\n\n${enrichedContext}\n\n**Use o contexto acima para fundamentar sua resposta.**`
+      }
+      
+      const openaiResponse = await this.openAIFallback(contextualMessage, context)
       const processingTime = Date.now() - startTime
       
       // Salvar para aprendizado
@@ -341,11 +363,16 @@ Como posso ajudá-lo hoje?`
         normalized.includes('receita') ||
         normalized.includes('medicamento')
       ) {
-        try {
-          return await prescriptionAgent.create(normalized, context)
-        } catch (error) {
-          console.warn('[NoaVision IA] PrescriptionAgent erro:', error)
-        }
+        return `💊 **Prescrições**
+
+Este sistema não possui produtos REUNI ou venda de medicamentos. 
+
+📋 **Você pode usar a área de Prescrições para:**
+- Registrar tratamentos prescritos externamente
+- Acompanhar histórico de medicações
+- Compartilhar informações com profissionais de saúde
+
+Para acessar: Menu lateral > Prescrições`
       }
     }
     
@@ -530,9 +557,9 @@ Como posso ajudá-lo hoje?`
     try {
       const { data, error } = await supabase.rpc('search_similar_embeddings', {
         query_embedding: embedding,
-        user_profile: context.userProfile,
-        specialty: context.specialty,
-        dashboard: context.currentDashboard,
+        filter_profile: context.userProfile,
+        filter_specialty: context.specialty,
+        filter_dashboard: context.currentDashboard,
         similarity_threshold: 0.85,
         match_count: 3
       })
@@ -757,7 +784,25 @@ Como posso ajudá-lo hoje?`
    */
   private async incrementUsage(id: string): Promise<void> {
     try {
-      await supabase.rpc('increment_usage', { learning_id: id })
+      // Buscar valor atual
+      const { data: current } = await supabase
+        .from('ai_learning')
+        .select('usage_count')
+        .eq('id', id)
+        .single()
+      
+      if (current) {
+        // Incrementar +1
+        await supabase
+          .from('ai_learning')
+          .update({ 
+            usage_count: (current.usage_count || 0) + 1,
+            last_used_at: new Date().toISOString()
+          })
+          .eq('id', id)
+        
+        console.log('📊 [NoaVision IA] Uso incrementado:', (current.usage_count || 0) + 1)
+      }
     } catch (error) {
       console.warn('⚠️ [NoaVision IA] Erro ao incrementar uso:', error)
     }
@@ -775,9 +820,7 @@ Como posso ajudá-lo hoje?`
     if (lower.includes('curso') || lower.includes('aula') || lower.includes('educacao')) {
       return 'educational'
     }
-    if (lower.includes('prescricao') || lower.includes('medicamento')) {
-      return 'prescription'
-    }
+    // Removido: prescription (não temos produtos REUNI)
     if (lower.includes('exame') || lower.includes('resultado')) {
       return 'exam'
     }
@@ -855,6 +898,228 @@ Como posso ajudá-lo hoje?`
   public async cleanupCache(): Promise<number> {
     const { data } = await supabase.rpc('cleanup_old_cache')
     return data || 0
+  }
+  
+  // ========================================
+  // BUSCA DE DOCUMENTOS E CONHECIMENTO
+  // ========================================
+  
+  /**
+   * Busca documentos relevantes por embedding
+   */
+  private async searchDocuments(embedding: number[], context: NoaContext): Promise<any[]> {
+    try {
+      const { data, error } = await supabase.rpc('search_documents_by_embedding', {
+        query_embedding: embedding,
+        user_id_filter: context.userId,
+        category_filter: null,
+        similarity_threshold: 0.75,
+        match_count: 3
+      })
+      
+      if (error) {
+        console.warn('⚠️ [NoaVision IA] Erro ao buscar documentos:', error)
+        return []
+      }
+      
+      if (data && data.length > 0) {
+        console.log(`📄 [NoaVision IA] Encontrados ${data.length} documentos relevantes`)
+      }
+      
+      return data || []
+    } catch (error) {
+      console.warn('⚠️ [NoaVision IA] Erro ao buscar documentos:', error)
+      return []
+    }
+  }
+  
+  /**
+   * Busca conhecimento relevante por embedding
+   */
+  private async searchKnowledge(embedding: number[]): Promise<any[]> {
+    try {
+      const { data, error } = await supabase.rpc('search_knowledge_by_embedding', {
+        query_embedding: embedding,
+        category_filter: null,
+        similarity_threshold: 0.75,
+        match_count: 3
+      })
+      
+      if (error) {
+        console.warn('⚠️ [NoaVision IA] Erro ao buscar conhecimento:', error)
+        return []
+      }
+      
+      if (data && data.length > 0) {
+        console.log(`🧠 [NoaVision IA] Encontrados ${data.length} itens de conhecimento relevantes`)
+      }
+      
+      return data || []
+    } catch (error) {
+      console.warn('⚠️ [NoaVision IA] Erro ao buscar conhecimento:', error)
+      return []
+    }
+  }
+  
+  /**
+   * Busca híbrida: documentos + conhecimento + conversas
+   */
+  private async searchAllContext(embedding: number[], context: NoaContext): Promise<any[]> {
+    try {
+      const { data, error } = await supabase.rpc('search_all_noa_knowledge', {
+        query_embedding: embedding,
+        similarity_threshold: 0.75,
+        match_count: 10
+      })
+      
+      if (error) {
+        console.warn('⚠️ [NoaVision IA] Erro na busca híbrida:', error)
+        return []
+      }
+      
+      if (data && data.length > 0) {
+        console.log(`🔍 [NoaVision IA] Busca híbrida: ${data.length} itens encontrados`)
+        const byType = data.reduce((acc: any, item: any) => {
+          acc[item.source_type] = (acc[item.source_type] || 0) + 1
+          return acc
+        }, {})
+        console.log(`   📊 Distribuição:`, byType)
+      }
+      
+      return data || []
+    } catch (error) {
+      console.warn('⚠️ [NoaVision IA] Erro na busca híbrida:', error)
+      return []
+    }
+  }
+  
+  /**
+   * Enriquece contexto com documentos e conhecimento
+   */
+  private async enrichContextWithDocs(
+    embedding: number[],
+    context: NoaContext
+  ): Promise<string> {
+    try {
+      // Busca híbrida (tudo de uma vez)
+      const results = await this.searchAllContext(embedding, context)
+      
+      if (results.length === 0) {
+        return ''
+      }
+      
+      const contextParts: string[] = []
+      contextParts.push('\n📚 **Contexto encontrado:**\n')
+      
+      // Agrupar por tipo
+      const documents = results.filter((r: any) => r.source_type === 'document')
+      const knowledge = results.filter((r: any) => r.source_type === 'knowledge')
+      const conversations = results.filter((r: any) => r.source_type === 'conversation')
+      
+      // Documentos
+      if (documents.length > 0) {
+        contextParts.push('📄 **Documentos:**')
+        documents.slice(0, 2).forEach((doc: any, i: number) => {
+          const preview = doc.content.substring(0, 300)
+          contextParts.push(`${i + 1}. ${doc.title} (${(doc.similarity * 100).toFixed(0)}% relevante)`)
+          contextParts.push(`   "${preview}..."`)
+        })
+        contextParts.push('')
+      }
+      
+      // Conhecimento
+      if (knowledge.length > 0) {
+        contextParts.push('🧠 **Base de Conhecimento:**')
+        knowledge.slice(0, 2).forEach((k: any, i: number) => {
+          const preview = k.content.substring(0, 250)
+          contextParts.push(`${i + 1}. ${k.title} (${(k.similarity * 100).toFixed(0)}% relevante)`)
+          contextParts.push(`   "${preview}..."`)
+        })
+        contextParts.push('')
+      }
+      
+      // Conversas anteriores relevantes
+      if (conversations.length > 0) {
+        contextParts.push('💬 **Conversas anteriores similares:**')
+        conversations.slice(0, 1).forEach((conv: any) => {
+          contextParts.push(`   Usuário perguntou: "${conv.title}"`)
+          contextParts.push(`   Resposta: "${conv.content.substring(0, 200)}..."`)
+        })
+      }
+      
+      return contextParts.join('\n')
+      
+    } catch (error) {
+      console.warn('⚠️ [NoaVision IA] Erro ao enriquecer contexto:', error)
+      return ''
+    }
+  }
+  
+  // ========================================
+  // FALLBACK OFFLINE INTELIGENTE
+  // ========================================
+  
+  /**
+   * Fallback inteligente quando OpenAI não está disponível
+   * Usa: banco de conhecimento + histórico + regras
+   */
+  private async intelligentOfflineFallback(message: string, context: NoaContext): Promise<string> {
+    const lower = message.toLowerCase().trim()
+    
+    // 1️⃣ SAUDAÇÕES
+    if (lower.match(/^(oi|olá|ola|hey|opa|e ai|eai|bom dia|boa tarde|boa noite)/)) {
+      const saudacoes = [
+        `Olá! Sou a Nôa Esperanza, sua assistente de saúde especializada em cannabis medicinal 🌿\n\nEstou em modo offline, mas posso ajudar com:\n• Avaliação clínica inicial (28 perguntas IMRE)\n• Orientações sobre cannabis medicinal\n• Navegação pelo sistema\n• Consulta ao histórico\n\nComo posso ajudar você hoje?`,
+        
+        `Oi! 😊 Sou a Nôa, especialista em cannabis medicinal!\n\nModo offline ativo - mas totalmente funcional para:\n✓ Avaliação clínica completa\n✓ Informações sobre tratamentos\n✓ Gestão do seu acompanhamento\n\nO que você precisa?`,
+        
+        `Olá! Que bom ver você! 💚\n\nSou a Nôa Esperanza, sua parceira em saúde integrativa.\n\n**Posso ajudar com:**\n• Iniciar avaliação clínica\n• Dúvidas sobre cannabis medicinal\n• Ver seus relatórios\n• Acessar documentos\n\nMe conte, como posso ajudar?`
+      ]
+      return saudacoes[Math.floor(Math.random() * saudacoes.length)]
+    }
+    
+    // 2️⃣ COMO ESTÁ / TUDO BEM
+    if (lower.match(/(tudo bem|como (você |vc )?está|como vai|tá bem)/)) {
+      const respostas = [
+        `Estou bem, obrigada por perguntar! 😊\n\nPronta para ajudar com sua saúde e bem-estar.\n\n**Posso auxiliar com:**\n• Avaliação clínica (digite "fazer avaliação")\n• Informações sobre tratamentos\n• Consultar seus dados\n• Tirar dúvidas\n\nO que você gostaria de fazer?`,
+        
+        `Ótima, obrigada! E você, como está se sentindo? 💚\n\nEstou aqui para:\n✓ Realizar avaliação clínica completa\n✓ Responder dúvidas sobre cannabis medicinal\n✓ Acessar seus relatórios\n✓ Orientar sobre tratamentos\n\nConte-me, como posso ajudar hoje?`,
+        
+        `Estou funcionando perfeitamente! 🌟\n\n**Modo offline ativo** mas com todas as funcionalidades principais:\n• Avaliação clínica (28 blocos IMRE)\n• Base de conhecimento local\n• Histórico de conversas\n• Relatórios e documentos\n\nQual sua necessidade hoje?`
+      ]
+      return respostas[Math.floor(Math.random() * respostas.length)]
+    }
+    
+    // 3️⃣ AVALIAÇÃO CLÍNICA
+    if (lower.match(/(avalia|clinica|inicial|imre|consulta|sintoma|queixa)/)) {
+      return `🏥 **Avaliação Clínica Inicial**\n\nVou realizar uma avaliação completa seguindo o protocolo IMRE (28 blocos).\n\n**O que vamos avaliar:**\n• Identificação e queixa principal\n• Lista indiciária (sintomas)\n• História da doença atual\n• Cannabis medicinal (experiência)\n• Antecedentes pessoais e familiares\n• Hábitos de vida\n• Exame físico geral\n• Revisão de sistemas\n\n**Vamos começar?**\n\nPrimeira pergunta: **Qual é a sua queixa principal?**\n(O que te trouxe aqui hoje?)`
+    }
+    
+    // 4️⃣ CANNABIS / MEDICAMENTOS
+    if (lower.match(/(cannabis|cbd|thc|canabidiol|medicinal|tratamento|remédio)/)) {
+      return `🌿 **Cannabis Medicinal**\n\nPosso ajudar com informações sobre:\n\n**Tratamento:**\n• Produtos disponíveis (CBD, THC, full spectrum)\n• Dosagens e formas de uso\n• Efeitos esperados e colaterais\n• Interações medicamentosas\n\n**Processo:**\n• Como funciona a prescrição\n• Documentação necessária\n• Acompanhamento médico\n• Registro ANVISA\n\n**Para iniciar tratamento:**\nÉ necessário realizar a avaliação clínica completa.\n\nDeseja começar agora? (digite "sim" ou "fazer avaliação")`
+    }
+    
+    // 5️⃣ DOCUMENTOS / RELATÓRIOS
+    if (lower.match(/(documento|relatório|relatorio|histórico|historico|dados|registro)/)) {
+      return `📊 **Documentos e Relatórios**\n\n**Seus dados estão em:**\n• Dashboard Paciente → aba "Relatórios"\n• Avaliações clínicas realizadas\n• Histórico de conversas\n• Documentos compartilhados\n\n**Para acessar:**\nClique no menu lateral em "Relatórios" ou "Meus Dados"\n\n**Precisa de algo específico?**\nMe diga o que procura e te ajudo a encontrar!`
+    }
+    
+    // 6️⃣ AJUDA / O QUE PODE FAZER
+    if (lower.match(/(ajuda|help|o que (você |vc )?pode|funcionalidade|menu|opções|opçoes)/)) {
+      return `❓ **Como posso ajudar?**\n\n**Principais funções:**\n\n🏥 **Avaliação Clínica**\n"fazer avaliação" ou "avaliação inicial"\n\n🌿 **Cannabis Medicinal**\n"informações sobre cannabis" ou "tratamento"\n\n📊 **Seus Dados**\n"ver relatórios" ou "meu histórico"\n\n🗂️ **Documentos**\n"ver documentos" ou "base de conhecimento"\n\n📍 **Navegação**\n"ir para dashboard" ou "abrir [área]"\n\n💬 **Conversação Natural**\nPergunte o que quiser sobre saúde, tratamentos e cannabis medicinal!\n\n**Modo offline ativo** - funcionalidades principais disponíveis!`
+    }
+    
+    // 7️⃣ FALLBACK GENÉRICO CONTEXTUAL
+    const respostasGenericas = [
+      `Entendi sua mensagem: "${message}"\n\n**Em modo offline**, posso ajudar melhor se você:\n• Iniciar avaliação clínica (digite "avaliação")\n• Perguntar sobre cannabis medicinal\n• Solicitar acesso a relatórios\n• Pedir ajuda com navegação\n\nO que você gostaria de fazer?`,
+      
+      `Recebi: "${message}"\n\n🔌 **Modo offline ativo**\n\nPosso responder sobre:\n✓ Avaliação clínica\n✓ Cannabis medicinal\n✓ Seus relatórios\n✓ Navegação no sistema\n\nPoderia reformular sua pergunta ou escolher uma opção?`,
+      
+      `"${message}"\n\n💡 **Dica:** Em modo offline, funciono melhor com comandos diretos:\n\n• "fazer avaliação clínica"\n• "informações sobre cannabis"\n• "ver meus relatórios"\n• "ajuda"\n\nQual dessas opções te interessa?`
+    ]
+    
+    return respostasGenericas[Math.floor(Math.random() * respostasGenericas.length)]
   }
 }
 
