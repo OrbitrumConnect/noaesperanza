@@ -402,6 +402,22 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
       const cleanText = cleanTextForAudio(text)
       const audioResponse = await elevenLabsService.textToSpeech(cleanText)
       
+      // Se usa Web Speech API, não criar Blob (já foi reproduzido)
+      if ((audioResponse as any).isWebSpeech) {
+        console.log('🎤 Usando Web Speech API (áudio já reproduzido)')
+        // Apenas marcar como tocando para sincronizar UI
+        setAudioPlaying(true)
+        
+        // Simular fim do áudio após tempo estimado
+        const estimatedDuration = cleanText.length * 50 // ~50ms por caractere
+        setTimeout(() => {
+          setAudioPlaying(false)
+        }, estimatedDuration)
+        
+        return
+      }
+      
+      // Se retornou áudio real (ElevenLabs), criar Blob
       const audioBlob = new Blob([audioResponse.audio], { type: 'audio/mpeg' })
       const audioUrl = URL.createObjectURL(audioBlob)
       const audio = new Audio(audioUrl)

@@ -82,10 +82,11 @@ class ElevenLabsService {
       // Usar Web Speech API diretamente
       await webSpeechService.textToSpeech(text)
       
-      // Retornar resposta compatível com o formato esperado
+      // Retornar resposta compatível indicando que Web Speech foi usado
       return { 
         audio: new ArrayBuffer(0), 
-        content_type: 'audio/web-speech' 
+        content_type: 'audio/web-speech',
+        isWebSpeech: true // Flag para indicar uso de Web Speech
       }
 
     } catch (error) {
