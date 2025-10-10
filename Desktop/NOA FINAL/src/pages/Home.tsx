@@ -20,6 +20,7 @@ import { avaliacaoClinicaService } from '../services/avaliacaoClinicaService'
 import { conversationModeService, ConversationMode } from '../services/conversationModeService'
 import { identityRecognitionService, UserProfile } from '../services/identityRecognitionService'
 import { directCommandProcessor } from '../services/directCommandProcessor'
+import { consentService } from '../services/consentService'
 import UserIntentDetector from '../utils/userIntentDetection'
 import ThoughtBubble from '../components/ThoughtBubble'
 import MatrixBackground from '../components/MatrixBackground'
@@ -350,6 +351,8 @@ const Home = ({
   const [isPersonalizedMode, setIsPersonalizedMode] = useState(false)
   const [availableCommands, setAvailableCommands] = useState<string[]>([])
   const [perguntandoMais, setPerguntandoMais] = useState(false)
+  const [contadorOqMais, setContadorOqMais] = useState(0) // Limitar "O que mais?"
+  const [aguardandoConsentimento, setAguardandoConsentimento] = useState(false) // Aguarda clique no consentimento
 
   // Estado para efeito matrix eterno
   const [matrixActive, setMatrixActive] = useState(true)
@@ -1240,6 +1243,68 @@ const Home = ({
         return
       }
 
+      // 🔐 AGUARDANDO CONSENTIMENTO? (após avaliação)
+      if (aguardandoConsentimento) {
+        console.log('🔐 Aguardando consentimento para enviar ao dashboard')
+        
+        const aceitouConsentimento = mensagemLower.includes('sim') || 
+                                     mensagemLower.includes('enviar') ||
+                                     mensagemLower.includes('✅')
+        
+        if (aceitouConsentimento) {
+          setAguardandoConsentimento(false)
+          
+          // Registra consentimento
+          if (user?.id) {
+            await consentService.saveConsent(user.id, 'dataSharing', true, {
+              context: 'clinical_evaluation',
+              session_id: sessionId,
+              timestamp: new Date().toISOString()
+            })
+          }
+          
+          // Envia para dashboard
+          const nftReport = await noaSystemService.completeClinicalEvaluation(sessionId, {
+            ...dadosAvaliacao,
+            relatorio_narrativo: dadosAvaliacao.relatorio_narrativo,
+            blocks_completed: ETAPAS_AVALIACAO.length,
+            user_type: userType,
+            timestamp: new Date().toISOString(),
+            consent_given: true,
+          })
+
+          const finalizacao: Message = {
+            id: crypto.randomUUID(),
+            message: `**🎉 AVALIAÇÃO ENVIADA AO DASHBOARD!**\n\n✅ Relatório salvo com sucesso!\n🪙 **NFT Hash:** ${nftReport?.nft_hash || 'Gerando...'}\n📊 **Dashboard:** Disponível agora!\n\n**RECOMENDAÇÃO:**\n\nSua avaliação inicial foi concluída e está disponível no seu dashboard. Recomendo agendar consulta com o Dr. Ricardo Valença pelo site.\n\n💡 **Próximos passos:**\n• Acesse "Dashboard Paciente"\n• Revise seu relatório completo\n• Compartilhe com o Dr. Ricardo\n• Agende sua consulta\n\n*Método Arte da Entrevista Clínica - Dr. Ricardo Valença*`,
+            sender: 'noa',
+            timestamp: new Date(),
+            conversation_type: 'clinical_evaluation',
+          }
+
+          setMessages(prev => [...prev, finalizacao])
+          await playNoaAudioWithText(
+            'Relatório enviado ao seu dashboard com sucesso! Você pode acessá-lo a qualquer momento.'
+          )
+          
+          setIsTyping(false)
+          return
+        } else {
+          // Usuário recusou
+          setAguardandoConsentimento(false)
+          
+          const msgRecusa: Message = {
+            id: crypto.randomUUID(),
+            message: `📝 **Relatório não enviado ao dashboard.**\n\nVocê pode visualizar o relatório acima, mas ele não será salvo permanentemente.\n\nCaso mude de ideia, você pode fazer uma nova avaliação quando quiser.`,
+            sender: 'noa',
+            timestamp: new Date(),
+          }
+          
+          setMessages(prev => [...prev, msgRecusa])
+          setIsTyping(false)
+          return
+        }
+      }
+      
       // 🛡️ PROTEÇÃO: Se está em modo avaliação, BLOQUEIA qualquer outra lógica
       // Avaliação Clínica Inicial roda SEM INTERRUPÇÃO até o fim
       if (modoAvaliacao) {
@@ -1256,6 +1321,33 @@ const Home = ({
           'abortar',
           'fechar avaliação',
         ]
+        
+        // 🚫 BLOQUEAR PERGUNTAS FORA DO CONTEXTO
+        const perguntasForaContexto = [
+          'base de conhecimento',
+          'de onde vem',
+          'quem é você',
+          'o que você faz',
+          'ajuda',
+          'menu',
+          'dashboard'
+        ]
+        
+        if (perguntasForaContexto.some(p => mensagemLower.includes(p))) {
+          console.log('🚫 Pergunta fora do contexto durante avaliação - Redirecionando')
+          
+          const msgRedirecionar: Message = {
+            id: crypto.randomUUID(),
+            message: `📋 **Estamos em avaliação clínica!**\n\nPor favor, vamos focar nas perguntas da avaliação. Depois que terminarmos, posso responder qualquer dúvida!\n\n**Etapa atual:** ${etapaAtual + 1}/28 blocos IMRE\n\n**Continuando...**\n\nPor favor, responda a pergunta anterior.`,
+            sender: 'noa',
+            timestamp: new Date(),
+          }
+          
+          setMessages(prev => [...prev, msgRedirecionar])
+          setIsTyping(false)
+          return
+        }
+        
         if (comandosSaida.some(cmd => mensagemLower.includes(cmd))) {
           console.log('🛑 Usuário cancelou a avaliação')
           setModoAvaliacao(false)
@@ -1562,7 +1654,8 @@ AVALIAÇÃO INICIAL - SIGA ESTRITAMENTE:
 - Apresente cada pergunta entre aspas exatamente como especificado
 - NÃO exiba textos entre colchetes [ ] ou parênteses ( )
 - Faça pausas apropriadas para resposta do usuário
-- Para "O que mais?" repita até resposta negativa
+- Para "O que mais?" pergunte NO MÁXIMO 2 vezes, depois avance
+- Se usuário responder "não", "nada", "nenhum" ou similar, AVANCE IMEDIATAMENTE
 - Use exatamente as perguntas fornecidas nas instruções
 
 AVALIAÇÃO INICIAL CANNABIS - SIGA ESTRITAMENTE:
@@ -1770,9 +1863,18 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       setDadosAvaliacao(prev => ({ ...prev, relatorio_narrativo: relatorio }))
     }
 
-    // Se estava perguntando "O que mais?" e recebeu resposta negativa, avança
-    if (perguntandoMais && respostaNegativa) {
+    // 🛡️ PROTEÇÃO: Limitar "O que mais?" e detectar finalização
+    const usuarioTerminou = respostaNegativa || 
+                           contadorOqMais >= 2 || // Máximo 2 "O que mais?"
+                           resposta.toLowerCase().includes('pronto') ||
+                           resposta.toLowerCase().includes('terminei') ||
+                           resposta.toLowerCase().includes('só isso') ||
+                           resposta.toLowerCase().includes('é só')
+    
+    // Se estava perguntando "O que mais?" e usuário terminou, avança
+    if (perguntandoMais && usuarioTerminou) {
       setPerguntandoMais(false)
+      setContadorOqMais(0) // Reset para próxima seção
     }
 
     // Salva progresso no Supabase
@@ -1781,6 +1883,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
     // Avança para próxima etapa
     if (etapaAtual < ETAPAS_AVALIACAO.length - 1) {
       setEtapaAtual(prev => prev + 1)
+      setContadorOqMais(0) // Reset ao mudar de etapa
       const proximaEtapa = ETAPAS_AVALIACAO[etapaAtual + 1]
 
       // Próxima pergunta removida - usa ChatGPT
@@ -1790,20 +1893,45 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
     }
   }
 
-  // Gera relatório narrativo
+  // Gera relatório narrativo MELHORADO com análise
   const gerarRelatorioNarrativo = () => {
     const dados = dadosAvaliacao
+    
+    // 🎯 ANÁLISE INTELIGENTE dos pontos trazidos
+    const queixas = dados.lista_indiciaria.filter(q => q && !q.toLowerCase().includes('não') && !q.toLowerCase().includes('nada'))
+    const temHistoriaFamiliar = dados.historia_familiar.mae.length > 0 || dados.historia_familiar.pai.length > 0
+    const temHistoriaPatologica = dados.historia_patologica.length > 0
+    
+    let analiseClinica = '\n**📊 ANÁLISE CLÍNICA:**\n'
+    if (queixas.length > 1) {
+      analiseClinica += `• Paciente apresenta múltiplas queixas (${queixas.length}), sugerindo quadro complexo que merece atenção multifatorial.\n`
+    }
+    if (temHistoriaFamiliar) {
+      analiseClinica += `• História familiar positiva detectada - importante considerar componente genético/familiar.\n`
+    }
+    if (temHistoriaPatologica) {
+      analiseClinica += `• Antecedentes médicos relevantes registrados - contexto importante para diagnóstico.\n`
+    }
+    if (dados.cannabis_medicinal?.toLowerCase().includes('sim')) {
+      analiseClinica += `• Paciente já teve contato com cannabis medicinal - considerar histórico de uso.\n`
+    }
+    
     return `
 **RELATÓRIO DE AVALIAÇÃO CLÍNICA INICIAL**
-*Método Triaxial - Dr. Ricardo Valença*
+*Método Arte da Entrevista Clínica - Dr. Ricardo Valença*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-**APRESENTAÇÃO:** ${dados.apresentacao || 'Não informado'}
+**👤 APRESENTAÇÃO:** 
+${dados.apresentacao || 'Não informado'}
 
-**CANNABIS MEDICINAL:** ${dados.cannabis_medicinal || 'Não informado'}
+**🌿 CANNABIS MEDICINAL:** 
+${dados.cannabis_medicinal || 'Não informado'}
 
-**QUEIXAS PRINCIPAIS:** ${dados.lista_indiciaria.join(', ')}
+**📋 LISTA DE QUEIXAS:** 
+${queixas.length > 0 ? queixas.map((q, i) => `${i + 1}. ${q}`).join('\n') : 'Nenhuma queixa registrada'}
 
-**QUEIXA PRINCIPAL:** ${dados.queixa_principal || 'Não especificada'}
+**🎯 QUEIXA PRINCIPAL (mais incomoda):** 
+${dados.queixa_principal || 'Não especificada'}
 
 **DESENVOLVIMENTO INDICIÁRIO:**
 - Localização: ${dados.desenvolvimento_indiciario?.localizacao || 'Não informado'}
@@ -1826,8 +1954,11 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
 **MEDICAÇÕES:**
 - Contínuas: ${dados.medicacoes?.continuas || 'Nenhuma'}
 - Eventuais: ${dados.medicacoes?.eventuais || 'Nenhuma'}
+${analiseClinica}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *Relatório gerado em: ${new Date().toLocaleString('pt-BR')}*
+*Método Arte da Entrevista Clínica - Dr. Ricardo Valença*
     `.trim()
   }
 
@@ -1870,70 +2001,30 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
 
       // Finalização com recomendação específica
       setTimeout(async () => {
-        // Pede consentimento antes de enviar para dashboard
+        // ✅ CARD DE CONSENTIMENTO CLICÁVEL
+        setAguardandoConsentimento(true)
+        
         const consentimentoMessage: Message = {
           id: crypto.randomUUID(),
           message:
-            '🔐 **CONSENTIMENTO PARA DASHBOARD**\n\nVocê concorda em enviar este relatório para o seu dashboard pessoal?\n\nO relatório ficará disponível para você e poderá ser compartilhado com o Dr. Ricardo Valença.\n\n**Responda:**\n• SIM - Enviar para dashboard\n• NÃO - Apenas visualizar',
+            '🔐 **CONSENTIMENTO PARA ENVIO AO DASHBOARD**\n\n✅ **Você concorda em enviar este relatório para o seu dashboard pessoal?**\n\nO relatório ficará disponível:\n• Para você acessar a qualquer momento\n• Para compartilhar com o Dr. Ricardo Valença\n• Certificado com NFT na blockchain\n\n**Clique abaixo para confirmar:**',
           sender: 'noa',
           timestamp: new Date(),
           conversation_type: 'clinical_evaluation',
           session_id: sessionId,
+          options: [
+            '✅ SIM - Enviar para meu dashboard',
+            '❌ NÃO - Apenas visualizar agora',
+            '📧 Enviar por e-mail também'
+          ]
         }
         setMessages(prev => [...prev, consentimentoMessage])
         await playNoaAudioWithText(
-          'Você concorda em enviar este relatório para o seu dashboard pessoal? Responda SIM para enviar ou NÃO para apenas visualizar.'
+          'Você concorda em enviar este relatório para o seu dashboard pessoal? Clique na opção desejada.'
         )
 
-        // TODO: Aguardar resposta do usuário antes de finalizar
-        // Por enquanto, vamos assumir consentimento após timeout
-        setTimeout(async () => {
-          // Cria o relatório NFT no sistema
-          const nftReport = await noaSystemService.completeClinicalEvaluation(sessionId, {
-            ...dadosAvaliacao,
-            relatorio_narrativo: relatorio,
-            blocks_completed: ETAPAS_AVALIACAO.length,
-            user_type: userType,
-            timestamp: new Date().toISOString(),
-            consent_given: true, // Consentimento registrado
-          })
-
-          const finalizacao: Message = {
-            id: crypto.randomUUID(),
-            message: `**🎉 AVALIAÇÃO CLÍNICA CONCLUÍDA!**\n\n✅ Seu relatório foi gerado e certificado com NFT!\n🪙 **NFT Hash:** ${nftReport?.nft_hash || 'Gerando...'}\n📊 **Dashboard:** Relatório enviado com sucesso!\n\n**RECOMENDAÇÃO FINAL:**\n\nEssa é uma avaliação inicial de acordo com o método desenvolvido pelo Dr. Ricardo Valença com o objetivo de aperfeiçoar o seu atendimento. Ao final, recomendo a marcação de uma consulta com o Dr. Ricardo Valença pelo site.\n\n💡 **Próximos passos:**\n- Acesse seu dashboard para ver o relatório completo\n- Compartilhe com o Dr. Ricardo Valença\n- Agende sua consulta\n- Prepare suas dúvidas\n\n*Método Arte da Entrevista Clínica - Dr. Ricardo Valença*`,
-            sender: 'noa',
-            timestamp: new Date(),
-            conversation_type: 'clinical_evaluation',
-            user_type: userType || 'paciente',
-            session_id: sessionId,
-          }
-
-          setMessages(prev => [...prev, finalizacao])
-          playNoaAudioWithText(
-            'Avaliação clínica concluída! Seu relatório foi gerado, certificado com NFT e enviado para o seu dashboard. Você pode acessá-lo a qualquer momento e compartilhar com o Dr. Ricardo Valença.'
-          )
-
-          // Salva avaliação concluída no Supabase
-          saveEvaluationToSupabase(true).then(() => {
-            console.log('✅ Avaliação salva no Supabase:', evaluationId)
-          })
-
-          // Registra a conclusão no fluxo e envia para dashboard
-          await noaSystemService.registerConversationFlow(
-            sessionId,
-            'evaluation_completed',
-            {
-              nft_report_id: nftReport?.id,
-              nft_hash: nftReport?.nft_hash,
-              evaluation_data: dadosAvaliacao,
-              sent_to_dashboard: true,
-              consent_given: true,
-            },
-            999
-          )
-
-          console.log('📊 Relatório enviado para dashboard do paciente!')
-        }, 3000)
+        // ✅ Aguarda clique do usuário (processado em getNoaResponse via aguardandoConsentimento)
+        // O usuário deve clicar em uma das opções para continuar
       }, 3000)
     }, 3000)
   }

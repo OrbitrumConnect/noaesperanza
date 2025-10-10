@@ -16,7 +16,7 @@ interface ThoughtBubbleProps {
   onClose?: () => void;
 }
 
-const ThoughtBubble: React.FC<ThoughtBubbleProps> = ({ 
+const ThoughtBubble: React.FC<ThoughtBubbleProps> = React.memo(({ 
   thought, 
   index, 
   onClick, 
@@ -39,8 +39,7 @@ const ThoughtBubble: React.FC<ThoughtBubbleProps> = ({
   const finalX = position.x;
   const finalY = position.y;
 
-
-  console.log('🎯 ThoughtBubble renderizando:', thought.title, 'posição:', finalX, finalY)
+  // Console.log removido para evitar spam
 
   return (
     <motion.div
@@ -127,6 +126,8 @@ const ThoughtBubble: React.FC<ThoughtBubbleProps> = ({
       </div>
     </motion.div>
   );
-};
+});
+
+ThoughtBubble.displayName = 'ThoughtBubble';
 
 export default ThoughtBubble;
