@@ -109,6 +109,35 @@ export class ClinicalAssessmentService {
   }
 
   /**
+   * 🧹 Limpa a queixa removendo palavras extras
+   */
+  private limparQueixa(queixa: string): string {
+    if (!queixa) return ''
+    
+    let limpa = queixa.trim()
+    
+    // Remover palavras iniciais comuns
+    const palavrasRemover = [
+      'apenas essa', 'apenas', 'só essa', 'so essa',
+      'acho que', 'acho que é', 'é',
+      'eu tenho', 'eu sinto', 'sinto',
+      'estou com', 'estou sentindo',
+      'percebi que', 'percebi que tenho'
+    ]
+    
+    for (const palavra of palavrasRemover) {
+      const regex = new RegExp(`^${palavra}\\s+`, 'gi')
+      limpa = limpa.replace(regex, '')
+    }
+    
+    // Converter "eu" para forma neutra (ex: "eu andava" não faz sentido em "onde você sente")
+    // Mas manter substantivos
+    limpa = limpa.trim()
+    
+    return limpa
+  }
+
+  /**
    * 🛡️ Detecta se o paciente sinalizou que terminou de falar
    */
   private detectaFinalizacao(answer: string = ''): boolean {
@@ -199,7 +228,18 @@ export class ClinicalAssessmentService {
         const complaints = responses.filter(r => r.category === 'complaints').map(r => r.answer)
         
         // 🧹 LIMPEZA: Remover respostas vazias ou de finalização
-        const complaintsLimpos = complaints.filter(c => c && c.trim().length > 3)
+        const respostasFinalizacao = [
+          'só isso', 'so isso', 'apenas', 'apenas isso', 'chega',
+          'nada', 'nada mais', 'não mais', 'nenhuma', 'nenhum', 'acabou',
+          'acho que so isso', 'acho que só isso', 'acho que é isso'
+        ]
+        
+        const complaintsLimpos = complaints.filter(c => {
+          if (!c || c.trim().length < 3) return false
+          const lower = c.toLowerCase().trim()
+          // Filtrar respostas de finalização
+          return !respostasFinalizacao.some(f => lower === f || lower.includes(f))
+        })
         
         if (complaintsLimpos.length === 0) {
           return "Qual é a sua queixa principal?"
@@ -208,10 +248,67 @@ export class ClinicalAssessmentService {
         if (complaintsLimpos.length === 1) {
           // Se só tem 1 queixa, não precisa perguntar "qual mais incomoda"
           this.advanceStage()
-          return "Onde você sente essa dor? Como começou?"
+          return `Vamos explorar isso mais detalhadamente. Onde você sente ${complaintsLimpos[0]}?`
+        }
+        
+        // 🎯 ESCOLHA AUTOMÁTICA: Se já perguntou e não tem resposta válida
+        const lastResponse = responses.filter(r => r.category === 'complaints').slice(-1)[0]?.answer || ''
+        const lastResponseLower = lastResponse.toLowerCase().trim()
+        const ehRespFinalizacao = respostasFinalizacao.some(f => 
+          lastResponseLower === f || 
+          lastResponseLower.includes(f)
+        )
+        
+        // Se última resposta foi finalização E já perguntou antes
+        if (ehRespFinalizacao && this.ultimaPerguntaFeita && this.ultimaPerguntaFeita.includes('qual mais')) {
+          console.log('🎯 Resposta de finalização detectada. Escolhendo automaticamente queixa principal...')
+          
+          // Escolhe a queixa mais específica (mais longa geralmente é mais detalhada)
+          let queixaPrincipal = complaintsLimpos.reduce((a, b) => a.length > b.length ? a : b)
+          
+          // 🧹 Limpar palavras extras da queixa
+          queixaPrincipal = this.limparQueixa(queixaPrincipal)
+          
+          // Salva como queixa principal
+          const response: AssessmentResponse = {
+            question: 'Queixa principal (escolhida automaticamente)',
+            answer: queixaPrincipal,
+            timestamp: new Date(),
+            category: 'complaints'
+          }
+          this.assessmentResponses.push(response)
+          this.currentAssessment.responses.push(response)
+          
+          console.log(`✅ Queixa principal escolhida: "${queixaPrincipal}"`)
+          
+          this.advanceStage()
+          return `Vamos explorar suas questões mais detalhadamente. Onde você sente ${queixaPrincipal}?`
         }
         
         const perguntaPrincipal = `De todas essas questões (${complaintsLimpos.join(', ')}), qual mais o(a) incomoda?`
+        
+        // 🚫 PROTEÇÃO: Se já fez essa pergunta E usuário respondeu com queixa válida
+        if (this.ultimaPerguntaFeita === perguntaPrincipal && lastResponse && !ehRespFinalizacao) {
+          console.log('⚠️ Usuário escolheu queixa principal:', lastResponse)
+          
+          // Limpa a queixa escolhida
+          let queixaEscolhida = this.limparQueixa(lastResponse)
+          
+          // Salva como queixa principal
+          const response: AssessmentResponse = {
+            question: 'Queixa principal',
+            answer: queixaEscolhida,
+            timestamp: new Date(),
+            category: 'complaints'
+          }
+          this.assessmentResponses.push(response)
+          this.currentAssessment.responses.push(response)
+          
+          console.log(`✅ Queixa principal registrada: "${queixaEscolhida}"`)
+          
+          this.advanceStage()
+          return `Vamos explorar suas questões mais detalhadamente. Onde você sente ${queixaEscolhida}?`
+        }
         
         // 🚫 PROTEÇÃO: Se já fez essa pergunta, não repetir!
         if (this.ultimaPerguntaFeita === perguntaPrincipal) {
@@ -226,22 +323,45 @@ export class ClinicalAssessmentService {
       case 'complaint_development':
         // 🎯 DESENVOLVIMENTO COMPLETO DA QUEIXA (Protocolo IMRE)
         const mainComplaint = responses.filter(r => r.category === 'complaints').slice(-1)[0]?.answer || 'isso'
-        const developmentResponses = responses.filter(r => r.category === 'complaints' && r.question.includes('Onde'))
+        
+        // Contar TODAS as respostas dessa etapa (não apenas as que têm "Onde")
+        const developmentResponses = responses.filter(r => {
+          const pergunta = r.question.toLowerCase()
+          return (
+            pergunta.includes('onde você sente') ||
+            pergunta.includes('quando isso começou') ||
+            pergunta.includes('como é essa sensação') ||
+            pergunta.includes('o que você percebe que ajuda') ||
+            pergunta.includes('o que costuma piorar') ||
+            r.category === 'complaints' && (
+              this.currentAssessment?.stage === 'complaint_development'
+            )
+          )
+        })
+        
+        // Contar respostas dessa etapa específica
+        const imreCount = developmentResponses.filter(r => 
+          r.question.toLowerCase().includes('onde você sente') ||
+          r.question.toLowerCase().includes('quando') ||
+          r.question.toLowerCase().includes('como é') ||
+          r.question.toLowerCase().includes('ajuda a melhorar') ||
+          r.question.toLowerCase().includes('costuma piorar')
+        ).length
         
         // 📋 SEQUÊNCIA COMPLETA: Onde → Quando → Como → O que melhora → O que piora
-        if (developmentResponses.length === 0) {
+        if (imreCount === 0) {
           return `Vamos explorar suas questões mais detalhadamente. Onde você sente ${mainComplaint}?`
         }
-        if (developmentResponses.length === 1) {
+        if (imreCount === 1) {
           return `Quando isso começou? Há quanto tempo?`
         }
-        if (developmentResponses.length === 2) {
+        if (imreCount === 2) {
           return `Como é essa sensação? Pode descrever?`
         }
-        if (developmentResponses.length === 3) {
+        if (imreCount === 3) {
           return `O que você percebe que ajuda a melhorar?`
         }
-        if (developmentResponses.length === 4) {
+        if (imreCount === 4) {
           return `E o que costuma piorar?`
         }
         
@@ -402,7 +522,10 @@ export class ClinicalAssessmentService {
       'avançar',
       'vamos',
       'continuar',
-      'seguir'
+      'seguir',
+      'segui',
+      'avanaçar',
+      'poxa'
     ]
     
     const answerLower = answer.toLowerCase().trim()
@@ -412,7 +535,26 @@ export class ClinicalAssessmentService {
       (answerLower.length < 15 && answerLower.includes(f)) // Curto e contém
     )
     
-    // Se for tentativa de finalização, não salvar
+    // ⚠️ EXCEÇÃO: Se está em complaint_development (5 perguntas IMRE)
+    // E usuário quer avançar, salva resposta genérica e permite avanço
+    if (ehFinalizacao && this.currentAssessment.stage === 'complaint_development') {
+      console.log('⏭️ Comando de avanço detectado nas perguntas IMRE. Salvando resposta e avançando...')
+      
+      // Salva resposta genérica para permitir avanço
+      const response: AssessmentResponse = {
+        question,
+        answer: 'Não especificado',
+        timestamp: new Date(),
+        category
+      }
+      this.assessmentResponses.push(response)
+      this.currentAssessment.responses.push(response)
+      console.log('✅ Resposta genérica salva para permitir avanço')
+      this.saveToSupabase()
+      return
+    }
+    
+    // Se for tentativa de finalização em outras etapas, não salvar
     if (ehFinalizacao) {
       console.log('🚫 Resposta de finalização detectada, não salvando:', answer)
       return

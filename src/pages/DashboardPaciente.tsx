@@ -221,7 +221,6 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                 </div>
                 <div>
                   <h1 className="text-sm font-bold text-premium">Dashboard Paciente</h1>
-                  <p className="text-emerald-400 text-xs">{profile.title}</p>
                 </div>
               </div>
             </div>
@@ -290,7 +289,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                         <i className="fas fa-user text-white text-2xl"></i>
                       </div>
                       <h2 className="text-2xl font-bold text-white mb-2">{builderUserName}</h2>
-                      <p className="text-gray-400">{profile.title}</p>
+                      <p className="text-gray-400">Paciente Nôa Esperanza</p>
                     </div>
 
                     {clinicalReport && (
