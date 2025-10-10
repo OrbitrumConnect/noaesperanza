@@ -224,29 +224,30 @@ export class ClinicalAssessmentService {
         return perguntaPrincipal
 
       case 'complaint_development':
-        const mainComplaint = responses.filter(r => r.category === 'complaints').slice(-1)[0]?.answer
+        // 🎯 DESENVOLVIMENTO COMPLETO DA QUEIXA (Protocolo IMRE)
+        const mainComplaint = responses.filter(r => r.category === 'complaints').slice(-1)[0]?.answer || 'isso'
         const developmentResponses = responses.filter(r => r.category === 'complaints' && r.question.includes('Onde'))
         
+        // 📋 SEQUÊNCIA COMPLETA: Onde → Quando → Como → O que melhora → O que piora
         if (developmentResponses.length === 0) {
           return `Vamos explorar suas questões mais detalhadamente. Onde você sente ${mainComplaint}?`
         }
         if (developmentResponses.length === 1) {
-          return `Quando essa ${mainComplaint} começou?`
+          return `Quando isso começou? Há quanto tempo?`
         }
         if (developmentResponses.length === 2) {
-          return `Como é a ${mainComplaint}?`
+          return `Como é essa sensação? Pode descrever?`
         }
         if (developmentResponses.length === 3) {
-          return `O que mais você sente quando está com a ${mainComplaint}?`
+          return `O que você percebe que ajuda a melhorar?`
         }
         if (developmentResponses.length === 4) {
-          return `O que parece melhorar a ${mainComplaint}?`
+          return `E o que costuma piorar?`
         }
-        if (developmentResponses.length === 5) {
-          return `O que parece piorar a ${mainComplaint}?`
-        }
+        
+        // ✅ Desenvolvimento completo - avança para próxima etapa
         this.advanceStage()
-        return "Você possui alguma doença prévia? Está tomando algum medicamento?"
+        return "Agora vamos falar sobre sua saúde ao longo da vida. Quais questões de saúde você já viveu, desde o mais antigo até o mais recente?"
 
       case 'medical_history':
         const historyResponses = responses.filter(r => r.category === 'history')

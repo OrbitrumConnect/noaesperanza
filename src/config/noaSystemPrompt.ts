@@ -243,6 +243,18 @@ export const getNoaSystemPrompt = (userContext?: {
 }): string => {
   let prompt = NOA_SYSTEM_PROMPT
 
+  // 🕐 ADICIONAR INFORMAÇÃO DE HORÁRIO ATUAL
+  const now = new Date()
+  const hour = now.getHours()
+  const greeting = hour >= 5 && hour < 12 ? 'Bom dia' : hour >= 12 && hour < 18 ? 'Boa tarde' : 'Boa noite'
+  const timeOfDay = hour >= 5 && hour < 12 ? 'manhã' : hour >= 12 && hour < 18 ? 'tarde' : 'noite'
+  
+  prompt += `\n\n## ⏰ CONTEXTO TEMPORAL ATUAL\n`
+  prompt += `Horário: ${hour}:${now.getMinutes().toString().padStart(2, '0')}\n`
+  prompt += `Período: ${timeOfDay}\n`
+  prompt += `Cumprimento apropriado: "${greeting}"\n`
+  prompt += `\n**IMPORTANTE: Use cumprimentos adequados ao horário. Agora é ${timeOfDay}, então use "${greeting}" ao cumprimentar!**\n`
+
   if (userContext?.recognizedAs) {
     // Usar nome reconhecido (Dr. Ricardo, Dr. Eduardo, etc)
     prompt += `\n\n## CONTEXTO DO USUÁRIO ATUAL\n`

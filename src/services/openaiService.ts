@@ -379,14 +379,23 @@ class OpenAIService {
     return this.sendMessage(messages, systemPrompt)
   }
 
+  // 🕐 Função para cumprimento baseado no horário
+  private getTimeBasedGreeting(): string {
+    const hour = new Date().getHours()
+    if (hour >= 5 && hour < 12) return 'Bom dia'
+    if (hour >= 12 && hour < 18) return 'Boa tarde'
+    return 'Boa noite'
+  }
+
   // Fallback inteligente offline
   private offlineResponse(messages: ChatMessage[]): string {
     const lastUser = [...messages].reverse().find(m => m.role === 'user')
     const userText = (lastUser?.content || '').toLowerCase().trim()
+    const greeting = this.getTimeBasedGreeting()
     
     // Saudações
     if (userText.match(/^(oi|olá|ola|hey|bom dia|boa tarde|boa noite|e ai)/)) {
-      return `Olá! Sou a Nôa Esperanza 🌿\n\nMuito prazer em conhecê-lo! Estou aqui para ajudar com sua saúde e bem-estar.\n\nPosso realizar avaliação clínica completa, orientar sobre cannabis medicinal e muito mais.\n\nComo posso ajudar você hoje?`
+      return `${greeting}! Sou a Nôa Esperanza 🌿\n\nMuito prazer em conhecê-lo! Estou aqui para ajudar com sua saúde e bem-estar.\n\nPosso realizar avaliação clínica completa, orientar sobre cannabis medicinal e muito mais.\n\nComo posso ajudar você hoje?`
     }
     
     // Como está / tudo bem
@@ -419,17 +428,80 @@ class OpenAIService {
       return `Estou aqui para ajudar! 🤗\n\n**Principais funcionalidades:**\n• Avaliação clínica completa (IMRE)\n• Orientação sobre cannabis medicinal\n• Informações sobre tratamentos\n• Acompanhamento terapêutico\n\nÉ só conversar comigo naturalmente! Pode fazer perguntas, contar seus sintomas ou pedir orientações.\n\nSobre o que gostaria de conversar?`
     }
     
-    // Fallback mais inteligente e natural
-    const responses = [
-      `Entendo sua pergunta. No momento estou em modo offline, então minhas respostas são baseadas no conhecimento que já tenho armazenado.\n\nPosso te ajudar especialmente com avaliação clínica e cannabis medicinal. Sobre o que você perguntou, prefere que eu te oriente sobre esses temas ou quer conversar sobre outra coisa?`,
+    // 💬 CONVERSAÇÃO LIVRE - Respostas naturais e empáticas
+    const conversationHistory = messages.map(m => m.content).join(' ').toLowerCase()
+    
+    // Detectar tópicos de interesse
+    const topicos = {
+      saude: /saúde|bem.?estar|cuidar|prevenção|qualidade de vida/,
+      emocional: /ansiedade|depressão|estresse|medo|preocupa|triste|nervos/,
+      sono: /sono|insônia|dormir|acordar|cansaço/,
+      alimentacao: /comer|dieta|alimentação|nutri|peso|emagrecer/,
+      exercicio: /exercício|academia|corrida|caminhada|atividade física/,
+      curiosidade: /por.?que|como.?funciona|explica|entender|saber/,
+      agradecimento: /obrigad|valeu|legal|massa|show|obg|vlw/,
+      casual: /rs|kk|kkk|haha|😂|😊|legal|massa|bacana/
+    }
+    
+    // Agradecimento
+    if (topicos.agradecimento.test(userText)) {
+      const respostasAgradecimento = [
+        `Por nada! 😊 Estou sempre aqui para ajudar. Precisa de mais alguma coisa?`,
+        `Fico feliz em ajudar! 🌿 Pode contar comigo sempre que precisar.`,
+        `É um prazer poder te ajudar! Qualquer dúvida, é só chamar.`
+      ]
+      return respostasAgradecimento[Math.floor(Math.random() * respostasAgradecimento.length)]
+    }
+    
+    // Emocional
+    if (topicos.emocional.test(userText)) {
+      return `Entendo... questões emocionais afetam muito nossa saúde física também. 💙\n\nÉ importante cuidar tanto do corpo quanto da mente. A cannabis medicinal pode ajudar em casos de ansiedade e estresse, por exemplo.\n\nGostaria de conversar mais sobre isso? Ou prefere fazer uma avaliação para eu entender melhor sua situação?`
+    }
+    
+    // Sono
+    if (topicos.sono.test(userText)) {
+      return `Sono de qualidade é fundamental para a saúde! 😴\n\nProblemas de sono podem estar relacionados a diversos fatores: estresse, ansiedade, hábitos, dor crônica...\n\nExistem opções tanto de higiene do sono quanto terapêuticas (incluindo cannabis medicinal para insônia).\n\nQuer que eu te ajude a entender melhor o seu caso?`
+    }
+    
+    // Alimentação
+    if (topicos.alimentacao.test(userText)) {
+      return `Alimentação é mesmo muito importante! 🥗\n\nNutrição adequada impacta diretamente na saúde, energia, humor e até no sistema imunológico.\n\nEmbora minha especialidade seja mais clínica e medicinal, posso te orientar sobre como a alimentação se relaciona com sua saúde geral.\n\nGostaria de conversar sobre alguma condição específica ou fazer uma avaliação?`
+    }
+    
+    // Exercício
+    if (topicos.exercicio.test(userText)) {
+      return `Atividade física é maravilhosa para a saúde! 💪\n\nExercícios regulares ajudam com circulação, humor, sono, controle de doenças crônicas e muito mais.\n\nImportante sempre adaptar a atividade à sua condição de saúde. Tem alguma limitação ou questão que devo saber?`
+    }
+    
+    // Curiosidade / Perguntas gerais
+    if (topicos.curiosidade.test(userText)) {
+      return `Ótima pergunta! Adoro quando as pessoas querem entender melhor as coisas. 🤓\n\nTenho conhecimento em neurologia, nefrologia, cannabis medicinal e avaliação clínica geral.\n\nPoderia reformular sua pergunta de forma mais específica? Assim consigo te dar uma resposta mais completa e útil!`
+    }
+    
+    // Casual / Descontraído
+    if (topicos.casual.test(userText)) {
+      const respostasCasuais = [
+        `Haha, gosto dessa energia! 😄 Vamos conversar? Sobre o que você quer saber?`,
+        `Legal mesmo! 😊 Estou aqui para o que precisar. Pode perguntar à vontade!`,
+        `Que bom! 🌿 Vamos aproveitar para conversar sobre sua saúde ou tirar alguma dúvida?`
+      ]
+      return respostasCasuais[Math.floor(Math.random() * respostasCasuais.length)]
+    }
+    
+    // Fallback SUPER natural - Resposta conversacional livre
+    const respostasLivres = [
+      `Entendi! Sobre isso, posso te ajudar de algumas formas. Quer que eu explique mais sobre o tema ou prefere fazer perguntas específicas?`,
       
-      `Interessante questão! Embora esteja offline agora, tenho conhecimento extenso em saúde e medicina.\n\nSe sua dúvida é sobre saúde, sintomas ou tratamentos, posso te ajudar bastante! Quer me contar mais detalhes?`,
+      `Interessante você perguntar sobre isso! 🌿 Tenho bastante conhecimento em saúde e medicina. Me conta mais, estou curiosa para entender melhor sua situação.`,
       
-      `Vi sua mensagem! 🌿\n\nEstou em modo offline, mas ainda assim posso conversar e ajudar com várias coisas, especialmente relacionadas à saúde.\n\nPoderia reformular sua pergunta ou me contar o que você está precisando? Assim consigo te ajudar melhor!`
+      `Certo! Vamos explorar isso juntos. O que exatamente você gostaria de saber ou resolver? Pode falar livremente!`,
+      
+      `Ah, entendo o que você está dizendo. Deixa eu pensar na melhor forma de te ajudar... Você está com alguma preocupação específica ou é mais uma curiosidade?`,
+      
+      `Legal! Adoro quando as pessoas se interessam por saúde. 😊 Pode me contar mais detalhes? Quanto mais eu souber, melhor posso te orientar.`
     ]
     
-    // Escolher resposta aleatória para parecer mais natural
-    return responses[Math.floor(Math.random() * responses.length)]
+    return respostasLivres[Math.floor(Math.random() * respostasLivres.length)]
   }
 }
 

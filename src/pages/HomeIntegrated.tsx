@@ -8,6 +8,7 @@ import { cleanTextForAudio } from '../utils/textUtils'
 import { clinicalAssessmentService, ClinicalAssessmentData } from '../services/clinicalAssessmentService'
 import ThoughtBubble from '../components/ThoughtBubble'
 import MatrixBackground from '../components/MatrixBackground'
+import { noaVisionIA } from '../gpt/noaVisionIA' // 🧠 NoaVision IA Local
 
 interface Message {
   id: string
@@ -234,13 +235,39 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
         }
       }
 
-      // Processar com OpenAI (mesma lógica do /chat)
+      // 🧠 PROCESSAR COM NOAVISION IA (IA LOCAL + INTELIGENTE)
       const conversationHistory: ChatMessage[] = messages.map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.message
       }))
 
-      const response = await openAIService.getNoaResponse(userMessage, conversationHistory)
+      let response: string
+      
+      try {
+        // 🎯 PRIORIDADE 1: NoaVision IA (local, rápido, grátis)
+        console.log('🧠 Usando NoaVision IA...')
+        const noaContext = {
+          userId: 'user-local',
+          userProfile: 'paciente' as const,
+          userName: userMemory.name || 'Usuário',
+          specialty: 'neuro' as const,
+          currentDashboard: '/home',
+          currentRoute: '/home',
+          conversationHistory: conversationHistory.filter(m => m.role !== 'system').map(m => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content
+          }))
+        }
+        
+        const noaResult = await noaVisionIA.processMessage(userMessage, noaContext)
+        response = noaResult.response
+        console.log(`✅ NoaVision IA respondeu (${noaResult.source}, confidence: ${noaResult.confidence})`)
+        
+      } catch (noaError) {
+        // 🔄 FALLBACK: OpenAI Service com respostas offline
+        console.log('⚠️ NoaVision IA erro, usando fallback:', noaError)
+        response = await openAIService.getNoaResponse(userMessage, conversationHistory)
+      }
       
       // 🚫 DETECÇÃO DE RECUSA: Usuário não quer avaliação agora?
       const recusouAvaliacao = msgLower.match(/(não quero|agora não|depois|talvez depois|não precisa|já fiz|dispenso|outra hora)/)
