@@ -2539,8 +2539,11 @@ ${analiseClinica}
       <div className="w-full h-full flex relative z-0">
         {/* Sidebar Esquerdo - Chat */}
         <div
-          className="sidebar-mobile w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[calc(100vh-7vh-80px)] z-10"
-          style={{ overflow: 'hidden' }}
+          className="sidebar-mobile w-80 flex-shrink-0 bg-white/10 border-r border-white/20 p-4 fixed left-0 top-[7vh] h-[calc(100vh-7vh-80px)] z-20"
+          style={{ 
+            overflow: 'hidden',
+            isolation: 'isolate' // Isola o scroll do chat
+          }}
         >
           {/* Balão de Pensamento */}
           <div className="h-full flex flex-col">
@@ -2618,21 +2621,11 @@ ${analiseClinica}
 
               {/* Área de Mensagens - Melhorada */}
               <div
-                className="messages-container space-y-3 flex-1 overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 min-h-0 max-h-full px-3 pt-3 pb-6"
+                className="messages-container space-y-3 flex-1 overflow-hidden min-h-0 max-h-full px-3 pt-3 pb-6"
                 style={{
-                  scrollBehavior: 'auto',
-                  WebkitOverflowScrolling: 'touch',
-                  overflowAnchor: 'none',
-                  position: 'relative',
-                  scrollSnapType: 'none',
-                  scrollPadding: '0',
-                  scrollMargin: '0',
-                  overflowY: 'scroll',
                   height: '100%',
                   maxHeight: '100%',
-                  /* FORÇAR SCROLL MANUAL */
-                  scrollSnapAlign: 'none',
-                  scrollSnapStop: 'normal',
+                  overflow: 'hidden' // SEM SCROLL!
                 }}
               >
                 {messages.map(message => (
@@ -2743,8 +2736,12 @@ ${analiseClinica}
 
       {/* Área Central - NOA e Pensamentos */}
       <div
-        className="flex-1 flex items-center justify-center relative min-h-screen md:ml-80 ml-0 w-full fixed md:left-80 left-0 top-0 h-full"
-        style={{ pointerEvents: 'auto' }}
+        className="flex-1 flex items-center justify-center relative min-h-screen md:ml-80 ml-0 w-full fixed md:left-80 left-0 top-0 h-full z-30"
+        style={{ 
+          pointerEvents: 'auto',
+          isolation: 'isolate', // Isola o contexto de empilhamento
+          transform: 'translateZ(0)' // Força aceleração de hardware
+        }}
         onClick={e => {
           console.log('🎯 CLIQUE NO CONTAINER PRINCIPAL!', e.target)
         }}

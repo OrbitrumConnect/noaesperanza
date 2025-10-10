@@ -379,17 +379,33 @@ class OpenAIService {
     return this.sendMessage(messages, systemPrompt)
   }
 
-  // Fallback totalmente offline/local para quando a API estiver indisponível
+  // Fallback inteligente offline
   private offlineResponse(messages: ChatMessage[]): string {
     const lastUser = [...messages].reverse().find(m => m.role === 'user')
-    const userText = lastUser?.content || ''
-    const base = 'Sou a Nôa Esperanza em modo offline. Posso orientar com base no material local e no roteiro clínico, enquanto algumas integrações (OpenAI) estão indisponíveis.'
-    if (!userText) return `${base}\n\nPara começarmos, descreva sua queixa principal e há quanto tempo ela ocorre.`
-    const lower = userText.toLowerCase()
-    if (lower.includes('origem') || lower.includes('história') || lower.includes('historia') || lower.includes('quem é você') || lower.includes('quem e voce')) {
-      return `${base}\n\nMinha função aqui é clínica: conduzir a Avaliação Clínica Inicial (método do Dr. Ricardo Valença), organizar os indícios e orientar os próximos passos. Quando desejar, podemos iniciar pelo: "O que trouxe você hoje?"`
+    const userText = (lastUser?.content || '').toLowerCase().trim()
+    
+    // Saudações
+    if (userText.match(/^(oi|olá|ola|hey|bom dia|boa tarde|boa noite|e ai)/)) {
+      return `Olá! Sou a Nôa Esperanza 🌿\n\n**Modo offline ativo**, mas totalmente funcional!\n\n**Posso ajudar com:**\n• Avaliação clínica (28 blocos IMRE)\n• Informações sobre cannabis medicinal\n• Orientações de tratamento\n• Navegação no sistema\n\nO que você precisa hoje?`
     }
-    return `${base}\n\nVamos seguir o roteiro clínico. Primeiro: qual é a sua queixa principal? Em seguida diremos quando começou, como é, o que melhora e o que piora.`
+    
+    // Como está / tudo bem
+    if (userText.match(/(tudo bem|como (você|vc) está|como vai)/)) {
+      return `Estou ótima, obrigada! 😊\n\n**Pronta para ajudar com sua saúde.**\n\n**Posso:**\n✓ Realizar avaliação clínica completa\n✓ Responder sobre cannabis medicinal\n✓ Ver seus relatórios\n✓ Orientar tratamentos\n\nComo posso ajudar você?`
+    }
+    
+    // Avaliação clínica
+    if (userText.match(/(avalia|clinica|imre|consulta|sintoma)/)) {
+      return `🏥 **Avaliação Clínica Inicial**\n\nVou realizar uma avaliação completa seguindo o protocolo IMRE (28 blocos).\n\n**Vamos avaliar:**\n• Identificação e queixa principal\n• Lista indiciária (sintomas)\n• História da doença\n• Cannabis medicinal\n• Antecedentes\n• Hábitos\n• Revisão de sistemas\n\n**Primeira pergunta:**\nQual é a sua queixa principal?`
+    }
+    
+    // Cannabis
+    if (userText.match(/(cannabis|cbd|thc|tratamento|medicamento)/)) {
+      return `🌿 **Cannabis Medicinal**\n\n**Informações disponíveis:**\n• Produtos (CBD, THC, full spectrum)\n• Dosagens e uso\n• Efeitos esperados\n• Processo de prescrição\n\n**Para iniciar tratamento:**\nPrecisa de avaliação clínica completa.\n\nDeseja começar? (digite "sim" ou "fazer avaliação")`
+    }
+    
+    // Fallback genérico
+    return `Recebi: "${userText}"\n\n💡 **Modo offline** - funciono melhor com:\n• "fazer avaliação clínica"\n• "informações sobre cannabis"\n• "ver meus relatórios"\n• "ajuda"\n\nO que você gostaria?`
   }
 }
 

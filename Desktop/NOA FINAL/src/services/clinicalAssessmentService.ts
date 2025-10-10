@@ -98,7 +98,7 @@ export class ClinicalAssessmentService {
           return "O que trouxe você à nossa avaliação hoje?"
         }
         this.advanceStage()
-        return this.getNextQuestion()
+        return "O que trouxe você à nossa avaliação hoje?"
 
       case 'complaints_list':
         if (responses.filter(r => r.category === 'complaints').length === 0) {
@@ -141,7 +141,7 @@ export class ClinicalAssessmentService {
         if (complaintsLimpos.length === 1) {
           // Se só tem 1 queixa, não precisa perguntar "qual mais incomoda"
           this.advanceStage()
-          return this.getNextQuestion()
+          return "Onde você sente essa dor? Como começou?"
         }
         
         return `De todas essas questões (${complaintsLimpos.join(', ')}), qual mais o(a) incomoda?`
@@ -169,7 +169,7 @@ export class ClinicalAssessmentService {
           return `O que parece piorar a ${mainComplaint}?`
         }
         this.advanceStage()
-        return this.getNextQuestion()
+        return "Você possui alguma doença prévia? Está tomando algum medicamento?"
 
       case 'medical_history':
         const historyResponses = responses.filter(r => r.category === 'history')

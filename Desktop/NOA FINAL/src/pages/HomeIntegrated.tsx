@@ -457,9 +457,9 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
         {/* Sidebar Esquerdo - Chat Noa */}
         <div className="w-80 flex-shrink-0 bg-white/10 backdrop-blur-sm border-r border-white/20 p-4">
           <div className="h-full flex flex-col">
-            <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 flex-1 flex flex-col">
+            <div className="bg-white rounded-2xl px-3 pb-3 shadow-lg border border-white/20 flex-1 flex flex-col" style={{ overflow: 'hidden' }}>
               {/* Área de Mensagens */}
-              <div className="space-y-2 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div className="space-y-2 flex-1 overflow-hidden" style={{ overflow: 'hidden' }}>
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -540,7 +540,7 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
         </div>
 
         {/* Área Central - Vídeo da NOA e Pensamentos */}
-        <div className="flex-1 flex items-center justify-center relative fixed md:left-80 left-0 top-0 h-full w-[calc(100%-320px)] md:w-[calc(100%-320px)]">
+        <div className="flex-1 flex items-center justify-center relative fixed md:left-80 left-0 top-0 h-full w-[calc(100%-320px)] md:w-[calc(100%-320px)] z-20">
           {/* Avatar da NOA - Vídeos Animados */}
           <div className="flex-shrink-0 flex justify-center items-center relative">
             <div className="w-[clamp(120px,20vw,135px)] h-[clamp(120px,20vw,135px)] md:w-[533px] md:h-[533px] rounded-full overflow-hidden border-2 md:border-4 border-green-400 shadow-lg relative aspect-square">
