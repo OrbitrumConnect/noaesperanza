@@ -1,18 +1,20 @@
-// 🧠 SERVIÇO GPT BUILDER - GERENCIAMENTO DA BASE DE CONHECIMENTO
-// Gerencia documentos mestres, configurações da Nôa e reconhecimento de usuários
+// 🧠 GPT BUILDER SERVICE - SISTEMA HÍBRIDO
+// Integração completa: AppB + NOA FINAL
+// ==============================================================================
 
 import { supabase } from '../integrations/supabase/client'
+import mammoth from 'mammoth'
+import { getDocument } from 'pdfjs-dist'
 
 export interface DocumentMaster {
   id: string
   title: string
   content: string
-  type: 'personality' | 'knowledge' | 'instructions' | 'examples' | 'development-milestone'
+  type: 'personality' | 'knowledge' | 'instructions' | 'examples'
   category: string
   is_active: boolean
   created_at: string
   updated_at: string
-  created_by?: string
 }
 
 export interface NoaConfig {
@@ -24,54 +26,89 @@ export interface NoaConfig {
     drRicardoValenca: boolean
     autoGreeting: boolean
     personalizedResponse: boolean
+    contextualAnalysis: boolean
+  }
+  features: {
+    noaVisionIA: boolean
+    hybridAI: boolean
+    semanticSearch: boolean
+    gptBuilder: boolean
+    collaboration: boolean
   }
 }
 
 export interface UserRecognition {
   id: string
-  user_id: string
+  user_id?: string
   name: string
   role: string
   specialization?: string
   greeting_template?: string
   is_active: boolean
-  created_at: string
-  updated_at: string
 }
 
-export interface MasterPrompt {
+export interface WorkAnalysis {
   id: string
-  name: string
-  prompt: string
-  category: string
-  priority: number
-  is_active: boolean
+  original_work: string
+  analysis_result: string
+  improved_version: string
+  accuracy_score: number
+  cross_references: any[]
+  related_documents: any[]
+  total_references: number
+  analysis_status: 'pending' | 'processing' | 'completed' | 'error'
+}
+
+export interface CollaborativeWork {
+  id: string
+  title: string
+  type: 'research' | 'clinical' | 'development' | 'analysis'
+  content: string
+  participants: string[]
+  status: 'active' | 'completed' | 'archived'
   created_at: string
   updated_at: string
 }
 
 export class GPTBuilderService {
+  
+  // ===========================================================================
   // 📚 GERENCIAMENTO DE DOCUMENTOS MESTRES
-
-  // Buscar todos os documentos
+  // ===========================================================================
+  
+  /**
+   * Buscar todos os documentos mestres
+   */
   async getDocuments(): Promise<DocumentMaster[]> {
     try {
+      console.log('📚 Buscando documentos mestres...')
+      
       const { data, error } = await supabase
         .from('documentos_mestres')
         .select('*')
+        .eq('is_active', true)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ Erro ao buscar documentos:', error)
+        throw error
+      }
+      
+      console.log(`✅ ${data?.length || 0} documentos encontrados`)
       return data || []
     } catch (error) {
-      console.error('Erro ao buscar documentos:', error)
-      throw error
+      console.error('❌ Erro ao buscar documentos:', error)
+      return []
     }
   }
 
-  // Buscar documentos por tipo
+  /**
+   * Buscar documentos por tipo
+   */
   async getDocumentsByType(type: string): Promise<DocumentMaster[]> {
     try {
+      console.log(`📚 Buscando documentos do tipo: ${type}`)
+      
       const { data, error } = await supabase
         .from('documentos_mestres')
         .select('*')
@@ -80,76 +117,238 @@ export class GPTBuilderService {
         .order('created_at', { ascending: false })
 
       if (error) throw error
+      
+      console.log(`✅ ${data?.length || 0} documentos encontrados`)
       return data || []
     } catch (error) {
-      console.error('Erro ao buscar documentos por tipo:', error)
-      throw error
+      console.error('❌ Erro ao buscar documentos por tipo:', error)
+      return []
     }
   }
 
-  // Criar novo documento
+  /**
+   * Buscar documentos por texto
+   */
+  async searchDocuments(query: string): Promise<DocumentMaster[]> {
+    try {
+      console.log(`🔍 Buscando documentos com: "${query}"`)
+      
+      // Usar função SQL de busca por similaridade
+      const { data, error } = await supabase
+        .rpc('search_documents_by_text', {
+          search_query: query,
+          limit_results: 10
+        })
+
+      if (error) {
+        // Fallback para busca simples
+        console.warn('⚠️ Busca avançada falhou, usando fallback...')
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('documentos_mestres')
+          .select('*')
+          .eq('is_active', true)
+          .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+          .limit(10)
+        
+        if (fallbackError) throw fallbackError
+        return fallbackData || []
+      }
+      
+      console.log(`✅ ${data?.length || 0} documentos encontrados`)
+      return data || []
+    } catch (error) {
+      console.error('❌ Erro ao buscar documentos:', error)
+      return []
+    }
+  }
+
+  /**
+   * Criar novo documento mestre
+   */
   async createDocument(
     document: Omit<DocumentMaster, 'id' | 'created_at' | 'updated_at'>
-  ): Promise<DocumentMaster> {
+  ): Promise<DocumentMaster | null> {
     try {
+      console.log(`📝 Criando documento: "${document.title}"`)
+      
       const { data, error } = await supabase
         .from('documentos_mestres')
         .insert({
-          ...document,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          title: document.title,
+          content: document.content,
+          type: document.type,
+          category: document.category || 'general',
+          is_active: true
         })
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ Erro ao criar documento:', error)
+        throw error
+      }
+      
+      console.log('✅ Documento criado com sucesso!')
+      
+      // Registrar no histórico de treinamento
+      await this.recordTrainingHistory(data.id, 'create')
+      
       return data
     } catch (error) {
-      console.error('Erro ao criar documento:', error)
-      throw error
+      console.error('❌ Erro ao criar documento:', error)
+      return null
     }
   }
 
-  // Atualizar documento
-  async updateDocument(id: string, updates: Partial<DocumentMaster>): Promise<DocumentMaster> {
+  /**
+   * Atualizar documento
+   */
+  async updateDocument(id: string, updates: Partial<DocumentMaster>): Promise<DocumentMaster | null> {
     try {
+      console.log(`📝 Atualizando documento: ${id}`)
+      
       const { data, error } = await supabase
         .from('documentos_mestres')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updates)
         .eq('id', id)
         .select()
         .single()
 
       if (error) throw error
+      
+      console.log('✅ Documento atualizado!')
+      
+      // Registrar no histórico
+      await this.recordTrainingHistory(id, 'update', updates)
+      
       return data
     } catch (error) {
-      console.error('Erro ao atualizar documento:', error)
-      throw error
+      console.error('❌ Erro ao atualizar documento:', error)
+      return null
     }
   }
 
-  // Deletar documento (soft delete)
-  async deleteDocument(id: string): Promise<void> {
+  /**
+   * Deletar documento (soft delete)
+   */
+  async deleteDocument(id: string): Promise<boolean> {
     try {
+      console.log(`🗑️ Deletando documento: ${id}`)
+      
       const { error } = await supabase
         .from('documentos_mestres')
         .update({ is_active: false })
         .eq('id', id)
 
       if (error) throw error
+      
+      console.log('✅ Documento deletado!')
+      
+      // Registrar no histórico
+      await this.recordTrainingHistory(id, 'delete')
+      
+      return true
     } catch (error) {
-      console.error('Erro ao deletar documento:', error)
+      console.error('❌ Erro ao deletar documento:', error)
+      return false
+    }
+  }
+
+  // ===========================================================================
+  // 📄 UPLOAD E EXTRAÇÃO DE DOCUMENTOS
+  // ===========================================================================
+
+  /**
+   * Upload de arquivo DOCX/PDF e extração automática
+   */
+  async uploadAndExtractDocument(
+    file: File,
+    type: DocumentMaster['type'],
+    category: string
+  ): Promise<DocumentMaster | null> {
+    try {
+      console.log(`📤 Fazendo upload de: ${file.name}`)
+      
+      let extractedText = ''
+      
+      // Extrair texto baseado no tipo de arquivo
+      if (file.name.endsWith('.docx')) {
+        extractedText = await this.extractFromDocx(file)
+      } else if (file.name.endsWith('.pdf')) {
+        extractedText = await this.extractFromPdf(file)
+      } else if (file.name.endsWith('.txt')) {
+        extractedText = await file.text()
+      } else {
+        throw new Error('Formato de arquivo não suportado')
+      }
+      
+      if (!extractedText || extractedText.trim().length === 0) {
+        throw new Error('Não foi possível extrair texto do documento')
+      }
+      
+      console.log(`✅ Texto extraído: ${extractedText.length} caracteres`)
+      
+      // Criar documento com texto extraído
+      const document = await this.createDocument({
+        title: file.name.replace(/\.(docx|pdf|txt)$/, ''),
+        content: extractedText,
+        type,
+        category,
+        is_active: true
+      })
+      
+      return document
+    } catch (error) {
+      console.error('❌ Erro ao fazer upload:', error)
+      return null
+    }
+  }
+
+  /**
+   * Extrair texto de arquivo DOCX
+   */
+  private async extractFromDocx(file: File): Promise<string> {
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      const result = await mammoth.extractRawText({ arrayBuffer })
+      return result.value
+    } catch (error) {
+      console.error('❌ Erro ao extrair DOCX:', error)
       throw error
     }
   }
 
-  // 🔧 CONFIGURAÇÃO DA NÔA
+  /**
+   * Extrair texto de arquivo PDF
+   */
+  private async extractFromPdf(file: File): Promise<string> {
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      const pdf = await getDocument({ data: arrayBuffer }).promise
+      let fullText = ''
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i)
+        const textContent = await page.getTextContent()
+        const pageText = textContent.items.map((item: any) => item.str).join(' ')
+        fullText += pageText + '\n'
+      }
+      
+      return fullText
+    } catch (error) {
+      console.error('❌ Erro ao extrair PDF:', error)
+      throw error
+    }
+  }
 
-  // Obter configuração atual da Nôa
-  async getNoaConfig(): Promise<NoaConfig> {
+  // ===========================================================================
+  // 🔧 CONFIGURAÇÃO DA NÔA
+  // ===========================================================================
+
+  /**
+   * Buscar configuração atual
+   */
+  async getConfig(): Promise<NoaConfig | null> {
     try {
       const { data, error } = await supabase
         .from('noa_config')
@@ -157,364 +356,177 @@ export class GPTBuilderService {
         .eq('id', 'main')
         .single()
 
-      if (error) {
-        // 403 (RLS) ou 406 (preferência de cabeçalho) → usar defaults silenciosamente
-        // @ts-ignore - alguns drivers expõem .code
-        const code = (error as any)?.code
-        if (code === 'PGRST116' || code === 'PGRST301' || code === '42501') {
-          return {
-            personality: '',
-            greeting: '',
-            expertise: '',
-            tone: 'professional',
-            recognition: {
-              drRicardoValenca: true,
-              autoGreeting: true,
-              personalizedResponse: true,
-            },
-          }
-        }
-        throw error
-      }
-      return (
-        data?.config || {
-          personality: '',
-          greeting: '',
-          expertise: '',
-          tone: 'professional',
-          recognition: {
-            drRicardoValenca: false,
-            autoGreeting: false,
-            personalizedResponse: false,
-          },
-        }
-      )
+      if (error) throw error
+      return data?.config as NoaConfig
     } catch (error) {
-      console.error('Erro ao obter configuração da Nôa:', error)
-      // Fallback final – mantém app funcional
-      return {
-        personality: '',
-        greeting: '',
-        expertise: '',
-        tone: 'professional',
-        recognition: {
-          drRicardoValenca: true,
-          autoGreeting: true,
-          personalizedResponse: true,
-        },
-      }
+      console.error('❌ Erro ao buscar config:', error)
+      return null
     }
   }
 
-  // Salvar configuração da Nôa
-  async saveNoaConfig(config: NoaConfig): Promise<void> {
+  /**
+   * Atualizar configuração
+   */
+  async updateConfig(config: Partial<NoaConfig>): Promise<boolean> {
     try {
-      const { error } = await supabase.from('noa_config').upsert({
-        id: 'main',
-        config,
-        updated_at: new Date().toISOString(),
-      })
+      const currentConfig = await this.getConfig()
+      const newConfig = { ...currentConfig, ...config }
+      
+      const { error } = await supabase
+        .from('noa_config')
+        .update({ config: newConfig })
+        .eq('id', 'main')
 
       if (error) throw error
+      
+      console.log('✅ Configuração atualizada!')
+      return true
     } catch (error) {
-      console.error('Erro ao salvar configuração da Nôa:', error)
-      throw error
+      console.error('❌ Erro ao atualizar config:', error)
+      return false
     }
   }
 
-  // 👤 RECONHECIMENTO DE USUÁRIOS
+  // ===========================================================================
+  // 🤝 SISTEMA DE COLABORAÇÃO
+  // ===========================================================================
 
-  // Buscar usuário por email
-  async recognizeUser(email: string): Promise<UserRecognition | null> {
+  /**
+   * Criar trabalho colaborativo
+   */
+  async createCollaborativeWork(work: Omit<CollaborativeWork, 'id' | 'created_at' | 'updated_at'>): Promise<CollaborativeWork | null> {
     try {
+      const workId = `work_${Date.now()}`
+      
       const { data, error } = await supabase
-        .from('user_recognition')
-        .select(
-          `
-          *,
-          auth.users!inner(email)
-        `
-        )
-        .eq('auth.users.email', email)
-        .eq('is_active', true)
-        .single()
-
-      if (error && error.code !== 'PGRST116') throw error
-      if (!data || typeof data !== 'object' || 'error' in data) {
-        return null
-      }
-      return data as UserRecognition
-    } catch (error) {
-      console.error('Erro ao reconhecer usuário:', error)
-      throw error
-    }
-  }
-
-  // Adicionar/atualizar reconhecimento de usuário
-  async upsertUserRecognition(recognition: Partial<UserRecognition>): Promise<UserRecognition> {
-    try {
-      const { data, error } = await supabase
-        .from('user_recognition')
-        .upsert({
-          ...recognition,
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-      return data
-    } catch (error) {
-      console.error('Erro ao salvar reconhecimento de usuário:', error)
-      throw error
-    }
-  }
-
-  // 📝 PROMPTS MESTRES
-
-  // Buscar prompts mestres
-  async getMasterPrompts(): Promise<MasterPrompt[]> {
-    try {
-      const { data, error } = await supabase
-        .from('master_prompts')
-        .select('*')
-        .eq('is_active', true)
-        .order('priority', { ascending: true })
-
-      if (error) throw error
-      return data || []
-    } catch (error) {
-      console.error('Erro ao buscar prompts mestres:', error)
-      throw error
-    }
-  }
-
-  // Criar prompt mestre
-  async createMasterPrompt(
-    prompt: Omit<MasterPrompt, 'id' | 'created_at' | 'updated_at'>
-  ): Promise<MasterPrompt> {
-    try {
-      const { data, error } = await supabase
-        .from('master_prompts')
+        .from('collaborative_works')
         .insert({
-          ...prompt,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          id: workId,
+          ...work
         })
         .select()
         .single()
 
       if (error) throw error
+      
+      console.log('✅ Trabalho colaborativo criado!')
       return data
     } catch (error) {
-      console.error('Erro ao criar prompt mestre:', error)
-      throw error
+      console.error('❌ Erro ao criar trabalho:', error)
+      return null
     }
   }
 
-  // 📊 ESTATÍSTICAS E RELATÓRIOS
-
-  // Obter estatísticas da base de conhecimento
-  async getKnowledgeStats(): Promise<{
-    totalDocuments: number
-    documentsByType: Record<string, number>
-    totalPrompts: number
-    lastUpdate: string
-  }> {
+  /**
+   * Buscar trabalhos colaborativos
+   */
+  async getCollaborativeWorks(status?: string): Promise<CollaborativeWork[]> {
     try {
-      const [documents, prompts] = await Promise.all([this.getDocuments(), this.getMasterPrompts()])
-
-      const documentsByType = documents.reduce(
-        (acc, doc) => {
-          acc[doc.type] = (acc[doc.type] || 0) + 1
-          return acc
-        },
-        {} as Record<string, number>
-      )
-
-      const lastUpdate =
-        documents.length > 0
-          ? documents.reduce(
-              (latest, doc) =>
-                new Date(doc.updated_at) > new Date(latest) ? doc.updated_at : latest,
-              documents[0].updated_at
-            )
-          : new Date().toISOString()
-
-      return {
-        totalDocuments: documents.filter(d => d.is_active).length,
-        documentsByType,
-        totalPrompts: prompts.length,
-        lastUpdate,
-      }
-    } catch (error) {
-      console.error('Erro ao obter estatísticas:', error)
-      throw error
-    }
-  }
-
-  // 🔍 BUSCA INTELIGENTE
-
-  // Buscar documentos por conteúdo
-  async searchDocuments(query: string): Promise<DocumentMaster[]> {
-    try {
-      console.log('🔍 Buscando documentos com query:', query)
-
-      // Sanitizar query para evitar problemas com caracteres especiais
-      const sanitizedQuery = query
-        .replace(/[%_\\]/g, '\\$&')
-        .replace(/[#🌟📋📊🏗️🧠🎯🖥️🧩🗄️🔧🎊]/g, '') // Remove emojis e caracteres especiais
-        .substring(0, 100) // Limita o tamanho da query
-
-      const { data, error } = await supabase
-        .from('documentos_mestres')
+      let query = supabase
+        .from('collaborative_works')
         .select('*')
-        .or(
-          `title.ilike.%${sanitizedQuery}%,content.ilike.%${sanitizedQuery}%,category.ilike.%${sanitizedQuery}%`
-        )
-        .eq('is_active', true)
-        .order('updated_at', { ascending: false })
-
-      if (error) {
-        console.error('Erro ao buscar documentos:', error)
-        // Fallback: buscar todos os documentos se a busca falhar
-        const { data: fallbackData } = await supabase
-          .from('documentos_mestres')
-          .select('*')
-          .eq('is_active', true)
-          .order('updated_at', { ascending: false })
-          .limit(10)
-
-        return fallbackData || []
+        .order('created_at', { ascending: false })
+      
+      if (status) {
+        query = query.eq('status', status)
       }
-
+      
+      const { data, error } = await query
+      
+      if (error) throw error
       return data || []
     } catch (error) {
-      console.error('Erro ao buscar documentos:', error)
+      console.error('❌ Erro ao buscar trabalhos:', error)
       return []
     }
   }
 
-  // 🎯 GERAR PROMPT CONTEXTUAL
+  // ===========================================================================
+  // 📊 HISTÓRICO E AUDITORIA
+  // ===========================================================================
 
-  // Gerar prompt contextual baseado nos documentos mestres
-  async generateContextualPrompt(context: string, userType?: string): Promise<string> {
+  /**
+   * Registrar ação no histórico de treinamento
+   */
+  private async recordTrainingHistory(
+    documentId: string,
+    action: string,
+    changes?: any
+  ): Promise<void> {
     try {
-      const [config, documents, prompts] = await Promise.all([
-        this.getNoaConfig(),
-        this.getDocuments(),
-        this.getMasterPrompts(),
-      ])
-
-      let contextualPrompt = `Você é Nôa Esperanza, assistente médica especializada.`
-
-      // Adicionar personalidade
-      if (config.personality) {
-        contextualPrompt += `\n\nPERSONALIDADE:\n${config.personality}`
-      }
-
-      // Adicionar especialização
-      if (config.expertise) {
-        contextualPrompt += `\n\nESPECIALIZAÇÃO:\n${config.expertise}`
-      }
-
-      // Adicionar contexto específico
-      if (context) {
-        const relevantDocs = documents.filter(
-          doc =>
-            doc.content.toLowerCase().includes(context.toLowerCase()) ||
-            doc.title.toLowerCase().includes(context.toLowerCase())
-        )
-
-        if (relevantDocs.length > 0) {
-          contextualPrompt += `\n\nCONTEXTO RELEVANTE:\n`
-          relevantDocs.slice(0, 3).forEach(doc => {
-            contextualPrompt += `${doc.title}: ${doc.content.substring(0, 200)}...\n`
-          })
-        }
-      }
-
-      // Adicionar prompts mestres relevantes
-      const relevantPrompts = prompts.filter(p => p.category === context || p.priority === 1)
-
-      if (relevantPrompts.length > 0) {
-        contextualPrompt += `\n\nINSTRUÇÕES ESPECÍFICAS:\n`
-        relevantPrompts.forEach(prompt => {
-          contextualPrompt += `${prompt.prompt}\n`
+      await supabase
+        .from('training_history')
+        .insert({
+          document_id: documentId,
+          action,
+          changes: changes || null
         })
-      }
-
-      return contextualPrompt
     } catch (error) {
-      console.error('Erro ao gerar prompt contextual:', error)
-      throw error
+      console.error('⚠️ Erro ao registrar histórico:', error)
     }
   }
 
-  // 🔄 SINCRONIZAÇÃO COM SISTEMA DE IA
-
-  // Sincronizar documentos com o sistema de aprendizados
-  async syncWithAILearning(): Promise<void> {
+  /**
+   * Buscar histórico de treinamento
+   */
+  async getTrainingHistory(limit: number = 50): Promise<any[]> {
     try {
-      const documents = await this.getDocuments()
-      const knowledgeDocs = documents.filter(doc => doc.type === 'knowledge' && doc.is_active)
+      const { data, error } = await supabase
+        .from('training_history')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit)
 
-      // Converter documentos mestres em aprendizados
-      for (const doc of knowledgeDocs) {
-        const learningData = {
-          keyword: doc.title.toLowerCase(),
-          context: doc.category,
-          user_message: `Informação sobre ${doc.title}`,
-          ai_response: doc.content,
-          category: doc.category,
-          confidence_score: 0.9,
-          usage_count: 0,
-        }
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('❌ Erro ao buscar histórico:', error)
+      return []
+    }
+  }
 
-        // Verificar se já existe
-        const { data: existing } = await supabase
-          .from('ai_learning')
-          .select('id')
-          .eq('keyword', learningData.keyword)
-          .single()
+  // ===========================================================================
+  // 🔍 BUSCA CONTEXTUAL INTEGRADA
+  // ===========================================================================
 
-        if (!existing) {
-          await supabase.from('ai_learning').insert(learningData)
+  /**
+   * Busca integrada em todas as fontes de conhecimento
+   */
+  async getIntegratedContext(userMessage: string): Promise<any> {
+    try {
+      console.log(`🔍 Buscando contexto integrado para: "${userMessage}"`)
+      
+      const { data, error } = await supabase
+        .rpc('get_integrated_context', {
+          user_message: userMessage,
+          limit_results: 5
+        })
+
+      if (error) {
+        console.warn('⚠️ Busca integrada falhou, usando fallback...')
+        // Fallback: buscar separadamente
+        const docs = await this.searchDocuments(userMessage)
+        return {
+          documents: docs.slice(0, 5),
+          learnings: [],
+          prompts: [],
+          total_results: docs.length
         }
       }
-
-      console.log('✅ Sincronização com IA Learning concluída')
+      
+      console.log(`✅ Contexto encontrado: ${data?.total_results || 0} resultados`)
+      return data
     } catch (error) {
-      console.error('Erro na sincronização com IA Learning:', error)
-      throw error
+      console.error('❌ Erro na busca integrada:', error)
+      return {
+        documents: [],
+        learnings: [],
+        prompts: [],
+        total_results: 0
+      }
     }
   }
 }
 
-// Instância global do serviço
+// Exportar instância única
 export const gptBuilderService = new GPTBuilderService()
-
-// 🌀 GPT BUILDER V2 - ENRIQUECIMENTO COM GRAMÁTICA NOA
-// Enriquece mensagem com metodologia da Arte da Entrevista Clínica
-export function enrichWithNoaGrammar(message: string, docs: any[], context: string = '') {
-  const baseInstructions = `
-Você é Nôa Esperanza, assistente clínica e simbólica. Sua missão é escutar profundamente, organizar o raciocínio clínico com empatia e precisão, e responder com base nos documentos abaixo e na metodologia da Arte da Entrevista Clínica.
-
-Nunca dê respostas genéricas. Cada palavra deve respeitar o que foi dito pelo usuário e o que está documentado.
-
-Método de resposta:
-1. Nomear o que foi trazido (escuta ativa).
-2. Relacionar com a base documental.
-3. Responder com empatia e linguagem acessível.
-
-Documentos relevantes:
-${docs.map((d, i) => `(${i + 1}) ${d.content}`).join('\n\n')}
-
-Histórico simbólico do usuário:
-${context}
-
-Mensagem do usuário:
-${message}
-`
-  return baseInstructions
-}

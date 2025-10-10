@@ -116,6 +116,17 @@ export class ClinicalAssessmentService {
     
     let limpa = queixa.trim()
     
+    // 🚫 FILTRO: Rejeitar queixas inválidas
+    const queixasInvalidas = [
+      'si', 'so', 'soso', 'sim', 'nao', 'não', 'ok', 'certo',
+      'oi', 'olá', 'ola', 'apenas', 'nada', 'chega'
+    ]
+    
+    if (limpa.length < 5 || queixasInvalidas.includes(limpa.toLowerCase())) {
+      console.warn(`⚠️ Queixa inválida detectada: "${limpa}". Retornando vazio.`)
+      return ''
+    }
+    
     // Remover palavras iniciais comuns
     const palavrasRemover = [
       'apenas essa', 'apenas', 'só essa', 'so essa',
@@ -503,6 +514,24 @@ export class ClinicalAssessmentService {
       throw new Error('Nenhuma avaliação ativa')
     }
 
+    // 🚪 DETECÇÃO DE COMANDOS DE SAÍDA: Verifica ANTES de processar
+    const answerLower = answer.toLowerCase().trim()
+    const comandosSaida = [
+      'sair', 'parar', 'cancelar', 'desistir', 'encerrar', 'encerra',
+      'nao quero', 'não quero', 'chat livre', 'so conversar', 'só conversar',
+      'quero conversar', 'desisto', 'chega de avaliacao', 'chega de avaliação'
+    ]
+    
+    const ehComandoSaida = comandosSaida.some(cmd => 
+      answerLower.includes(cmd) && answer.length < 100
+    )
+    
+    if (ehComandoSaida) {
+      console.warn('🚪 Comando de saída detectado. NÃO salvando como resposta:', answer)
+      // NÃO salva como resposta, apenas retorna
+      return
+    }
+
     // 🛡️ FILTRO: Não salvar respostas de finalização como dados reais
     const respostasFinalizacao = [
       'só isso',
@@ -528,7 +557,7 @@ export class ClinicalAssessmentService {
       'poxa'
     ]
     
-    const answerLower = answer.toLowerCase().trim()
+    // answerLower já foi declarado acima
     const ehFinalizacao = respostasFinalizacao.some(f => 
       answerLower === f || // Exatamente igual
       answerLower === f + '?' || // Com interrogação

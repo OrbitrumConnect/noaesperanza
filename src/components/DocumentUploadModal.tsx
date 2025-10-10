@@ -1,208 +1,283 @@
-import React, { useState } from 'react'
-import { aiLearningService } from '../services/aiLearningService'
+// 📤 DOCUMENT UPLOAD MODAL - SISTEMA HÍBRIDO
+// Upload de DOCX/PDF com extração automática
+// ==============================================================================
+
+import { useState } from 'react'
+import { gptBuilderService, DocumentMaster } from '../services/gptBuilderService'
 
 interface DocumentUploadModalProps {
+  isOpen: boolean
   onClose: () => void
+  onSuccess: (document: DocumentMaster) => void
 }
 
-const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({ onClose }) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [category, setCategory] = useState('general')
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [extractedText, setExtractedText] = useState('')
+export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess
+}) => {
+  const [file, setFile] = useState<File | null>(null)
+  const [type, setType] = useState<DocumentMaster['type']>('knowledge')
+  const [category, setCategory] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const [progress, setProgress] = useState<string>('')
+  const [error, setError] = useState<string>('')
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      setSelectedFile(file)
-      // Simular extração de texto (em produção, usar uma biblioteca real)
-      setExtractedText(`Texto extraído de ${file.name}...`)
+  if (!isOpen) return null
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile) {
+      // Validar tipo de arquivo
+      const validTypes = ['.docx', '.pdf', '.txt']
+      const fileExtension = selectedFile.name.toLowerCase().substring(selectedFile.name.lastIndexOf('.'))
+      
+      if (!validTypes.includes(fileExtension)) {
+        setError('Formato não suportado. Use DOCX, PDF ou TXT.')
+        return
+      }
+      
+      setFile(selectedFile)
+      setError('')
     }
   }
 
   const handleUpload = async () => {
-    if (!selectedFile || !title.trim()) return
+    if (!file) {
+      setError('Selecione um arquivo')
+      return
+    }
 
-    setUploading(true)
+    if (!category.trim()) {
+      setError('Digite uma categoria')
+      return
+    }
+
     try {
-      // Simular processamento do documento
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Extrair palavras-chave do texto
-      const keywords = await aiLearningService.detectKeywords(extractedText)
-      
-      // Salvar como aprendizado
-      await aiLearningService.saveInteraction(
-        `Documento: ${title}`,
-        `Conteúdo do documento: ${extractedText}`,
+      setIsUploading(true)
+      setProgress('📤 Fazendo upload...')
+      setError('')
+
+      // Upload e extração automática
+      setProgress('🔍 Extraindo texto do documento...')
+      const document = await gptBuilderService.uploadAndExtractDocument(
+        file,
+        type,
         category
       )
 
-      // Adicionar palavras-chave específicas
-      for (const keyword of keywords) {
-        await aiLearningService.addKeyword(keyword, category, 0.8)
+      if (!document) {
+        throw new Error('Falha ao processar documento')
       }
 
-      alert('Documento processado e conhecimento adicionado à IA!')
-      onClose()
-    } catch (error) {
-      console.error('Erro ao processar documento:', error)
-      alert('Erro ao processar documento')
+      setProgress('✅ Documento processado com sucesso!')
+      
+      // Limpar formulário
+      setFile(null)
+      setCategory('')
+      
+      // Callback de sucesso
+      onSuccess(document)
+      
+      // Fechar após 1 segundo
+      setTimeout(() => {
+        onClose()
+        setProgress('')
+      }, 1000)
+
+    } catch (err: any) {
+      console.error('❌ Erro no upload:', err)
+      setError(err.message || 'Erro ao fazer upload')
+      setProgress('')
     } finally {
-      setUploading(false)
+      setIsUploading(false)
+    }
+  }
+
+  const handleClose = () => {
+    if (!isUploading) {
+      setFile(null)
+      setCategory('')
+      setError('')
+      setProgress('')
+      onClose()
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold">📄 Upload de Documentos</h2>
-              <p className="text-orange-100">Adicionar conhecimento à IA através de documentos</p>
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <span className="text-2xl">📤</span>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">Upload de Documento</h2>
+                <p className="text-white/80 text-sm">Extraia conhecimento de DOCX, PDF ou TXT</p>
+              </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 text-2xl"
-            >
-              ×
-            </button>
+            {!isUploading && (
+              <button
+                onClick={handleClose}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto">
-          
-          {/* Informações do Documento */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Título do Documento
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ex: Guia de Cannabis Medicinal"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Categoria
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="general">Geral</option>
-                <option value="medical">Médico</option>
-                <option value="cannabis">Cannabis</option>
-                <option value="neurology">Neurologia</option>
-                <option value="nephrology">Nefrologia</option>
-                <option value="evaluation">Avaliação</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Descrição
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Breve descrição do conteúdo do documento..."
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-          </div>
-
-          {/* Upload de Arquivo */}
-          <div className="space-y-4">
+        {/* Body */}
+        <div className="p-6 space-y-6">
+          {/* Seleção de Arquivo */}
+          <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Selecionar Arquivo
+              📄 Arquivo
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <div className="relative">
               <input
                 type="file"
-                accept=".pdf,.doc,.docx,.txt"
-                onChange={handleFileSelect}
-                className="hidden"
-                id="file-upload"
+                onChange={handleFileChange}
+                accept=".docx,.pdf,.txt"
+                disabled={isUploading}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               />
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer flex flex-col items-center"
-              >
-                <i className="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
-                <span className="text-sm text-gray-600">
-                  Clique para selecionar ou arraste o arquivo aqui
-                </span>
-                <span className="text-xs text-gray-500 mt-1">
-                  PDF, DOC, DOCX, TXT (máx. 10MB)
-                </span>
-              </label>
             </div>
-            
-            {selectedFile && (
-              <div className="bg-green-50 p-3 rounded-lg">
-                <p className="text-sm text-green-800">
-                  <i className="fas fa-check-circle mr-2"></i>
-                  Arquivo selecionado: {selectedFile.name}
-                </p>
+            {file && (
+              <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                <span className="text-lg">✅</span>
+                <span className="font-medium">{file.name}</span>
+                <span className="text-gray-400">({(file.size / 1024).toFixed(1)} KB)</span>
               </div>
             )}
+            <p className="text-xs text-gray-500">
+              Formatos suportados: DOCX, PDF, TXT (máximo 10MB)
+            </p>
           </div>
 
-          {/* Texto Extraído */}
-          {extractedText && (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Texto Extraído (Preview)
-              </label>
-              <div className="bg-gray-50 p-3 rounded-lg max-h-32 overflow-y-auto">
-                <p className="text-sm text-gray-700">{extractedText}</p>
-              </div>
+          {/* Tipo de Documento */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              📚 Tipo de Conhecimento
+            </label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as DocumentMaster['type'])}
+              disabled={isUploading}
+              className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <option value="knowledge">🧠 Conhecimento Médico</option>
+              <option value="personality">💭 Personalidade/Comportamento</option>
+              <option value="instructions">📋 Instruções/Protocolos</option>
+              <option value="examples">💡 Exemplos/Casos</option>
+            </select>
+          </div>
+
+          {/* Categoria */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              🏷️ Categoria
+            </label>
+            <input
+              type="text"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="Ex: Cannabis Medicinal, Neurologia, IMRE..."
+              disabled={isUploading}
+              className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            />
+            <p className="text-xs text-gray-500">
+              Ajuda a organizar e buscar o conhecimento depois
+            </p>
+          </div>
+
+          {/* Progresso */}
+          {progress && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-blue-800 text-sm font-medium flex items-center gap-2">
+                {progress.includes('✅') ? (
+                  <span className="text-lg">✅</span>
+                ) : (
+                  <svg className="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                )}
+                {progress}
+              </p>
             </div>
           )}
 
-          {/* Botões */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleUpload}
-              disabled={!selectedFile || !title.trim() || uploading}
-              className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {uploading ? (
-                <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-upload mr-2"></i>
-                  Processar Documento
-                </>
-              )}
-            </button>
+          {/* Erro */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800 text-sm font-medium flex items-center gap-2">
+                <span className="text-lg">⚠️</span>
+                {error}
+              </p>
+            </div>
+          )}
+
+          {/* Informações Adicionais */}
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 space-y-2">
+            <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+              <span>💡</span>
+              O que acontece após o upload:
+            </h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li className="flex items-start gap-2">
+                <span>1️⃣</span>
+                <span>O texto é extraído automaticamente do documento</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>2️⃣</span>
+                <span>É salvo na base de conhecimento da Nôa</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>3️⃣</span>
+                <span>A IA passa a usar esse conhecimento nas respostas</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span>4️⃣</span>
+                <span>Você pode editar ou remover depois</span>
+              </li>
+            </ul>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t">
+          <button
+            onClick={handleClose}
+            disabled={isUploading}
+            className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleUpload}
+            disabled={!file || !category.trim() || isUploading}
+            className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+          >
+            {isUploading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Processando...
+              </span>
+            ) : (
+              '📤 Fazer Upload'
+            )}
+          </button>
         </div>
       </div>
     </div>
   )
 }
-
-export default DocumentUploadModal

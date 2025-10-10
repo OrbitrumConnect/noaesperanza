@@ -9,6 +9,8 @@ import { clinicalAssessmentService, ClinicalAssessmentData } from '../services/c
 import ThoughtBubble from '../components/ThoughtBubble'
 import MatrixBackground from '../components/MatrixBackground'
 import { noaVisionIA } from '../gpt/noaVisionIA' // 🧠 NoaVision IA Local
+import { DocumentUploadModal } from '../components/DocumentUploadModal'
+import { gptBuilderService, DocumentMaster } from '../services/gptBuilderService'
 
 interface Message {
   id: string
@@ -44,6 +46,11 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
   const [isProcessing, setIsProcessing] = useState(false)
   const currentAudioRef = useRef<HTMLAudioElement | null>(null)
   const navigate = useNavigate()
+  
+  // GPT Builder - Upload de documentos
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [documents, setDocuments] = useState<DocumentMaster[]>([])
+  const [showDocumentsList, setShowDocumentsList] = useState(false)
   
   // Memória do usuário
   const [userMemory, setUserMemory] = useState(() => {
@@ -128,8 +135,36 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
 
       // Se está em modo avaliação, processa a resposta
       if (modoAvaliacao && assessment) {
-        // 🚪 DETECÇÃO DE SAÍDA: Usuário quer sair/pausar?
-        const querSair = userMessage.toLowerCase().match(/^(sair|parar|cancelar|desistir|voltar|chat livre|só conversar|quero conversar)/)
+        // 🧠 ANÁLISE CONTEXTUAL INTELIGENTE: Usar IA para detectar intenção
+        const intencaoDetectada = await analisarIntencaoUsuario(userMessage, assessment.stage)
+        
+        if (intencaoDetectada.tipo === 'sair') {
+          const noaMessage: Message = {
+            id: crypto.randomUUID(),
+            message: `${intencaoDetectada.mensagem}\n\n✅ **Seu progresso está salvo!**\n\nPodemos:\n• Continuar conversando livremente sobre outros assuntos\n• Retomar a avaliação quando quiser (digite "continuar avaliação")\n\nO que prefere agora?`,
+            sender: 'noa',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, noaMessage])
+          await playNoaAudioWithText('Seu progresso está salvo! Podemos conversar livremente ou retomar quando quiser.')
+          setModoAvaliacao(false)
+          setIsTyping(false)
+          return
+        }
+        
+        // 🚪 DETECÇÃO RÁPIDA (fallback): Palavras-chave explícitas
+        const msgLower = userMessage.toLowerCase()
+        const querSair = msgLower.includes('sair') ||
+                        msgLower.includes('parar') ||
+                        msgLower.includes('cancelar') ||
+                        msgLower.includes('desistir') ||
+                        msgLower.includes('encerrar') ||
+                        msgLower.includes('encerra') ||
+                        msgLower.includes('nao quero') ||
+                        msgLower.includes('chat livre') ||
+                        msgLower.includes('so conversar') ||
+                        msgLower.includes('quero conversar') ||
+                        msgLower.match(/^(voltar|desisto|chega)$/)
         
         if (querSair) {
           const noaMessage: Message = {
@@ -412,6 +447,59 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
       }
     } catch (error) {
       console.error('Erro ao finalizar avaliação:', error)
+    }
+  }
+
+  /**
+   * 🧠 Analisa a intenção do usuário usando contexto inteligente
+   */
+  const analisarIntencaoUsuario = async (mensagem: string, stage: string): Promise<{
+    tipo: 'sair' | 'confuso' | 'normal',
+    mensagem: string,
+    confianca: number
+  }> => {
+    const msgLower = mensagem.toLowerCase().trim()
+    
+    // 🚪 PADRÕES DE SAÍDA (alta confiança)
+    const padroesSaida = [
+      /quero (sair|parar|encerrar|cancelar)/,
+      /pode(mos)? (sair|parar|encerrar|cancelar)/,
+      /(nao|não) quero (mais|continuar)/,
+      /chega de (avalia|consulta)/,
+      /vamos (sair|parar|encerrar)/,
+      /(quero|prefiro|melhor) (chat livre|conversar|falar)/,
+    ]
+    
+    for (const padrao of padroesSaida) {
+      if (padrao.test(msgLower)) {
+        console.log('🎯 Intenção detectada: SAIR (padrão regex)')
+        return {
+          tipo: 'sair',
+          mensagem: 'Entendo que você prefere pausar a avaliação.',
+          confianca: 0.95
+        }
+      }
+    }
+    
+    // 🎯 CONTEXTO POR ETAPA: Detectar saída disfarçada de queixa
+    if (stage === 'complaints_list' || stage === 'identification') {
+      // Frases que indicam vontade de sair, não queixas médicas
+      if ((msgLower.includes('sair') || msgLower.includes('parar')) &&
+          (msgLower.includes('daqui') || msgLower.includes('desta') || 
+           msgLower.includes('dessa') || msgLower.includes('agora'))) {
+        console.log('🎯 Intenção detectada: SAIR (contexto: quer sair daqui)')
+        return {
+          tipo: 'sair',
+          mensagem: 'Percebo que você quer encerrar a avaliação.',
+          confianca: 0.90
+        }
+      }
+    }
+    
+    return {
+      tipo: 'normal',
+      mensagem: '',
+      confianca: 1.0
     }
   }
 
