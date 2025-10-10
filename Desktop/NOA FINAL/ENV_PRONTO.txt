@@ -1,0 +1,15 @@
+# ========================================
+# NOA ESPERANZA - CONFIGURAÇÃO FINAL
+# ========================================
+
+# Supabase Configuration
+VITE_SUPABASE_URL=https://lhclqebtkyfftkevumix.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoY2xxZWJ0a3lmZnRrZXZ1bWl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE1MTc5MjEsImV4cCI6MjA0NzA5MzkyMX0.7J1QcP5z-EYEEFRs9lCy9RQnYZFRaEWLxJVgVPZIE8I
+
+# OpenAI Configuration 
+VITE_OPENAI_API_KEY=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
+
+# App Configuration
+VITE_APP_ENVIRONMENT=production
+VITE_APP_VERSION=3.0.0
+
