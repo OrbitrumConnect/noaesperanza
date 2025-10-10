@@ -76,6 +76,12 @@ export class WebSpeechService {
         }
 
         utterance.onerror = (event) => {
+          // 🔇 Suprimir erros normais de áudio (interrupted/canceled)
+          if (event.error === 'interrupted' || event.error === 'canceled') {
+            console.debug('🔇 Áudio interrompido (normal)')
+            resolve() // Resolver sem erro
+            return
+          }
           console.error('❌ Erro na Web Speech API:', event.error)
           reject(new Error(`Web Speech API Error: ${event.error}`))
         }

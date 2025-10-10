@@ -1999,7 +1999,7 @@ ${analiseClinica}
       setMessages(prev => [...prev, concordancia])
       playNoaAudioWithText(concordancia.message)
 
-      // Finalização com recomendação específica
+      // Finalização com recomendação específica (REDUZIDO: 3s → 1.5s)
       setTimeout(async () => {
         // ✅ CARD DE CONSENTIMENTO CLICÁVEL
         setAguardandoConsentimento(true)
@@ -2025,8 +2025,8 @@ ${analiseClinica}
 
         // ✅ Aguarda clique do usuário (processado em getNoaResponse via aguardandoConsentimento)
         // O usuário deve clicar em uma das opções para continuar
-      }, 3000)
-    }, 3000)
+      }, 1500)
+    }, 1500)
   }
 
   const handleSendMessage = (messageText?: string) => {

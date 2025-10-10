@@ -59,6 +59,7 @@ import { supabase } from '../integrations/supabase/client'
 export class ClinicalAssessmentService {
   private currentAssessment: ClinicalAssessmentData | null = null
   private assessmentResponses: AssessmentResponse[] = []
+  private contadorOqMais: number = 0 // 🛡️ LIMITE "O que mais?"
 
   /**
    * Inicia nova avaliação clínica
@@ -101,14 +102,30 @@ export class ClinicalAssessmentService {
 
       case 'complaints_list':
         if (responses.filter(r => r.category === 'complaints').length === 0) {
+          this.contadorOqMais = 0 // Reset
           return "O que trouxe você à nossa avaliação hoje?"
         }
         const lastComplaintResponse = responses.filter(r => r.category === 'complaints').slice(-1)[0]
-        if (lastComplaintResponse && lastComplaintResponse.answer.toLowerCase().includes('não') && 
-            lastComplaintResponse.answer.toLowerCase().includes('mais')) {
+        const complaintCount = responses.filter(r => r.category === 'complaints').length
+        
+        // 🛡️ PROTEÇÃO: Detecta finalização
+        const usuarioTerminou = 
+          (lastComplaintResponse?.answer.toLowerCase().includes('não') && 
+           lastComplaintResponse?.answer.toLowerCase().includes('mais')) ||
+          lastComplaintResponse?.answer.toLowerCase().includes('nada') ||
+          lastComplaintResponse?.answer.toLowerCase().includes('só isso') ||
+          lastComplaintResponse?.answer.toLowerCase().includes('apenas') ||
+          lastComplaintResponse?.answer.toLowerCase().includes('chega') ||
+          this.contadorOqMais >= 2 || // MÁXIMO 2 vezes
+          complaintCount >= 4 // MÁXIMO 4 queixas
+        
+        if (usuarioTerminou) {
+          this.contadorOqMais = 0 // Reset
           this.advanceStage()
           return this.getNextQuestion()
         }
+        
+        this.contadorOqMais++
         return "O que mais?"
 
       case 'main_complaint':
@@ -143,14 +160,31 @@ export class ClinicalAssessmentService {
       case 'medical_history':
         const historyResponses = responses.filter(r => r.category === 'history')
         if (historyResponses.length === 0) {
+          this.contadorOqMais = 0 // Reset
           return "E agora, sobre o restante sua vida até aqui, desde seu nascimento, quais as questões de saúde que você já viveu? Vamos ordenar do mais antigo para o mais recente, o que veio primeiro?"
         }
         const lastHistoryResponse = historyResponses.slice(-1)[0]
-        if (lastHistoryResponse && lastHistoryResponse.answer.toLowerCase().includes('não') && 
-            lastHistoryResponse.answer.toLowerCase().includes('mais')) {
+        const historyCount = historyResponses.length
+        
+        // 🛡️ PROTEÇÃO: Detecta finalização
+        const historyTerminou = 
+          (lastHistoryResponse?.answer.toLowerCase().includes('não') && 
+           lastHistoryResponse?.answer.toLowerCase().includes('mais')) ||
+          lastHistoryResponse?.answer.toLowerCase().includes('nada') ||
+          lastHistoryResponse?.answer.toLowerCase().includes('só isso') ||
+          lastHistoryResponse?.answer.toLowerCase().includes('apenas') ||
+          lastHistoryResponse?.answer.toLowerCase().includes('chega') ||
+          lastHistoryResponse?.answer.toLowerCase().includes('nenhuma') ||
+          this.contadorOqMais >= 2 || // MÁXIMO 2 vezes
+          historyCount >= 4 // MÁXIMO 4 histórias
+        
+        if (historyTerminou) {
+          this.contadorOqMais = 0 // Reset
           this.advanceStage()
           return this.getNextQuestion()
         }
+        
+        this.contadorOqMais++
         return "O que mais?"
 
       case 'family_history':
@@ -159,30 +193,76 @@ export class ClinicalAssessmentService {
         const paternalResponses = familyResponses.filter(r => r.question.includes('pai'))
         
         if (maternalResponses.length === 0) {
+          this.contadorOqMais = 0 // Reset
           return "E na sua família? Começando pela parte de sua mãe, quais as questões de saúde dela e desse lado da família?"
         }
-        if (maternalResponses.length > 0 && maternalResponses.slice(-1)[0].answer.toLowerCase().includes('não') && 
-            maternalResponses.slice(-1)[0].answer.toLowerCase().includes('mais')) {
+        
+        // 🛡️ PROTEÇÃO: Detecta finalização (mãe)
+        const lastMaternal = maternalResponses.slice(-1)[0]
+        const maternalTerminou = 
+          (lastMaternal?.answer.toLowerCase().includes('não') && 
+           lastMaternal?.answer.toLowerCase().includes('mais')) ||
+          lastMaternal?.answer.toLowerCase().includes('nada') ||
+          lastMaternal?.answer.toLowerCase().includes('nenhuma') ||
+          lastMaternal?.answer.toLowerCase().includes('só isso') ||
+          lastMaternal?.answer.toLowerCase().includes('chega') ||
+          this.contadorOqMais >= 2 || // MÁXIMO 2 vezes
+          maternalResponses.length >= 4 // MÁXIMO 4 histórias
+        
+        if (maternalResponses.length > 0 && maternalTerminou) {
+          this.contadorOqMais = 0 // Reset para parte do pai
           return "E por parte de seu pai?"
         }
-        if (paternalResponses.length > 0 && paternalResponses.slice(-1)[0].answer.toLowerCase().includes('não') && 
-            paternalResponses.slice(-1)[0].answer.toLowerCase().includes('mais')) {
+        
+        // 🛡️ PROTEÇÃO: Detecta finalização (pai)
+        const lastPaternal = paternalResponses.slice(-1)[0]
+        const paternalTerminou = 
+          (lastPaternal?.answer.toLowerCase().includes('não') && 
+           lastPaternal?.answer.toLowerCase().includes('mais')) ||
+          lastPaternal?.answer.toLowerCase().includes('nada') ||
+          lastPaternal?.answer.toLowerCase().includes('nenhuma') ||
+          lastPaternal?.answer.toLowerCase().includes('só isso') ||
+          lastPaternal?.answer.toLowerCase().includes('chega') ||
+          this.contadorOqMais >= 2 || // MÁXIMO 2 vezes
+          paternalResponses.length >= 4 // MÁXIMO 4 histórias
+        
+        if (paternalResponses.length > 0 && paternalTerminou) {
+          this.contadorOqMais = 0 // Reset
           this.advanceStage()
           return this.getNextQuestion()
         }
+        
+        this.contadorOqMais++
         return "O que mais?"
 
       case 'lifestyle_habits':
         const habitResponses = responses.filter(r => r.category === 'habits')
         if (habitResponses.length === 0) {
+          this.contadorOqMais = 0 // Reset
           return "Além dos hábitos de vida que já verificamos em nossa conversa, que outros hábitos você acha importante mencionar?"
         }
         const lastHabitResponse = habitResponses.slice(-1)[0]
-        if (lastHabitResponse && lastHabitResponse.answer.toLowerCase().includes('não') && 
-            lastHabitResponse.answer.toLowerCase().includes('mais')) {
+        const habitCount = habitResponses.length
+        
+        // 🛡️ PROTEÇÃO: Detecta finalização
+        const habitTerminou = 
+          (lastHabitResponse?.answer.toLowerCase().includes('não') && 
+           lastHabitResponse?.answer.toLowerCase().includes('mais')) ||
+          lastHabitResponse?.answer.toLowerCase().includes('nada') ||
+          lastHabitResponse?.answer.toLowerCase().includes('nenhuma') ||
+          lastHabitResponse?.answer.toLowerCase().includes('só isso') ||
+          lastHabitResponse?.answer.toLowerCase().includes('apenas') ||
+          lastHabitResponse?.answer.toLowerCase().includes('chega') ||
+          this.contadorOqMais >= 2 || // MÁXIMO 2 vezes
+          habitCount >= 4 // MÁXIMO 4 hábitos
+        
+        if (habitTerminou) {
+          this.contadorOqMais = 0 // Reset
           this.advanceStage()
           return this.getNextQuestion()
         }
+        
+        this.contadorOqMais++
         return "O que mais?"
 
       case 'medications_allergies':
