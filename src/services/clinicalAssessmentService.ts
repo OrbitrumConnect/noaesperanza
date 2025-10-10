@@ -60,6 +60,7 @@ export class ClinicalAssessmentService {
   private currentAssessment: ClinicalAssessmentData | null = null
   private assessmentResponses: AssessmentResponse[] = []
   private contadorOqMais: number = 0 // 🛡️ LIMITE "O que mais?"
+  private ultimaPerguntaFeita: string = '' // 🚫 Evita repetir a mesma pergunta
 
   /**
    * Inicia nova avaliação clínica
@@ -144,7 +145,17 @@ export class ClinicalAssessmentService {
           return "Onde você sente essa dor? Como começou?"
         }
         
-        return `De todas essas questões (${complaintsLimpos.join(', ')}), qual mais o(a) incomoda?`
+        const pergunta = `De todas essas questões (${complaintsLimpos.join(', ')}), qual mais o(a) incomoda?`
+        
+        // 🚫 PROTEÇÃO: Se já fez essa pergunta, não repetir!
+        if (this.ultimaPerguntaFeita === pergunta) {
+          console.log('⚠️ Pergunta já feita, avançando automaticamente...')
+          this.advanceStage()
+          return this.getNextQuestion()
+        }
+        
+        this.ultimaPerguntaFeita = pergunta
+        return pergunta
 
       case 'complaint_development':
         const mainComplaint = responses.filter(r => r.category === 'complaints').slice(-1)[0]?.answer

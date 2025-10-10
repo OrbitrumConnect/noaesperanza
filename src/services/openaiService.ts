@@ -386,26 +386,50 @@ class OpenAIService {
     
     // Saudações
     if (userText.match(/^(oi|olá|ola|hey|bom dia|boa tarde|boa noite|e ai)/)) {
-      return `Olá! Sou a Nôa Esperanza 🌿\n\n**Modo offline ativo**, mas totalmente funcional!\n\n**Posso ajudar com:**\n• Avaliação clínica (28 blocos IMRE)\n• Informações sobre cannabis medicinal\n• Orientações de tratamento\n• Navegação no sistema\n\nO que você precisa hoje?`
+      return `Olá! Sou a Nôa Esperanza 🌿\n\nMuito prazer em conhecê-lo! Estou aqui para ajudar com sua saúde e bem-estar.\n\nPosso realizar avaliação clínica completa, orientar sobre cannabis medicinal e muito mais.\n\nComo posso ajudar você hoje?`
     }
     
     // Como está / tudo bem
-    if (userText.match(/(tudo bem|como (você|vc) está|como vai)/)) {
-      return `Estou ótima, obrigada! 😊\n\n**Pronta para ajudar com sua saúde.**\n\n**Posso:**\n✓ Realizar avaliação clínica completa\n✓ Responder sobre cannabis medicinal\n✓ Ver seus relatórios\n✓ Orientar tratamentos\n\nComo posso ajudar você?`
+    if (userText.match(/(tudo bem|como (você|vc|voce) está|como vai|legal|beleza)/)) {
+      return `Estou ótima, muito obrigada por perguntar! 😊\n\nEstou aqui pronta para ajudar com o que você precisar. Seja para conversar sobre sua saúde, fazer uma avaliação clínica ou tirar dúvidas sobre tratamentos.\n\nE você, como está se sentindo?`
+    }
+    
+    // Quem é / sobre você
+    if (userText.match(/(quem (é|e) você|quem (é|e) noa|quem te criou|sobre você|se apresente)/)) {
+      return `Sou a Nôa Esperanza, assistente médica inteligente especializada em neurologia, cannabis medicinal e nefrologia. 🧠🌿\n\nFui desenvolvida pelo Dr. Ricardo e sua equipe para oferecer atendimento humanizado e baseado em evidências científicas.\n\nTenho conhecimento profundo em avaliação clínica pelo protocolo IMRE e posso auxiliar em todo o processo terapêutico.\n\nEstá precisando de ajuda com algo específico?`
     }
     
     // Avaliação clínica
-    if (userText.match(/(avalia|clinica|imre|consulta|sintoma)/)) {
-      return `🏥 **Avaliação Clínica Inicial**\n\nVou realizar uma avaliação completa seguindo o protocolo IMRE (28 blocos).\n\n**Vamos avaliar:**\n• Identificação e queixa principal\n• Lista indiciária (sintomas)\n• História da doença\n• Cannabis medicinal\n• Antecedentes\n• Hábitos\n• Revisão de sistemas\n\n**Primeira pergunta:**\nQual é a sua queixa principal?`
+    if (userText.match(/(avalia|clinica|imre|consulta|sintoma|dor|problema)/)) {
+      return `Entendo que você está buscando avaliação clínica. Vou ajudar!\n\nRealizo uma avaliação completa seguindo o protocolo IMRE (Identificação, Moléstia atual, Revisão de sistemas, Exame físico).\n\nPara começarmos, me conte: qual é a sua principal queixa ou preocupação de saúde no momento?`
     }
     
     // Cannabis
-    if (userText.match(/(cannabis|cbd|thc|tratamento|medicamento)/)) {
-      return `🌿 **Cannabis Medicinal**\n\n**Informações disponíveis:**\n• Produtos (CBD, THC, full spectrum)\n• Dosagens e uso\n• Efeitos esperados\n• Processo de prescrição\n\n**Para iniciar tratamento:**\nPrecisa de avaliação clínica completa.\n\nDeseja começar? (digite "sim" ou "fazer avaliação")`
+    if (userText.match(/(cannabis|cbd|thc|oleo|canabidiol)/)) {
+      return `Sobre cannabis medicinal, posso te orientar! 🌿\n\nA cannabis tem se mostrado eficaz em diversas condições, especialmente dor crônica, ansiedade, insônia e condições neurológicas.\n\nPara prescrição adequada, é importante fazer uma avaliação clínica completa. Assim consigo indicar o melhor produto, dosagem e forma de uso para o seu caso específico.\n\nGostaria de começar a avaliação agora?`
     }
     
-    // Fallback genérico
-    return `Recebi: "${userText}"\n\n💡 **Modo offline** - funciono melhor com:\n• "fazer avaliação clínica"\n• "informações sobre cannabis"\n• "ver meus relatórios"\n• "ajuda"\n\nO que você gostaria?`
+    // Tratamento / medicamento
+    if (userText.match(/(tratamento|medicamento|remedio|prescri)/)) {
+      return `Sobre tratamentos, trabalho de forma personalizada! 💊\n\nCada pessoa é única e merece um plano terapêutico individual. Posso orientar sobre medicamentos convencionais e cannabis medicinal.\n\nPara criar um plano adequado para você, preciso conhecer melhor sua condição. Quer fazer uma avaliação clínica comigo?`
+    }
+    
+    // Ajuda / não entendi
+    if (userText.match(/(ajuda|help|socorro|perdid|não entend)/)) {
+      return `Estou aqui para ajudar! 🤗\n\n**Principais funcionalidades:**\n• Avaliação clínica completa (IMRE)\n• Orientação sobre cannabis medicinal\n• Informações sobre tratamentos\n• Acompanhamento terapêutico\n\nÉ só conversar comigo naturalmente! Pode fazer perguntas, contar seus sintomas ou pedir orientações.\n\nSobre o que gostaria de conversar?`
+    }
+    
+    // Fallback mais inteligente e natural
+    const responses = [
+      `Entendo sua pergunta. No momento estou em modo offline, então minhas respostas são baseadas no conhecimento que já tenho armazenado.\n\nPosso te ajudar especialmente com avaliação clínica e cannabis medicinal. Sobre o que você perguntou, prefere que eu te oriente sobre esses temas ou quer conversar sobre outra coisa?`,
+      
+      `Interessante questão! Embora esteja offline agora, tenho conhecimento extenso em saúde e medicina.\n\nSe sua dúvida é sobre saúde, sintomas ou tratamentos, posso te ajudar bastante! Quer me contar mais detalhes?`,
+      
+      `Vi sua mensagem! 🌿\n\nEstou em modo offline, mas ainda assim posso conversar e ajudar com várias coisas, especialmente relacionadas à saúde.\n\nPoderia reformular sua pergunta ou me contar o que você está precisando? Assim consigo te ajudar melhor!`
+    ]
+    
+    // Escolher resposta aleatória para parecer mais natural
+    return responses[Math.floor(Math.random() * responses.length)]
   }
 }
 
