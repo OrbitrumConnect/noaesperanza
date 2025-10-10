@@ -130,7 +130,21 @@ export class ClinicalAssessmentService {
 
       case 'main_complaint':
         const complaints = responses.filter(r => r.category === 'complaints').map(r => r.answer)
-        return `De todas essas questões (${complaints.join(', ')}), qual mais o(a) incomoda?`
+        
+        // 🧹 LIMPEZA: Remover respostas vazias ou de finalização
+        const complaintsLimpos = complaints.filter(c => c && c.trim().length > 3)
+        
+        if (complaintsLimpos.length === 0) {
+          return "Qual é a sua queixa principal?"
+        }
+        
+        if (complaintsLimpos.length === 1) {
+          // Se só tem 1 queixa, não precisa perguntar "qual mais incomoda"
+          this.advanceStage()
+          return this.getNextQuestion()
+        }
+        
+        return `De todas essas questões (${complaintsLimpos.join(', ')}), qual mais o(a) incomoda?`
 
       case 'complaint_development':
         const mainComplaint = responses.filter(r => r.category === 'complaints').slice(-1)[0]?.answer
@@ -296,6 +310,41 @@ export class ClinicalAssessmentService {
   recordResponse(question: string, answer: string, category: AssessmentResponse['category']): void {
     if (!this.currentAssessment) {
       throw new Error('Nenhuma avaliação ativa')
+    }
+
+    // 🛡️ FILTRO: Não salvar respostas de finalização como dados reais
+    const respostasFinalizacao = [
+      'só isso',
+      'so isso',
+      'apenas',
+      'chega',
+      'nada',
+      'nada mais',
+      'não mais',
+      'não',
+      'nenhuma',
+      'nenhum',
+      'acabou',
+      'e agora',
+      'proxima',
+      'próxima',
+      'avançar',
+      'vamos',
+      'continuar',
+      'seguir'
+    ]
+    
+    const answerLower = answer.toLowerCase().trim()
+    const ehFinalizacao = respostasFinalizacao.some(f => 
+      answerLower === f || // Exatamente igual
+      answerLower === f + '?' || // Com interrogação
+      (answerLower.length < 15 && answerLower.includes(f)) // Curto e contém
+    )
+    
+    // Se for tentativa de finalização, não salvar
+    if (ehFinalizacao) {
+      console.log('🚫 Resposta de finalização detectada, não salvando:', answer)
+      return
     }
 
     const response: AssessmentResponse = {

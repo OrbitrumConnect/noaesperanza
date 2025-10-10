@@ -2743,8 +2743,8 @@ ${analiseClinica}
 
       {/* Área Central - NOA e Pensamentos */}
       <div
-        className="flex-1 flex items-center justify-center relative min-h-screen md:ml-80 ml-0 w-full"
-        style={{ transform: 'translate(-10%, -95%)', pointerEvents: 'auto' }}
+        className="flex-1 flex items-center justify-center relative min-h-screen md:ml-80 ml-0 w-full fixed md:left-80 left-0 top-0 h-full"
+        style={{ pointerEvents: 'auto' }}
         onClick={e => {
           console.log('🎯 CLIQUE NO CONTAINER PRINCIPAL!', e.target)
         }}
@@ -2776,7 +2776,7 @@ ${analiseClinica}
               }}
               onError={e => console.log('⚠️ Vídeo estático não disponível')}
             >
-              <source src="/estatica%20piscando.mp4" type="video/mp4" />
+              <source src="/estatica piscando.mp4" type="video/mp4" />
             </video>
 
             {/* Vídeo falando (quando áudio está tocando) */}
