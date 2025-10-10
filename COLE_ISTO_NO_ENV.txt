@@ -1,0 +1,40 @@
+# ========================================
+# COPIE ISTO PARA O .ENV
+# ========================================
+
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key_here
+VITE_OPENAI_API_KEY=your_openai_api_key_here
+
+VITE_APP_ENVIRONMENT=production
+VITE_APP_VERSION=3.0.0
+
+# ========================================
+# INSTRUÇÕES:
+# ========================================
+# 
+# 1. COLE isto no arquivo .env que acabou de abrir
+# 
+# 2. SUBSTITUA:
+#    your-project → URL do seu Supabase
+#    your_supabase_anon_key_here → chave anon do Supabase  
+#    your_openai_api_key_here → chave OpenAI
+#
+# 3. SALVAR: Ctrl+S
+#
+# 4. REINICIAR:
+#    Ctrl+C no terminal
+#    npm run dev
+#
+# ========================================
+# ONDE PEGAR CHAVES:
+# ========================================
+#
+# SUPABASE:
+# https://supabase.com/dashboard > Seu Projeto > Settings > API
+# 
+# OPENAI:
+# https://platform.openai.com/api-keys > Create new secret key
+#
+# ========================================
+
