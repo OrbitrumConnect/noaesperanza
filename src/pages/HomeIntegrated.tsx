@@ -47,7 +47,13 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
   // Memória do usuário
   const [userMemory, setUserMemory] = useState(() => {
     const saved = localStorage.getItem('noa_user_memory')
-    return saved ? JSON.parse(saved) : { name: '', preferences: {}, lastVisit: null }
+    return saved ? JSON.parse(saved) : { 
+      name: '', 
+      preferences: {}, 
+      lastVisit: null,
+      avaliacaoDeclinedAt: null, // Timestamp de quando recusou avaliação
+      avaliacaoCooldownMinutes: 15 // Minutos de cooldown (padrão 15min)
+    }
   })
 
   // Auto scroll para a última mensagem
@@ -81,8 +87,25 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
                              userMessage.toLowerCase().includes('avaliacao') ||
                              userMessage.toLowerCase().includes('consulta inicial') ||
                              userMessage.toLowerCase().includes('fazer avaliação')
+      
+      // Verifica se a última mensagem da NOA sugeriu avaliação e o usuário concordou
+      const lastNoaMessage = messages.filter(m => m.sender === 'noa').slice(-1)[0]?.message.toLowerCase() || ''
+      const noaSugeriuAvaliacao = (
+        lastNoaMessage.includes('avaliação') ||
+        lastNoaMessage.includes('avaliacao')
+      ) && (
+        lastNoaMessage.includes('começar') ||
+        lastNoaMessage.includes('iniciar') ||
+        lastNoaMessage.includes('quer fazer') ||
+        lastNoaMessage.includes('gostaria') ||
+        lastNoaMessage.includes('deseja')
+      )
+      
+      const usuarioConcordou = userMessage.toLowerCase().match(/^(sim|vamos|ok|pode|quero|claro|aceito|bora|vamo|beleza|isso|começar|iniciar)/)
+      
+      const deveIniciarAvaliacao = (wantsEvaluation || (noaSugeriuAvaliacao && usuarioConcordou)) && !modoAvaliacao
 
-      if (wantsEvaluation && !modoAvaliacao) {
+      if (deveIniciarAvaliacao) {
         // Inicia avaliação clínica
         const newAssessment = clinicalAssessmentService.startAssessment(userMemory.name || 'Usuário')
         setAssessment(newAssessment)
@@ -104,11 +127,99 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
 
       // Se está em modo avaliação, processa a resposta
       if (modoAvaliacao && assessment) {
+        // 🚪 DETECÇÃO DE SAÍDA: Usuário quer sair/pausar?
+        const querSair = userMessage.toLowerCase().match(/^(sair|parar|cancelar|desistir|voltar|chat livre|só conversar|quero conversar)/)
+        
+        if (querSair) {
+          const noaMessage: Message = {
+            id: crypto.randomUUID(),
+            message: `Entendo! Você quer pausar a avaliação agora.\n\n✅ **Seu progresso está salvo!**\n\nPodemos:\n• Continuar conversando livremente sobre outros assuntos\n• Retomar a avaliação quando quiser (digite "continuar avaliação")\n\nO que prefere agora?`,
+            sender: 'noa',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, noaMessage])
+          await playNoaAudioWithText('Seu progresso está salvo! Podemos conversar livremente ou retomar quando quiser.')
+          setModoAvaliacao(false) // Sai do modo avaliação mas mantém dados
+          setIsTyping(false)
+          return
+        }
+        
         await processarRespostaAvaliacao(userMessage)
         setIsTyping(false)
         return
       }
 
+      // Comandos pós-avaliação
+      const msgLower = userMessage.toLowerCase()
+      
+      // 🔄 RETOMAR AVALIAÇÃO: Usuário quer continuar avaliação pausada?
+      if (msgLower.match(/(continuar|retomar|voltar).*(avalia|avalição)/)) {
+        if (assessment) {
+          setModoAvaliacao(true)
+          const nextQ = clinicalAssessmentService.getNextQuestion()
+          const noaMessage: Message = {
+            id: crypto.randomUUID(),
+            message: `Perfeito! Vamos retomar a avaliação de onde paramos.\n\n${nextQ}`,
+            sender: 'noa',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, noaMessage])
+          await playNoaAudioWithText(nextQ)
+          setIsTyping(false)
+          return
+        } else {
+          const noaMessage: Message = {
+            id: crypto.randomUUID(),
+            message: `Você ainda não iniciou uma avaliação. Gostaria de começar uma agora?`,
+            sender: 'noa',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, noaMessage])
+          setIsTyping(false)
+          return
+        }
+      }
+      
+      // Comando: Baixar relatório
+      if (msgLower.includes('baixar') && !modoAvaliacao) {
+        const lastReport = localStorage.getItem('last_clinical_report')
+        if (lastReport) {
+          const report = JSON.parse(lastReport)
+          const blob = new Blob([report.summary || 'Relatório não disponível'], { type: 'text/plain' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `relatorio_noa_${Date.now()}.txt`
+          a.click()
+          URL.revokeObjectURL(url)
+          
+          addNotification('Relatório baixado com sucesso!', 'success')
+          
+          const noaMessage: Message = {
+            id: crypto.randomUUID(),
+            message: '📥 Relatório baixado! Está salvo no seu computador.',
+            sender: 'noa',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, noaMessage])
+          setIsTyping(false)
+          return
+        }
+      }
+      
+      // Comando: Ir para dashboard
+      if ((msgLower.includes('dashboard') || msgLower.includes('painel')) && !modoAvaliacao) {
+        const noaMessage: Message = {
+          id: crypto.randomUUID(),
+          message: '📊 Para acessar seu dashboard completo, clique no menu lateral em "Dashboard do Paciente" ou acesse:\n\n`/app/paciente`\n\nLá você encontrará todos os seus relatórios, chat dedicado e muito mais!',
+          sender: 'noa',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, noaMessage])
+        setIsTyping(false)
+        return
+      }
+      
       // Detecta se o usuário está se apresentando
       if (!userMemory.name && (
         userMessage.toLowerCase().includes('meu nome é') ||
@@ -131,9 +242,37 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
 
       const response = await openAIService.getNoaResponse(userMessage, conversationHistory)
       
+      // 🚫 DETECÇÃO DE RECUSA: Usuário não quer avaliação agora?
+      const recusouAvaliacao = msgLower.match(/(não quero|agora não|depois|talvez depois|não precisa|já fiz|dispenso|outra hora)/)
+      const ultimaNoaSugeriu = messages.filter(m => m.sender === 'noa').slice(-1)[0]?.message.toLowerCase().includes('avaliação')
+      
+      if (recusouAvaliacao && ultimaNoaSugeriu) {
+        saveUserMemory({ 
+          avaliacaoDeclinedAt: Date.now()
+        })
+        console.log('⏰ Cooldown de 15 minutos ativado para sugestão de avaliação')
+      }
+      
+      // 🎯 FUNIL SUAVE: Sugerir avaliação ocasionalmente
+      let finalResponse = response
+      const mensagemTemSintomas = userMessage.toLowerCase().match(/(dor|sinto|sintoma|problema|ruim|mal|desconforto|cansaço|tontura)/)
+      const jaTemRelatorio = localStorage.getItem('last_clinical_report')
+      const conversaLonga = messages.length > 6
+      
+      // Verificar cooldown
+      const agora = Date.now()
+      const cooldownMinutos = userMemory.avaliacaoCooldownMinutes || 15
+      const tempoDesdeRecusa = userMemory.avaliacaoDeclinedAt ? agora - userMemory.avaliacaoDeclinedAt : Infinity
+      const cooldownAtivo = tempoDesdeRecusa < (cooldownMinutos * 60 * 1000)
+      
+      // Se mencionou sintomas E não tem relatório E conversa longa E não está em cooldown
+      if (mensagemTemSintomas && !jaTemRelatorio && conversaLonga && !cooldownAtivo && Math.random() > 0.5) {
+        finalResponse += `\n\n💡 _Percebi que você mencionou alguns sintomas. Se quiser, posso fazer uma avaliação clínica completa para entender melhor. É só me avisar!_`
+      }
+      
       const noaMessage: Message = {
         id: crypto.randomUUID(),
-        message: response,
+        message: finalResponse,
         sender: 'noa',
         timestamp: new Date()
       }
@@ -142,13 +281,13 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
       
       // Gerar pensamentos flutuantes
       setTimeout(() => {
-        const newThoughts = generateThoughtsFromResponse(response)
+        const newThoughts = generateThoughtsFromResponse(finalResponse)
         setThoughts(newThoughts)
         setIsProcessing(false)
       }, 1500)
       
       // ElevenLabs gera áudio
-      await playNoaAudioWithText(response)
+      await playNoaAudioWithText(finalResponse)
       
     } catch (error) {
       console.error('Erro ao obter resposta da NOA:', error)
@@ -223,15 +362,27 @@ const HomeIntegrated = ({ currentSpecialty, isVoiceListening, setIsVoiceListenin
       
       setModoAvaliacao(false)
       
+      const mensagemFinal = `**🎉 AVALIAÇÃO CLÍNICA CONCLUÍDA!**\n\n✅ Seu relatório foi gerado com sucesso!\n\n**NFT Hash:** ${result.nftHash}\n\n${result.pdfUrl ? `📄 **Relatório salvo no sistema**\nAcesse em: Dashboard do Paciente > Relatórios\n\n` : ''}**RECOMENDAÇÃO FINAL:**\n\nEssa é uma avaliação inicial de acordo com o método desenvolvido pelo Dr. Ricardo Valença. Recomendo a marcação de uma consulta com o Dr. Ricardo Valença.\n\n💡 **Próximos passos:**\n- Agende sua consulta\n- Leve este relatório\n- Prepare suas dúvidas\n\n📥 **Ações disponíveis:**\n• Digite "baixar" para download local\n• Digite "dashboard" para ver no painel\n• Digite "compartilhar" para enviar ao médico`
+      
       const fechamentoConsensual: Message = {
         id: crypto.randomUUID(),
-        message: `**🎉 AVALIAÇÃO CLÍNICA CONCLUÍDA!**\n\n✅ Seu relatório foi gerado e está disponível.\n\n**NFT Hash:** ${result.nftHash}\n\n**RECOMENDAÇÃO FINAL:**\n\nEssa é uma avaliação inicial de acordo com o método desenvolvido pelo Dr. Ricardo Valença. Recomendo a marcação de uma consulta com o Dr. Ricardo Valença.\n\n💡 **Próximos passos:**\n- Agende sua consulta\n- Leve este relatório\n- Prepare suas dúvidas`,
+        message: mensagemFinal,
         sender: 'noa',
         timestamp: new Date()
       }
       
       setMessages(prev => [...prev, fechamentoConsensual])
-      await playNoaAudioWithText(fechamentoConsensual.message)
+      await playNoaAudioWithText('Avaliação concluída! Seu relatório está disponível no dashboard e você pode baixar quando quiser.')
+      
+      // Salvar para o dashboard poder acessar
+      if (result.pdfUrl) {
+        localStorage.setItem('last_clinical_report', JSON.stringify({
+          ...result.report,
+          nftHash: result.nftHash,
+          pdfUrl: result.pdfUrl,
+          assessmentId: clinicalAssessmentService.getCurrentAssessment()?.id
+        }))
+      }
     } catch (error) {
       console.error('Erro ao finalizar avaliação:', error)
     }

@@ -63,6 +63,69 @@ export class ClinicalAssessmentService {
   private ultimaPerguntaFeita: string = '' // 🚫 Evita repetir a mesma pergunta
 
   /**
+   * 💬 Gera variações naturais de perguntas para parecer mais humana
+   */
+  private getDynamicQuestion(context: 'first' | 'follow_up' | 'final'): string {
+    const variations = {
+      first: [
+        "O que trouxe você até aqui hoje?",
+        "O que motivou sua vinda para esta avaliação?",
+        "Como posso te ajudar hoje?",
+        "O que te traz aqui neste momento?"
+      ],
+      follow_up: [
+        "Há algo mais que você queira mencionar?",
+        "O que mais você percebeu?",
+        "Quer me contar mais alguma coisa?",
+        "Algo mais que esteja te incomodando?"
+      ],
+      final: [
+        "Há mais alguma coisa que você gostaria de acrescentar?",
+        "Algo mais que julgue importante compartilhar?",
+        "Quer comentar algo mais antes de seguirmos?",
+        "Mais alguma informação que queira me passar?"
+      ]
+    }
+    const options = variations[context]
+    return options[Math.floor(Math.random() * options.length)]
+  }
+
+  /**
+   * 💙 Gera resposta empática reconhecendo o que o paciente disse
+   */
+  private respostaEmpatica(resposta: string): string {
+    if (!resposta || resposta.trim().length < 3) return ''
+    
+    const respostasEmpaticas = [
+      "Entendo, obrigada por compartilhar isso.",
+      "Compreendo o que você está dizendo.",
+      "Certo, entendi.",
+      "Está bem, obrigada.",
+      "Compreendo.",
+      resposta.length > 40 ? "Entendo, deve ser desconfortável." : "Certo."
+    ]
+    
+    return respostasEmpaticas[Math.floor(Math.random() * respostasEmpaticas.length)]
+  }
+
+  /**
+   * 🛡️ Detecta se o paciente sinalizou que terminou de falar
+   */
+  private detectaFinalizacao(answer: string = ''): boolean {
+    const palavrasFinalizacao = [
+      'não mais', 'nada mais', 'nada', 'só isso', 'so isso',
+      'apenas', 'apenas isso', 'chega', 'nenhuma', 'nenhum',
+      'acabou', 'terminei', 'é isso'
+    ]
+    
+    const text = answer.toLowerCase().trim()
+    return palavrasFinalizacao.some(palavra => 
+      text.includes(palavra) || 
+      (text.length < 15 && text === palavra)
+    )
+  }
+
+  /**
    * Inicia nova avaliação clínica
    */
   startAssessment(userId: string): ClinicalAssessmentData {
@@ -76,6 +139,10 @@ export class ClinicalAssessmentService {
     }
 
     this.assessmentResponses = []
+    
+    // 💾 Salvar no Supabase
+    this.saveToSupabase()
+    
     return this.currentAssessment
   }
 
@@ -104,19 +171,14 @@ export class ClinicalAssessmentService {
       case 'complaints_list':
         if (responses.filter(r => r.category === 'complaints').length === 0) {
           this.contadorOqMais = 0 // Reset
-          return "O que trouxe você à nossa avaliação hoje?"
+          return this.getDynamicQuestion('first')
         }
         const lastComplaintResponse = responses.filter(r => r.category === 'complaints').slice(-1)[0]
         const complaintCount = responses.filter(r => r.category === 'complaints').length
         
         // 🛡️ PROTEÇÃO: Detecta finalização
         const usuarioTerminou = 
-          (lastComplaintResponse?.answer.toLowerCase().includes('não') && 
-           lastComplaintResponse?.answer.toLowerCase().includes('mais')) ||
-          lastComplaintResponse?.answer.toLowerCase().includes('nada') ||
-          lastComplaintResponse?.answer.toLowerCase().includes('só isso') ||
-          lastComplaintResponse?.answer.toLowerCase().includes('apenas') ||
-          lastComplaintResponse?.answer.toLowerCase().includes('chega') ||
+          this.detectaFinalizacao(lastComplaintResponse?.answer) ||
           this.contadorOqMais >= 2 || // MÁXIMO 2 vezes
           complaintCount >= 4 // MÁXIMO 4 queixas
         
@@ -127,7 +189,11 @@ export class ClinicalAssessmentService {
         }
         
         this.contadorOqMais++
-        return "O que mais?"
+        
+        // 💙 Resposta empática + pergunta variada
+        const empatiaComplaint = this.respostaEmpatica(lastComplaintResponse?.answer || '')
+        const perguntaComplaint = this.getDynamicQuestion('follow_up')
+        return empatiaComplaint ? `${empatiaComplaint} ${perguntaComplaint}` : perguntaComplaint
 
       case 'main_complaint':
         const complaints = responses.filter(r => r.category === 'complaints').map(r => r.answer)
@@ -145,17 +211,17 @@ export class ClinicalAssessmentService {
           return "Onde você sente essa dor? Como começou?"
         }
         
-        const pergunta = `De todas essas questões (${complaintsLimpos.join(', ')}), qual mais o(a) incomoda?`
+        const perguntaPrincipal = `De todas essas questões (${complaintsLimpos.join(', ')}), qual mais o(a) incomoda?`
         
         // 🚫 PROTEÇÃO: Se já fez essa pergunta, não repetir!
-        if (this.ultimaPerguntaFeita === pergunta) {
+        if (this.ultimaPerguntaFeita === perguntaPrincipal) {
           console.log('⚠️ Pergunta já feita, avançando automaticamente...')
           this.advanceStage()
           return this.getNextQuestion()
         }
         
-        this.ultimaPerguntaFeita = pergunta
-        return pergunta
+        this.ultimaPerguntaFeita = perguntaPrincipal
+        return perguntaPrincipal
 
       case 'complaint_development':
         const mainComplaint = responses.filter(r => r.category === 'complaints').slice(-1)[0]?.answer
@@ -186,20 +252,14 @@ export class ClinicalAssessmentService {
         const historyResponses = responses.filter(r => r.category === 'history')
         if (historyResponses.length === 0) {
           this.contadorOqMais = 0 // Reset
-          return "E agora, sobre o restante sua vida até aqui, desde seu nascimento, quais as questões de saúde que você já viveu? Vamos ordenar do mais antigo para o mais recente, o que veio primeiro?"
+          return "Agora vamos falar sobre sua saúde ao longo da vida. Quais questões de saúde você já viveu, desde o mais antigo até o mais recente?"
         }
         const lastHistoryResponse = historyResponses.slice(-1)[0]
         const historyCount = historyResponses.length
         
         // 🛡️ PROTEÇÃO: Detecta finalização
         const historyTerminou = 
-          (lastHistoryResponse?.answer.toLowerCase().includes('não') && 
-           lastHistoryResponse?.answer.toLowerCase().includes('mais')) ||
-          lastHistoryResponse?.answer.toLowerCase().includes('nada') ||
-          lastHistoryResponse?.answer.toLowerCase().includes('só isso') ||
-          lastHistoryResponse?.answer.toLowerCase().includes('apenas') ||
-          lastHistoryResponse?.answer.toLowerCase().includes('chega') ||
-          lastHistoryResponse?.answer.toLowerCase().includes('nenhuma') ||
+          this.detectaFinalizacao(lastHistoryResponse?.answer) ||
           this.contadorOqMais >= 2 || // MÁXIMO 2 vezes
           historyCount >= 4 // MÁXIMO 4 histórias
         
@@ -210,7 +270,11 @@ export class ClinicalAssessmentService {
         }
         
         this.contadorOqMais++
-        return "O que mais?"
+        
+        // 💙 Resposta empática + pergunta variada
+        const empatiaHistory = this.respostaEmpatica(lastHistoryResponse?.answer || '')
+        const perguntaHistory = this.getDynamicQuestion('follow_up')
+        return empatiaHistory ? `${empatiaHistory} ${perguntaHistory}` : perguntaHistory
 
       case 'family_history':
         const familyResponses = responses.filter(r => r.category === 'family')
@@ -225,29 +289,20 @@ export class ClinicalAssessmentService {
         // 🛡️ PROTEÇÃO: Detecta finalização (mãe)
         const lastMaternal = maternalResponses.slice(-1)[0]
         const maternalTerminou = 
-          (lastMaternal?.answer.toLowerCase().includes('não') && 
-           lastMaternal?.answer.toLowerCase().includes('mais')) ||
-          lastMaternal?.answer.toLowerCase().includes('nada') ||
-          lastMaternal?.answer.toLowerCase().includes('nenhuma') ||
-          lastMaternal?.answer.toLowerCase().includes('só isso') ||
-          lastMaternal?.answer.toLowerCase().includes('chega') ||
+          this.detectaFinalizacao(lastMaternal?.answer) ||
           this.contadorOqMais >= 2 || // MÁXIMO 2 vezes
           maternalResponses.length >= 4 // MÁXIMO 4 histórias
         
         if (maternalResponses.length > 0 && maternalTerminou) {
           this.contadorOqMais = 0 // Reset para parte do pai
-          return "E por parte de seu pai?"
+          const empatia = this.respostaEmpatica(lastMaternal?.answer || '')
+          return empatia ? `${empatia} E por parte de seu pai?` : "E por parte de seu pai?"
         }
         
         // 🛡️ PROTEÇÃO: Detecta finalização (pai)
         const lastPaternal = paternalResponses.slice(-1)[0]
         const paternalTerminou = 
-          (lastPaternal?.answer.toLowerCase().includes('não') && 
-           lastPaternal?.answer.toLowerCase().includes('mais')) ||
-          lastPaternal?.answer.toLowerCase().includes('nada') ||
-          lastPaternal?.answer.toLowerCase().includes('nenhuma') ||
-          lastPaternal?.answer.toLowerCase().includes('só isso') ||
-          lastPaternal?.answer.toLowerCase().includes('chega') ||
+          this.detectaFinalizacao(lastPaternal?.answer) ||
           this.contadorOqMais >= 2 || // MÁXIMO 2 vezes
           paternalResponses.length >= 4 // MÁXIMO 4 histórias
         
@@ -258,26 +313,25 @@ export class ClinicalAssessmentService {
         }
         
         this.contadorOqMais++
-        return "O que mais?"
+        
+        // 💙 Resposta empática + pergunta variada
+        const ultimaRespostaFamily = paternalResponses.length > 0 ? lastPaternal : lastMaternal
+        const empatiaFamily = this.respostaEmpatica(ultimaRespostaFamily?.answer || '')
+        const perguntaFamily = this.getDynamicQuestion('follow_up')
+        return empatiaFamily ? `${empatiaFamily} ${perguntaFamily}` : perguntaFamily
 
       case 'lifestyle_habits':
         const habitResponses = responses.filter(r => r.category === 'habits')
         if (habitResponses.length === 0) {
           this.contadorOqMais = 0 // Reset
-          return "Além dos hábitos de vida que já verificamos em nossa conversa, que outros hábitos você acha importante mencionar?"
+          return "Agora sobre seus hábitos de vida - sono, alimentação, atividades. Como é sua rotina diária?"
         }
         const lastHabitResponse = habitResponses.slice(-1)[0]
         const habitCount = habitResponses.length
         
         // 🛡️ PROTEÇÃO: Detecta finalização
         const habitTerminou = 
-          (lastHabitResponse?.answer.toLowerCase().includes('não') && 
-           lastHabitResponse?.answer.toLowerCase().includes('mais')) ||
-          lastHabitResponse?.answer.toLowerCase().includes('nada') ||
-          lastHabitResponse?.answer.toLowerCase().includes('nenhuma') ||
-          lastHabitResponse?.answer.toLowerCase().includes('só isso') ||
-          lastHabitResponse?.answer.toLowerCase().includes('apenas') ||
-          lastHabitResponse?.answer.toLowerCase().includes('chega') ||
+          this.detectaFinalizacao(lastHabitResponse?.answer) ||
           this.contadorOqMais >= 2 || // MÁXIMO 2 vezes
           habitCount >= 4 // MÁXIMO 4 hábitos
         
@@ -288,7 +342,11 @@ export class ClinicalAssessmentService {
         }
         
         this.contadorOqMais++
-        return "O que mais?"
+        
+        // 💙 Resposta empática + pergunta variada
+        const empatiaHabit = this.respostaEmpatica(lastHabitResponse?.answer || '')
+        const perguntaHabit = this.getDynamicQuestion('follow_up')
+        return empatiaHabit ? `${empatiaHabit} ${perguntaHabit}` : perguntaHabit
 
       case 'medications_allergies':
         const medResponses = responses.filter(r => r.category === 'medications')
@@ -320,6 +378,7 @@ export class ClinicalAssessmentService {
    */
   recordResponse(question: string, answer: string, category: AssessmentResponse['category']): void {
     if (!this.currentAssessment) {
+      console.error('❌ Nenhuma avaliação ativa! Inicie uma nova avaliação.')
       throw new Error('Nenhuma avaliação ativa')
     }
 
@@ -367,6 +426,9 @@ export class ClinicalAssessmentService {
 
     this.assessmentResponses.push(response)
     this.currentAssessment.responses.push(response)
+    
+    // 💾 Salvar no Supabase após cada resposta
+    this.saveToSupabase()
   }
 
   /**
@@ -465,9 +527,121 @@ export class ClinicalAssessmentService {
   }
 
   /**
+   * 💾 Salva avaliação atual no Supabase
+   */
+  private async saveToSupabase(): Promise<void> {
+    if (!this.currentAssessment) return
+    
+    try {
+      const payload = {
+        id: this.currentAssessment.id,
+        user_id: this.currentAssessment.userId,
+        session_id: this.currentAssessment.id,
+        status: this.currentAssessment.status,
+        etapa_atual: this.currentAssessment.stage,
+        dados: JSON.stringify({
+          responses: this.assessmentResponses,
+          stage: this.currentAssessment.stage
+        }),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      await supabase.from('avaliacoes_iniciais').upsert(payload, { onConflict: 'id' })
+      console.log('💾 Avaliação salva no Supabase:', this.currentAssessment.id)
+    } catch (error) {
+      console.warn('⚠️ Erro ao salvar no Supabase:', error)
+    }
+  }
+
+  /**
+   * 📄 Gera PDF do relatório
+   */
+  private generatePDFBlob(): Blob {
+    if (!this.currentAssessment?.finalReport) {
+      throw new Error('Nenhum relatório para gerar PDF')
+    }
+
+    const { patientName, summary, recommendations } = this.currentAssessment.finalReport
+    
+    // Criar conteúdo do relatório em texto
+    const content = `
+╔══════════════════════════════════════════════════════════╗
+║     RELATÓRIO DE AVALIAÇÃO CLÍNICA INICIAL              ║
+║     Nôa Esperanza - Assistente Médica Inteligente       ║
+╚══════════════════════════════════════════════════════════╝
+
+Paciente: ${patientName}
+Data: ${new Date().toLocaleDateString('pt-BR')}
+Hora: ${new Date().toLocaleTimeString('pt-BR')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 AVALIAÇÃO CLÍNICA:
+
+${summary}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 RECOMENDAÇÕES:
+
+${recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔐 NFT Hash: ${this.currentAssessment.nftHash || 'Gerando...'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👨‍⚕️ Desenvolvido pelo Dr. Ricardo Valença
+🏥 Método IMRE - Arte da Entrevista Clínica
+    `.trim()
+
+    return new Blob([content], { type: 'text/plain; charset=utf-8' })
+  }
+
+  /**
+   * 📤 Faz upload do PDF no Supabase Storage
+   */
+  private async uploadPDFToSupabase(): Promise<string | null> {
+    if (!this.currentAssessment) return null
+
+    try {
+      const pdfBlob = this.generatePDFBlob()
+      const fileName = `relatorio_${this.currentAssessment.userId}_${this.currentAssessment.id}.txt`
+      const filePath = `relatorios-clinicos/${fileName}`
+
+      // Upload no Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('documents') // ou criar bucket 'relatorios-clinicos'
+        .upload(filePath, pdfBlob, {
+          contentType: 'text/plain',
+          upsert: true
+        })
+
+      if (error) {
+        console.error('❌ Erro ao fazer upload do PDF:', error)
+        return null
+      }
+
+      // Gerar URL pública
+      const { data: urlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath)
+
+      console.log('✅ PDF enviado para Supabase:', urlData.publicUrl)
+      return urlData.publicUrl
+
+    } catch (error) {
+      console.error('❌ Erro ao fazer upload:', error)
+      return null
+    }
+  }
+
+  /**
    * Finaliza avaliação e gera NFT
    */
-  async completeAssessment(): Promise<{ report: ClinicalReport; nftHash: string }> {
+  async completeAssessment(): Promise<{ report: ClinicalReport; nftHash: string; pdfUrl?: string }> {
     if (!this.currentAssessment || !this.currentAssessment.finalReport) {
       throw new Error('Avaliação não pode ser finalizada')
     }
@@ -478,7 +652,10 @@ export class ClinicalAssessmentService {
     this.currentAssessment.nftHash = nftHash
     this.currentAssessment.status = 'completed'
 
-    // Persistir no Supabase (quando disponível) para métricas globais
+    // 📤 Upload do PDF no Supabase Storage
+    const pdfUrl = await this.uploadPDFToSupabase()
+
+    // Persistir no Supabase com URL do PDF
     try {
       const payload: any = {
         id: this.currentAssessment.id,
@@ -486,13 +663,19 @@ export class ClinicalAssessmentService {
         session_id: this.currentAssessment.id,
         status: 'completed',
         etapa_atual: this.currentAssessment.stage,
-        dados: this.currentAssessment.finalReport ? JSON.stringify(this.currentAssessment.finalReport) : null,
+        dados: JSON.stringify(this.currentAssessment.finalReport),
+        pdf_url: pdfUrl, // 📄 URL do PDF
+        nft_hash: nftHash,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
       await supabase.from('avaliacoes_iniciais').upsert(payload, { onConflict: 'id' })
+      
+      console.log('✅ Avaliação finalizada e salva no Supabase')
+      console.log('📄 PDF URL:', pdfUrl)
     } catch (e) {
-      // Fallback local: incrementar contador para uso no Admin
+      console.warn('⚠️ Erro ao salvar no Supabase:', e)
+      // Fallback local
       try {
         const total = Number(localStorage.getItem('kpi_total_assessments') || '0') + 1
         localStorage.setItem('kpi_total_assessments', String(total))
@@ -501,7 +684,8 @@ export class ClinicalAssessmentService {
 
     return {
       report: this.currentAssessment.finalReport,
-      nftHash
+      nftHash,
+      pdfUrl: pdfUrl || undefined
     }
   }
 

@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import Sidebar from '../components/Sidebar'
 import { sharingService, Doctor } from '../services/sharingService' // 🔗 Sistema de compartilhamento
 import { consentService } from '../services/consentService' // 🔐 Consentimentos
+import { supabase } from '../integrations/supabase/client' // 💾 Supabase
 
 type NotificationType = 'info' | 'success' | 'warning' | 'error'
 
@@ -47,32 +48,72 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
   const builderUserName = userProfile?.name || user?.email || 'Paciente Nôa'
 
   useEffect(() => {
-    // Carregar último relatório salvo
-    try {
-      const lastReport = localStorage.getItem('last_clinical_report')
-      if (lastReport) {
-        const parsedReport = JSON.parse(lastReport)
-        setClinicalReport(parsedReport)
-        setNftHash(parsedReport.nftHash || '')
+    // Carregar último relatório do Supabase primeiro, depois localStorage
+    const loadReport = async () => {
+      try {
+        // 1. Tentar buscar do Supabase
+        if (user?.id) {
+          const { data, error } = await supabase
+            .from('avaliacoes_iniciais')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('status', 'completed')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          if (data && !error) {
+            const reportData = typeof data.dados === 'string' ? JSON.parse(data.dados) : data.dados
+            setClinicalReport({
+              ...reportData,
+              pdfUrl: data.pdf_url,
+              assessmentId: data.id
+            })
+            setNftHash(data.nft_hash || '')
+            console.log('✅ Relatório carregado do Supabase')
+            return
+          }
+        }
+
+        // 2. Fallback: localStorage
+        const lastReport = localStorage.getItem('last_clinical_report')
+        if (lastReport) {
+          const parsedReport = JSON.parse(lastReport)
+          setClinicalReport(parsedReport)
+          setNftHash(parsedReport.nftHash || '')
+          console.log('✅ Relatório carregado do localStorage')
+        }
+      } catch (error) {
+        console.warn('⚠️ Erro ao carregar relatório:', error)
       }
-    } catch (error) {
-      console.warn('Erro ao carregar relatório:', error)
     }
-  }, [addNotification])
+
+    loadReport()
+  }, [user, addNotification])
 
   const downloadReport = () => {
     if (!clinicalReport) return
     
+    // Se tem pdfUrl do Supabase, usa ele
+    if (clinicalReport.pdfUrl) {
+      window.open(clinicalReport.pdfUrl, '_blank')
+      addNotification('Abrindo relatório em nova aba...', 'info')
+      return
+    }
+    
+    // Fallback: gerar do summary
     const reportText = clinicalReport.summary || 'Relatório não disponível'
-    const blob = new Blob([reportText], { type: 'text/plain' })
+    const blob = new Blob([reportText], { type: 'text/plain; charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `relatorio_clinico_${Date.now()}.txt`
+    a.download = `relatorio_clinico_noa_${Date.now()}.txt`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+    
+    addNotification('Relatório baixado com sucesso!', 'success')
   }
 
   // 🔗 FUNÇÃO DE COMPARTILHAR RELATÓRIO
