@@ -139,42 +139,45 @@ CONTRAINDICACOES:
 - Doenca cardiovascular grave descompensada
 - Uso concomitante com certos medicamentos
 
-IMPORTANTE:
-Sempre use com orientacao medica especializada.
-Dose deve ser ajustada individualmente (titracao).
-Acompanhamento regular e essencial.',
+IMPORTANTE - NAO PRESCREVEMOS:
+Este sistema NAO prescreve medicamentos, dosagens ou tratamentos.
+Todas as informacoes sao EDUCACIONAIS.
+Para tratamento com cannabis medicinal, consulte um medico especializado.
+Somente o medico pode prescrever dosagens e acompanhar o tratamento.',
 'knowledge', 'cannabis', true),
 
-('Cannabis Medicinal - Titracao', 
-'TITRACAO DE CANNABIS MEDICINAL
+('Cannabis Medicinal - Uso Seguro', 
+'USO SEGURO DE CANNABIS MEDICINAL
 
-PRINCIPIO:
-Comece com dose baixa e aumente gradualmente ate encontrar a dose minima eficaz.
+PRINCIPIO GERAL:
+A cannabis medicinal deve ser sempre prescrita e acompanhada por medico especializado.
 
-PROTOCOLO START LOW, GO SLOW:
-1. Iniciar com dose baixa (ex: 5-10mg CBD)
-2. Manter por 3-5 dias
-3. Avaliar resposta e efeitos adversos
-4. Aumentar 5-10mg se necessario
-5. Repetir ate dose ideal
+IMPORTANTE - NAO FAZEMOS:
+- Prescricao de medicamentos
+- Recomendacao de dosagens especificas
+- Indicacao de produtos especificos
+- Orientacao de tratamento sem medico
 
-SINAIS DE DOSE ADEQUADA:
-- Melhora dos sintomas
-- Minimos efeitos adversos
-- Funcionalidade preservada
-- Qualidade de vida melhorada
+O QUE ORIENTAMOS:
+- Informacoes educacionais gerais
+- Importancia do acompanhamento medico
+- Necessidade de titracao individualizada
+- Monitoramento de efeitos
 
-SINAIS DE SOBREDOSE:
+ACOMPANHAMENTO NECESSARIO:
+- Consulta com medico especializado
+- Avaliacao individualizada
+- Ajustes conforme resposta
+- Monitoramento continuo
+
+SINAIS DE ALERTA (procurar medico):
 - Sonolencia excessiva
-- Tontura
+- Tontura persistente
 - Nausea
-- Ansiedade paradoxal
+- Qualquer efeito indesejado
 
-ORIENTACOES:
-- Usar sempre no mesmo horario
-- Preferir via oral/sublingual (inicio)
-- Manter diario de sintomas
-- Comunicar medico sobre qualquer mudanca',
+RECOMENDACAO:
+Sempre consulte um medico especializado em cannabis medicinal para prescricao, dosagem e acompanhamento.',
 'knowledge', 'cannabis', true);
 
 -- 1.4 NEUROLOGIA
@@ -204,10 +207,13 @@ TRATAMENTO:
 - Estimulacao do nervo vago
 
 CANNABIS NA EPILEPSIA:
-- CBD mostrou eficacia em epilepsia refrataria
-- Sindrome de Dravet: reducao significativa de crises
-- Sindrome de Lennox-Gastaut: melhora documentada
-- Sempre com acompanhamento neurologico
+- Estudos mostram eficacia do CBD em alguns casos de epilepsia refrataria
+- Sindrome de Dravet e Lennox-Gastaut: estudos documentados
+IMPORTANTE: Uso de cannabis em epilepsia requer:
+- Prescricao de neurologista especializado
+- Nao e primeira linha de tratamento
+- Somente em casos especificos e refratarios
+- Acompanhamento medico rigoroso
 
 ACOMPANHAMENTO:
 - EEG periodico
@@ -325,9 +331,10 @@ META DE PRESSAO:
 - Com proteinuria: < 125/75 mmHg
 
 CANNABIS:
-- CBD pode ter efeito hipotensor leve
-- Nao substitui medicacao convencional
-- Pode ser adjuvante em casos selecionados',
+- Estudos sugerem possivel efeito sobre pressao arterial
+- NAO substitui medicacao convencional
+- Uso deve ser avaliado por medico especializado
+- Somente medico pode indicar como adjuvante',
 'knowledge', 'nefrologia', true);
 
 -- 1.6 EXEMPLOS DE CONVERSAS
@@ -364,15 +371,15 @@ Posso fazer uma avaliacao clinica completa para investigar melhor. Gostaria?
 DUVIDA SOBRE TRATAMENTO:
 
 Usuario: CBD funciona para ansiedade?
-Noa: O CBD tem mostrado eficacia no controle de ansiedade em varios estudos cientificos. Ele atua nos receptores de serotonina e tem propriedades ansioliticas.
+Noa: Estudos cientificos tem mostrado que o CBD pode ter propriedades ansioliticas e atuar nos receptores de serotonina.
 
 IMPORTANTE:
-- Dose deve ser individualizada (titracao)
-- Comeca baixo (5-10mg) e aumenta gradualmente
-- Acompanhamento medico e essencial
-- Efeito pode levar 2-4 semanas
+- NAO posso prescrever ou recomendar dosagens
+- Uso de cannabis medicinal requer prescricao medica
+- Somente medico especializado pode avaliar seu caso
+- Cada pessoa responde de forma diferente
 
-Voce esta considerando usar CBD? Posso te orientar melhor sobre o processo.',
+Posso te orientar sobre como encontrar um medico especializado em cannabis medicinal ou tirar duvidas educacionais gerais.',
 'examples', 'consulta', true);
 
 -- ==============================================================================
@@ -420,9 +427,9 @@ INSERT INTO ai_learning (user_message, ai_response, category, confidence_score, 
 -- 2.4 CANNABIS MEDICINAL (perguntas frequentes)
 INSERT INTO ai_learning (user_message, ai_response, category, confidence_score, keyword, context) VALUES
 ('o que e cannabis medicinal', 'Cannabis medicinal e o uso terapeutico da planta Cannabis sativa para tratamento de diversas condicoes de saude. Os principais componentes sao CBD (nao psicoativo, terapeutico) e THC (alivio de sintomas). Indicacoes comuns: dor cronica, epilepsia, ansiedade, insonia, nauseas. Importante: sempre use com orientacao medica!', 'medical', 0.95, 'cannabis', 'medical'),
-('cbd funciona', 'O CBD tem mostrado eficacia em varios estudos cientificos para: Reducao de crises epilepticas, Alivio de ansiedade, Melhora do sono, Controle de dor cronica, Propriedades anti-inflamatorias. Mas atencao: A resposta varia de pessoa para pessoa, Dose precisa ser ajustada individualmente, Acompanhamento medico e essencial. Gostaria de saber mais sobre algum uso especifico?', 'medical', 0.95, 'cbd', 'medical'),
-('como usar cbd', 'O uso de CBD segue o protocolo START LOW GO SLOW: Comece com dose baixa (5-10mg), Mantenha por 3-5 dias, Avalie resposta, Aumente gradualmente se necessario. Via de administracao: oral ou sublingual (mais comum). Importante: manter diario de sintomas e comunicar medico sobre qualquer mudanca.', 'medical', 0.95, 'como usar cbd', 'medical'),
-('cbd tem efeito colateral', 'O CBD geralmente e bem tolerado, mas pode ter alguns efeitos: Sonolencia leve, Boca seca, Tontura (raro), Alteracao de apetite, Interacoes medicamentosas. Por isso e importante: Comecar com dose baixa, Aumentar gradualmente, Acompanhamento medico, Informar outros medicamentos em uso.', 'medical', 0.95, 'efeito colateral cbd', 'medical');
+('cbd funciona', 'O CBD tem mostrado eficacia em varios estudos cientificos para: Reducao de crises epilepticas, Alivio de ansiedade, Melhora do sono, Controle de dor cronica, Propriedades anti-inflamatorias. IMPORTANTE: A resposta varia de pessoa para pessoa. Somente um medico especializado pode prescrever dosagens e acompanhar o tratamento. Gostaria de saber mais sobre aspectos gerais ou te orientar a buscar um especialista?', 'medical', 0.95, 'cbd', 'medical'),
+('como usar cbd', 'IMPORTANTE: Nao posso recomendar dosagens ou formas de uso especificas. Isso deve ser prescrito por um medico especializado em cannabis medicinal. O medico ira: Avaliar seu caso individualmente, Prescrever dosagem adequada, Orientar forma de uso, Acompanhar resultados e ajustes. Posso te ajudar a encontrar um especialista ou te orientar sobre informacoes gerais educacionais.', 'medical', 0.95, 'como usar cbd', 'medical'),
+('cbd tem efeito colateral', 'O CBD geralmente e bem tolerado em estudos, mas pode ter alguns efeitos relatados: Sonolencia leve, Boca seca, Alteracao de apetite, Interacoes medicamentosas. IMPORTANTE: Qualquer tratamento com cannabis medicinal deve ser prescrito e acompanhado por medico especializado. Somente o medico pode avaliar riscos e beneficios para seu caso especifico.', 'medical', 0.95, 'efeito colateral cbd', 'medical');
 
 -- 2.5 NEUROLOGIA (perguntas frequentes)
 INSERT INTO ai_learning (user_message, ai_response, category, confidence_score, keyword, context) VALUES
